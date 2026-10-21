@@ -1,0 +1,136 @@
+// AI Usage Monitor: ESP32-2432S024C dashboard
+//
+// Receives a compact JSON payload from the aimon service on the PC (USB serial
+// by default, optional Wi-Fi polling) and renders quota, activity and usage.
+// Holds no credentials and makes no requests to AI providers.
+//
+// Protocol (USB serial, 115200 8N1): the PC sends one JSON object per line.
+// The device replies "@HELLO ..." at boot and "@ACK <seq>" per accepted line.
+
+#include <TFT_eSPI.h>
+#include "config.h"
+#include "model.h"
+#include "ui.h"
+
+#if AIMON_USE_WIFI
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include "secrets.h"
+#endif
+
+static TFT_eSPI tft;
+static Model model;
+static char lineBuf[4096];
+static size_t lineLen = 0;
+static bool overflow = false;
+static uint32_t lastDraw = 0;
+static uint32_t badLines = 0;
+
+static const char* linkInfo();
+
+static void acceptPayload(const char* json, size_t len) {
+  if (parsePayload(json, len, model)) {
+    Serial.printf("@ACK %lu\n", (unsigned long)model.seq);
+    lastDraw = 0;  // redraw immediately
+  } else {
+    badLines++;
+    Serial.printf("@ERR parse failed (%lu bad lines)\n", (unsigned long)badLines);
+  }
+}
+
+static void printHello() {
+  Serial.printf("@HELLO aimon-fw %s rot=%d w=%d h=%d fb=%d heap=%lu\n", FW_VERSION, tft.getRotation(), tft.width(),
+                tft.height(), uiHasFramebuffer(), (unsigned long)ESP.getFreeHeap());
+  setup_t s;
+  tft.getSetup(s);  // proves which pin map was compiled in
+  Serial.printf("@SETUP drv=%x mosi=%d miso=%d sclk=%d cs=%d dc=%d rst=%d bl=%d spi=%ld\n", s.tft_driver,
+                s.pin_tft_mosi, s.pin_tft_miso, s.pin_tft_clk, s.pin_tft_cs, s.pin_tft_dc, s.pin_tft_rst,
+                PIN_BACKLIGHT, (long)s.tft_spi_freq);
+}
+
+// Commands: "!HELLO" repeats the boot info, "!SHOT" dumps the frame buffer,
+// "!ROT n" applies rotation n until reboot (test only).
+static void handleCommand(const char* cmd) {
+  if (!strcmp(cmd, "!HELLO")) {
+    printHello();
+  } else if (!strcmp(cmd, "!SHOT")) {
+    uiRender(model, millis(), linkInfo());
+    if (!uiScreenshot(Serial)) Serial.print("@ERR no framebuffer\n");
+  } else if (!strncmp(cmd, "!ROT ", 5)) {
+    uiSetRotation((uint8_t)atoi(cmd + 5));
+    Serial.printf("@ROT %d w=%d h=%d\n", atoi(cmd + 5) & 3, tft.width(), tft.height());
+    lastDraw = 0;
+  }
+}
+
+static void pollSerial() {
+  while (Serial.available()) {
+    char c = (char)Serial.read();
+    if (c == '\n') {
+      lineBuf[lineLen] = 0;
+      if (!overflow && lineLen > 0 && lineBuf[0] == '!') handleCommand(lineBuf);
+      if (!overflow && lineLen > 0 && lineBuf[0] == '{') acceptPayload(lineBuf, lineLen);
+      lineLen = 0;
+      overflow = false;
+    } else if (c != '\r') {
+      if (lineLen < sizeof(lineBuf) - 1) lineBuf[lineLen++] = c;
+      else overflow = true;  // drop the oversized line, resync at next newline
+    }
+  }
+}
+
+#if AIMON_USE_WIFI
+static uint32_t lastPoll = 0;
+static void pollWifi() {
+  if (WiFi.status() != WL_CONNECTED || millis() - lastPoll < WIFI_POLL_MS) return;
+  lastPoll = millis();
+  HTTPClient http;
+  http.setTimeout(3000);
+  if (http.begin(AIMON_URL)) {
+    int code = http.GET();
+    if (code == 200) {
+      String body = http.getString();
+      acceptPayload(body.c_str(), body.length());
+    }
+    http.end();
+  }
+}
+#endif
+
+static const char* linkInfo() {
+#if AIMON_USE_WIFI
+  static char b[48];
+  if (WiFi.status() == WL_CONNECTED) snprintf(b, sizeof b, "Wi-Fi %s", WiFi.localIP().toString().c_str());
+  else snprintf(b, sizeof b, "Wi-Fi connecting...");
+  return b;
+#else
+  return "Link: USB serial";
+#endif
+}
+
+void setup() {
+  Serial.setRxBufferSize(4096);
+  Serial.begin(SERIAL_BAUD);
+  pinMode(PIN_BACKLIGHT, OUTPUT);
+  digitalWrite(PIN_BACKLIGHT, HIGH);
+  uiBegin(tft, DISPLAY_ROTATION);
+  printHello();
+#if AIMON_USE_WIFI
+  WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+#endif
+}
+
+void loop() {
+  pollSerial();
+#if AIMON_USE_WIFI
+  pollWifi();
+#endif
+  uint32_t now = millis();
+  if (lastDraw == 0 || now - lastDraw >= REDRAW_MS) {
+    lastDraw = now ? now : 1;
+    uiRender(model, now, linkInfo());
+  }
+  delay(5);
+}
