@@ -14,7 +14,7 @@ HOME = Path.home()
 class Settings:
     # HTTP API. Localhost only unless you deliberately enable Wi-Fi mode.
     bind_host: str = "127.0.0.1"
-    bind_port: int = 8787
+    bind_port: int = 8797
 
     # USB serial push to the display. "auto" finds a CH340/CP210x/FTDI bridge.
     serial_port: str = "auto"
