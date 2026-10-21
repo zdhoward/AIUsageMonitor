@@ -16,9 +16,11 @@ def setup(log_dir: Path, verbose: bool = False) -> None:
     fmt = logging.Formatter("%(message)s")
     file_handler = RotatingFileHandler(log_dir / "aimon.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8")
     file_handler.setFormatter(fmt)
-    stream = logging.StreamHandler(sys.stderr)
-    stream.setFormatter(fmt)
-    _log.handlers[:] = [file_handler, stream]
+    _log.handlers[:] = [file_handler]
+    if sys.stderr is not None:  # None under pythonw (background service)
+        stream = logging.StreamHandler(sys.stderr)
+        stream.setFormatter(fmt)
+        _log.handlers.append(stream)
     _log.setLevel(logging.DEBUG if verbose else logging.INFO)
 
 

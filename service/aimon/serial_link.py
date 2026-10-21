@@ -90,6 +90,10 @@ class SerialLink:
             return False
         self._ser, self.connected_port = ser, port
         log.event("serial.opened", port=port, baud=self.baud)
+        try:
+            ser.write(b"!HELLO\n")  # device answers with firmware version and rotation
+        except (serial.SerialException, OSError):
+            pass
         return True
 
     def run(self) -> None:
