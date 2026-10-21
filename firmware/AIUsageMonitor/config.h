@@ -24,6 +24,14 @@
 #define DISPLAY_ROTATION 2
 #endif
 
+// SHOW_REMAINING: 1 = bars and percentages show quota LEFT (default),
+//                 0 = show quota USED. The top banner follows the same mode
+//                 ("LOWEST 7% left" vs "PEAK 93% used"). Colours always mean the
+//                 same thing: red = nearly exhausted.
+#ifndef SHOW_REMAINING
+#define SHOW_REMAINING 1
+#endif
+
 // Backlight pin (active high) on this board. TFT pins are passed as build
 // flags by scripts/build.ps1 (identical to your TFT_eSPI User_Setup.h).
 #define PIN_BACKLIGHT 27

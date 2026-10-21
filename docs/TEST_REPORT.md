@@ -20,6 +20,16 @@
 | Flash while service running | `flash.ps1` pauses the serial link, uploads, resumes | script output, log `serial.pause_requested` / `resume_requested` |
 | Live quota change | CL2 session moved from 37% to 46% between captures as T3 refreshed | screenshots |
 
+## v1.1.0 additions (verified on device)
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Remaining mode (`SHOW_REMAINING 1`) | Bars and % show quota left; banner `LOWEST 6% left CL1 7d`; colours still by usage | `docs/img/rot1.png`, `rot2.png` |
+| Reset credits label | Fixture payload (`rc` 1 and 2) renders `Pro (1x reset)` / `Pro (2x resets)`; real accounts with 0 show `Pro` | frame-buffer capture from a fixture via `screenshot.py --payload` |
+| Service passes `rc` only when > 0 | 2 new unit tests (22 total) | `service/tests` |
+
+`SHOW_REMAINING 0` is a compile-time constant in the same code paths, so it builds in the same binary layout. It was not flashed.
+
 ## Verified in the service
 
 - 20 unit tests (`service/tests`), all fixture-based with no network:

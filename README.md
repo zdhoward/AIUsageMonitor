@@ -28,8 +28,9 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 
 - **Header:** the green dot plus a time means the last payload is fresh. `!` (amber) means a source failed (named in the footer). `NO DATA 2m` (red) means nothing has arrived for 30 s; the last values stay up, dimmed.
 - **Activity:** a pulsing green dot means a T3 turn is running: account, model, elapsed time, and `+N` other running threads. Otherwise it shows `idle` with the last account and model.
-- **PEAK:** the highest used % among *fresh* quota windows, naming the account and window it comes from. Windows are not averaged together.
-- **Accounts:** one block per subscription (CL1, CL2, Codex). Each shows its 5 h session and 7 d weekly windows: bar, used %, time to reset, and how old T3's reading is.
+- **LOWEST … left** (or **PEAK … used**): the most-depleted *fresh* quota window, naming the account and window it comes from. Windows are not averaged together.
+- **Accounts:** one block per subscription (CL1, CL2, Codex). Each shows its 5 h session and 7 d weekly windows: bar, percent **left** (default; see below), time to reset, and how old T3's reading is. Colours always track usage: red means nearly exhausted.
+  - `Pro (1x reset)` in blue means the provider reports banked limit resets you can redeem in T3 (Usage → Limits → account → **Use reset**). With none, it shows just the plan.
   - `STALE` means older than 20 min.
   - `--` with a hatched bar means not reported or already reset since the last reading. It is never shown as 0.
 - **est $ today / 7d:** the **API-price estimate** of tokens used by the subscription accounts, per account, with a 24 h hourly sparkline. It is *not* money billed to a subscription. `+unpriced` means some models had no known price.
@@ -56,6 +57,10 @@ python scripts\screenshot.py --rot 1 --out build\preview.png
 ```
 
 The PNG shows the frame buffer exactly as sent to the panel.
+
+## Remaining vs. used
+
+`SHOW_REMAINING` in `config.h` (default `1`) shows quota **left**: a full bar is a full allowance. Set it to `0` to show quota **used**; the banner then becomes `PEAK n% used`. Rebuild and flash after changing it.
 
 ## Build, flash, run
 

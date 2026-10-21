@@ -28,6 +28,7 @@ class Account:
     checked_at: float | None = None
     source: str = "t3_cache"
     unavailable: str | None = None  # reason when no limits are reported
+    reset_credits: int | None = None  # banked limit resets, when the provider reports them
 
 
 @dataclass

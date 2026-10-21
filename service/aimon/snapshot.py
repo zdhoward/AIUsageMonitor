@@ -223,6 +223,8 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
             entry["pl"] = acct.plan
         if acct.unavailable:
             entry["x"] = acct.unavailable[:20]
+        if acct.reset_credits:
+            entry["rc"] = acct.reset_credits
         ws = []
         for w in acct.windows[:3]:
             used = -1 if w.used_percent is None else int(round(w.used_percent))
@@ -317,6 +319,7 @@ def build_status(st: State, now: float) -> dict:
                 "source": a.source,
                 "checked_at": a.checked_at,
                 "unavailable": a.unavailable,
+                "reset_credits": a.reset_credits,
                 "windows": [w.__dict__ for w in a.windows],
             }
             for a in st.accounts

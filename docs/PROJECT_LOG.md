@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-21: v1.1.0
+
+- **Show quota left by default** (`SHOW_REMAINING 1`, user preference), keeping "used" as a config option. Colours stay keyed to usage so red always means "nearly out", whichever number is shown.
+- **Reset credits** come from T3's cache (`usageLimits.resetCredits.availableCount`, the same count T3 shows next to **Use reset**). They are sent only when above 0 and shown as `Pro (Nx reset)`.
+- Done inline rather than delegated: three small edits, and the firmware half needed the device loop.
+
 ## 2026-10-21: v1.0.0
 
 - **Hardware identified before any code.**
