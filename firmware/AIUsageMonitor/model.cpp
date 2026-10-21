@@ -54,6 +54,7 @@ bool parsePayload(const char* json, size_t len, Model& out) {
     d.color = hexTo565(a["c"] | "888888");
     d.age = a["age"] | -1;
     d.stale = (a["st"] | 1) == 1;
+    d.rc = a["rc"] | 0;
     d.nw = 0;
     for (JsonObjectConst w : a["w"].as<JsonArrayConst>()) {
       if (d.nw >= 3) break;

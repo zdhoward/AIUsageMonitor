@@ -17,6 +17,7 @@ struct AccData {
   uint16_t color; // RGB565 accent
   int32_t age;    // seconds since the provider was last checked, -1 unknown
   bool stale;
+  int16_t rc;     // banked limit resets available (0 = none or not reported)
   WinData w[3];
   uint8_t nw;
 };

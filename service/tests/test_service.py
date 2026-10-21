@@ -66,6 +66,14 @@ class T3LimitsTests(unittest.TestCase):
         self.assertEqual(acct.windows[1].used_percent, 91)
         self.assertNotIn("secret", json.dumps(acct.__dict__, default=str))
 
+    def test_reset_credits(self):
+        base = {"driver": "claudeAgent", "enabled": True, "usageLimits": {"checkedAt": iso(NOW), "windows": []}}
+        self.write("a.json", {**base, "instanceId": "a", "usageLimits": {**base["usageLimits"], "resetCredits": {"availableCount": 2}}})
+        self.write("b.json", {**base, "instanceId": "b"})
+        by_id = {a.instance_id: a for a in t3_limits.read_accounts(self.home)}
+        self.assertEqual(by_id["a"].reset_credits, 2)
+        self.assertIsNone(by_id["b"].reset_credits)
+
     def test_malformed_and_irrelevant_caches_are_skipped(self):
         self.write("broken.json", "{not json")
         self.write("grok.json", {"driver": "grok", "enabled": True})
@@ -204,6 +212,14 @@ class PayloadTests(unittest.TestCase):
         self.assertEqual(p["act"], {"s": "run", "p": "CL1", "m": "opus-5-5", "t": 20})
         self.assertEqual(p["acc"][0]["w"][0], {"l": "5h", "u": 37, "r": 3600})
         self.assertLess(len(json.dumps(p, separators=(",", ":"))), 2048)
+
+    def test_reset_credits_only_sent_when_available(self):
+        st = self.state()
+        self.assertNotIn("rc", build_payload(st, NOW, PRICING, self.settings())["acc"][0])
+        st.accounts[0].reset_credits = 0
+        self.assertNotIn("rc", build_payload(st, NOW, PRICING, self.settings())["acc"][0])
+        st.accounts[0].reset_credits = 1
+        self.assertEqual(build_payload(st, NOW, PRICING, self.settings())["acc"][0]["rc"], 1)
 
     def test_expired_window_is_unknown_not_zero(self):
         st = self.state()

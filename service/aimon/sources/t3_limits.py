@@ -64,6 +64,9 @@ def parse_cache(doc: dict, instance_id: str, display_names: dict[str, str]) -> A
         acct.unavailable = "signed out" if auth_status == "unauthenticated" else "no limits reported"
         return acct
     acct.checked_at = parse_iso(limits.get("checkedAt"))
+    credits = (limits.get("resetCredits") or {}).get("availableCount")
+    if isinstance(credits, int):
+        acct.reset_credits = credits
     for w in limits.get("windows") or []:
         if not isinstance(w, dict):
             continue

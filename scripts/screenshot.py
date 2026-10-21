@@ -4,6 +4,7 @@ Usage: python scripts/screenshot.py [--port COM6] [--rot N] [--out shot.png] [--
 
 --rot N   apply rotation N on the device first (until reboot; test only)
 --feed    send the current aimon payload (from http://127.0.0.1:8797/v1/device) first
+--payload FILE   send this JSON payload first (test fixtures, e.g. reset credits)
 If the aimon service is running, it is asked to release the port and resumes afterwards.
 Requires pyserial. The PNG is written with the stdlib (zlib).
 """
@@ -76,12 +77,13 @@ def main() -> None:
     ap.add_argument("--out", default="shot.png")
     ap.add_argument("--scale", type=int, default=2)
     ap.add_argument("--feed", action="store_true")
+    ap.add_argument("--payload", help="JSON file to send before capturing")
     args = ap.parse_args()
 
-    payload = None
+    payload = json.loads(Path(args.payload).read_text(encoding="utf-8")) if args.payload else None
     paused = False
     try:
-        if args.feed:
+        if args.feed and payload is None:
             payload = api("GET", "/v1/device")
         api("POST", "/v1/serial/pause?seconds=60")
         paused = True

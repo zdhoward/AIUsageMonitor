@@ -74,6 +74,11 @@ static int text(const char* s, int x, int y, uint8_t font, uint16_t fg, uint8_t 
   return g.textWidth(buf);
 }
 
+// Quota values arrive as percent USED; SHOW_REMAINING flips what is displayed.
+static int shown(int used) { return used < 0 ? -1 : (SHOW_REMAINING ? 100 - min(used, 100) : used); }
+
+// `u` is percent used. The fill follows the display mode; the colour always
+// follows usage, so red means nearly exhausted either way.
 static void bar(int x, int y, int w, int h, int u) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 2, col(C_TRACK));
@@ -82,7 +87,7 @@ static void bar(int x, int y, int w, int h, int u) {
     for (int i = x + 3; i < x + w - 2; i += 6) g.drawLine(i, y + h - 2, i + 3, y + 1, col(C_FAINT));
     return;
   }
-  int fw = (int)((long)w * min(u, 100) / 100);
+  int fw = (int)((long)w * shown(u) / 100);
   if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, col(levelColor(u)));
 }
 
@@ -146,13 +151,14 @@ static int drawPeak(const Model& m, int x, int y, int w) {
   if (m.hasHi) {
     uint16_t c = levelColor(m.hiU);
     g.fillRoundRect(x + 2, y, w - 4, h - 2, 4, col(c));
-    snprintf(b, sizeof b, "PEAK %d%%", m.hiU);
+    if (SHOW_REMAINING) snprintf(b, sizeof b, "LOWEST %d%% left", shown(m.hiU));
+    else snprintf(b, sizeof b, "PEAK %d%% used", m.hiU);
     text(b, x + 8, y + 3, 2, C_BG, TL_DATUM);
     snprintf(b, sizeof b, "%s %s", m.hiP, m.hiW);
     text(b, x + w - 8, y + 3, 2, C_BG, TR_DATUM);
   } else {
     g.drawRoundRect(x + 2, y, w - 4, h - 2, 4, col(C_MUTED));
-    text("PEAK --  no fresh quota data", x + 8, y + 3, 2, C_MUTED, TL_DATUM, w - 14);
+    text(SHOW_REMAINING ? "LOWEST --  no fresh quota data" : "PEAK --  no fresh quota data", x + 8, y + 3, 2, C_MUTED, TL_DATUM, w - 14);
   }
   return h + 2;
 }
@@ -169,7 +175,12 @@ static int drawAccounts(const Model& m, uint32_t now, int x, int y, int w, int m
     int yy = y + used;
     G().fillRect(x + 4, yy + 4, 8, 8, col(a.color));
     int nw = text(a.p, x + 16, yy, 2, C_TEXT);
-    if (a.pl[0]) text(a.pl, x + 20 + nw, yy + 4, 1, C_MUTED);
+    if (a.pl[0] || a.rc > 0) {
+      char pl[32];
+      if (a.rc > 0) snprintf(pl, sizeof pl, "%s (%dx reset%s)", a.pl, a.rc, a.rc == 1 ? "" : "s");
+      else snprintf(pl, sizeof pl, "%s", a.pl);
+      text(pl, x + 20 + nw, yy + 4, 1, a.rc > 0 ? C_BLUE : C_MUTED, TL_DATUM, w - 70 - nw);
+    }
     if (a.age < 0) snprintf(b, sizeof b, "age ?");
     else {
       fmtDur(d, sizeof d, a.age + elapsed);
@@ -189,7 +200,7 @@ static int drawAccounts(const Model& m, uint32_t now, int x, int y, int w, int m
       int bx = x + 16 + labelW, bw = w - 16 - labelW - pctW - rstW - 8;
       bar(bx, yy + 3, bw, 10, a.stale ? -1 : wd.u);
       if (wd.u < 0) snprintf(b, sizeof b, "--");
-      else snprintf(b, sizeof b, "%d%%", wd.u);
+      else snprintf(b, sizeof b, "%d%%", shown(wd.u));
       text(b, bx + bw + pctW, yy, 2, a.stale ? C_MUTED : levelColor(wd.u), TR_DATUM);
       int32_t r = wd.r > 0 ? max<int32_t>(wd.r - elapsed, 0) : wd.r;
       fmtDur(d, sizeof d, r);
