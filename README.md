@@ -21,6 +21,7 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) | Each usage source, its metrics, and what's unavailable |
 | [docs/TEST_REPORT.md](docs/TEST_REPORT.md) | What was verified on the device vs. assumed |
 | [docs/PROJECT_LOG.md](docs/PROJECT_LOG.md) | Decisions and why |
+| [HANDOFF.md](HANDOFF.md) | Current state, open items, next actions |
 
 ![portrait](docs/img/rot2.png) ![landscape](docs/img/rot1.png)
 
@@ -85,7 +86,7 @@ Building from the Arduino IDE also works, because your sketchbook's `TFT_eSPI/Us
 
 - Logs are in `logs/aimon.log`, one `key=value` line per event, e.g. `evt=source.failed src=openrouter err=offline`.
 - One-shot payload dump: `cd service; python -m aimon --once`.
-- Tests: `cd service; python -m unittest discover -s tests -t .` (20 tests, fixtures only, no network).
+- Tests: `cd service; python -m unittest discover -s tests -t .` (22 tests, fixtures only, no network).
 - Settings (`service/aimon/config.py`) can be overridden in `service/aimon.config.json` (git-ignored) or with `AIMON_<NAME>` env vars:
   - port: `bind_port` (default 8797)
   - serial: `serial_port` (default `auto`)

@@ -32,7 +32,7 @@
 
 ## Verified in the service
 
-- 20 unit tests (`service/tests`), all fixture-based with no network:
+- 22 unit tests (`service/tests`), all fixture-based with no network:
   - T3 cache parsing (malformed, irrelevant, and signed-out caches)
   - e-mail exclusion
   - Claude dedupe and incremental appends
@@ -41,6 +41,7 @@
   - activity selection (stale running rows ignored)
   - OpenCode v1/v2 tables and a missing database
   - OpenRouter parsing
+  - reset credits (parsed, and sent only when above 0)
   - payload: unknown → `-1`, expired windows → unknown, stale excluded from PEAK, source and OpenRouter errors surfaced, empty state
 - Real data: 3 accounts, ~15.5k usage records, 43 free-model calls today. Refresh costs 2.5 s cold, then 40–55 ms per incremental pass every 10 s.
 - The service runs hidden via `pythonw`. The logon task `AI Usage Monitor (aimon)` is registered.
