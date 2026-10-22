@@ -1,0 +1,14 @@
+{
+  "bind_host": "127.0.0.1",
+  "bind_port": 8797,
+  "serial_enabled": true,
+  "serial_port": "auto",
+  "serial_baud": 115200,
+  "push_interval_s": 5,
+  "refresh_s": 10,
+  "limits_stale_s": 1200,
+  "t3_home": "~/.t3",
+  "opencode_refresh_s": 30,
+  "openrouter_enabled": false,
+  "openrouter_refresh_s": 600
+}

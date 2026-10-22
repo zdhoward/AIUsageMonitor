@@ -2,7 +2,7 @@
 .SYNOPSIS
   Compile the firmware for the ESP32-2432S024C with arduino-cli.
 .EXAMPLE
-  .\scripts\build.ps1                 # rotation from config.h (default 2)
+  .\scripts\build.ps1                 # rotation from config.h (default 1)
   .\scripts\build.ps1 -Rotation 1     # override for a test build
 #>
 param(
