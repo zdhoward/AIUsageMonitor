@@ -1,6 +1,13 @@
 # Test report
 
-Wrap-up 2026-10-22: all 22 existing service tests pass; service healthy on COM6 with v1.4.1 / rotation 1. Latest firmware build and final framebuffer evidence below are reused for documentation-only wrap-up. Historical v1.0 dimming/rotation observations below describe old firmware, not current behavior.
+Current baseline, 2026-10-22: all 22 existing service tests pass; the service is healthy with firmware v1.4.2 / rotation 1. The firmware build, flash and framebuffer capture were completed before the public documentation work. Historical dimming/rotation observations below describe old firmware, not current behavior.
+
+## v1.4.2 reset readability (2026-10-22)
+
+- Firmware built successfully: 413,263 bytes flash, 28,648 bytes static RAM. Flashed with hash verification; device reports `rot=1 w=320 h=240 fb=1` and normal serial acknowledgements.
+- [Current framebuffer](img/v1.4.2-rings.png) shows bright font 2 reset captions and rings moved up 6px. All six captions fit in their cards at the captured values. This verifies rendered geometry, not physical viewing-distance comfort.
+- Existing 22 service tests pass. The deadline scheduler was inspected and the service restarted; automatic deadline wake-up has not been observed through a real reset or covered by a dedicated timer test. It rereads local T3 caches/transcripts, not provider endpoints.
+- Documentation changes reuse this unchanged firmware baseline; no fresh hardware compatibility or optional Wi-Fi verification is claimed.
 
 ## v1.4.1 ring headings and captions (2026-10-22)
 

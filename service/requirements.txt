@@ -1,0 +1,2 @@
+# Tested USB serial and framebuffer capture dependency.
+pyserial==3.5
