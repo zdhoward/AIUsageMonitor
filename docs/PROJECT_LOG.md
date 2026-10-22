@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-10-22: v1.3.2 landscape redraw
+
+- Framebuffer inspection after flashing landscape caught startup pixels at the right edge. Clear the explicit rotated canvas dimensions rather than the TFT base class's screen extent.
+
 ## 2026-10-22: v1.3.1 landscape default
 
 - Corrected the default to rotation 1 (320×240 landscape). The final UI instructions superseded the earlier portrait request; firmware and current UI docs now agree. This is a small configuration fix performed inline, followed by build/flash and a framebuffer capture.

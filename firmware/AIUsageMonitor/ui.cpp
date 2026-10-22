@@ -701,7 +701,9 @@ static void animate(const Model& m, uint32_t now) {
 
 void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   TFT_eSPI& g = G();
-  g.fillScreen(C_BG);
+  // The base TFT API can retain its portrait extent on a sprite. Clear the
+  // actual rotated canvas so landscape's right edge has no startup remnants.
+  g.fillRect(0, 0, W, H, C_BG);
   dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
   uint8_t current = selView < kViewCount ? selView : 0;
