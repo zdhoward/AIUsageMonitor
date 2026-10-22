@@ -1,22 +1,22 @@
 # Public release preparation
 
-The owner selected the MIT license and requested local preparation for review on 2026-10-22. The GitHub repository remains private; no push, visibility change or GitHub release is authorized by this preparation step.
+The owner selected the MIT license, then explicitly requested the completed repository be pushed and made public on 2026-10-22. GitHub now reports [zdhoward/AIUsageMonitor](https://github.com/zdhoward/AIUsageMonitor) as public.
 
 ## Prepared
 
 - MIT [license](../LICENSE), attributed to Zach Howard.
 - Current dashboard framebuffer image: [v1.4.2](img/v1.4.2-rings.png). This is rendered on the actual device, not a photograph or mockup. It shows subscription percentages and reset durations, without account emails or credentials.
 - Hardware pinout, build/setup instructions, data-source limitations and contributor guidance.
-- Source and history secret scan using Gitleaks, with full redaction. The integrated documentation scan covered 26 commits on `main` through `3700cd0` and reported no leaks. This is a scanner result, not a guarantee of absence.
+- Source and history secret scan using Gitleaks, with full redaction. The integrated scan covered the 26 `main` commits through `3700cd0`; the subsequent `a7f2dd7` release record was separately scanned while staged. Neither scan reported leaks. This is scanner evidence, not a guarantee of absence.
 - Generated builds, logs, local service configuration and Wi-Fi credentials are excluded by `.gitignore`.
+- Repository description is “An ESP32 dashboard for AI subscription quotas, reset countdowns, and local usage telemetry.” Topics: `esp32`, `arduino`, `python`, `dashboard`, `embedded`, `usage-monitor`.
 
-## Owner review before publication
+## Publication record
 
-1. Read the README and hardware reference, and review the screenshot as the public portfolio image.
-2. Review Git history as well as current files. Earlier commits include a board MAC address and local Windows paths in development documentation; removing them from the current documentation does not remove them from history. No history rewrite was performed. Decide whether that historical detail is acceptable before publishing.
-3. Confirm the public project name, description and repository topics. Suggested description: “An ESP32 desktop dashboard for AI subscription quotas, reset countdowns and local usage telemetry.” Suggested topics: `esp32`, `arduino`, `python`, `dashboard`, `embedded`, `usage-monitor`.
-4. Check third-party dependencies under their own licenses. This project's MIT license applies to its own code and documentation; dependencies are installed separately and are not relicensed here.
-5. Explicitly authorize pushing local commits/tags and making the repository public. No remote settings were changed during preparation.
+- Pushed `main` through `a7f2dd7`; remote and local branch were verified synchronized.
+- Visibility was changed from private to public and verified through GitHub.
+- No history rewrite was performed. Earlier commits still contain a board MAC address and local Windows paths in development documentation. They are not credentials; the historical exposure is documented so maintainers understand what the public history contains.
+- Third-party dependencies retain their own licenses; MIT applies to this project's code and documentation.
 
 ## Known limits to retain publicly
 

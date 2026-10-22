@@ -9,6 +9,14 @@
 - Routing: hosted DeepSeek hit free quota; local Qwen produced no edits before cancellation. Coordinator completed documentation. Shadow run `94914ea8-9729-4c44-86c9-6899ccf6d2bb` recorded timeouts from both advisory backends; no independent model review claimed.
 - Final integrated Gitleaks scan: 26 `main` commits through `3700cd0`, no leaks, exit 0. GitHub is still private with unchanged last-push time; local work remains unpushed. Advisory routing review has insufficient evaluation evidence for promotion; routing labels remain pending rather than treating fallback completion as proof of the cheapest lane.
 
+## 2026-10-22: public GitHub release and session wrap-up
+
+- At the user's direction, pushed documentation commits through `a7f2dd7`, changed `zdhoward/AIUsageMonitor` from private to public, and set the project description/topics. Verified remote visibility and branch synchronization; no open PRs.
+- History contains an old board MAC address and local Windows paths. This was disclosed in the release checklist before the user requested public visibility. History was preserved; Gitleaks found no leaks across 26 mainline commits through `3700cd0`, and the final `a7f2dd7` release record was separately scanned staged. Current public docs omit those historical identifiers.
+- Updated handoff, goals, ticket index and release record to reflect the completed public state. Firmware remains v1.4.2; no docs-only tag or new firmware release.
+- Wrap-up check: previously green firmware build/flash/framebuffer and 22 service tests remain the applicable implementation baseline. Documentation checks found 44 valid local links and loaded the example config; final current docs-only edits do not warrant another firmware/test run. GitHub is public and no mergeable PRs are open.
+- Retro: deterministic publication, doc and status checks used scripts/CLI (right); free DeepSeek exhausted quota and local Qwen timeout required coordinator completion (right fallback after observed failures). No independent doc review. No new shared rule or tool proposed; routing notes remain recorded in model-router. Advisory shadow evaluation remains insufficient for promotion.
+
 ## 2026-10-22: v1.4.2 reset readability
 
 - Move console rings up 6px and use bright font 2 reset captions instead of muted font 1, for reading beneath a monitor.
