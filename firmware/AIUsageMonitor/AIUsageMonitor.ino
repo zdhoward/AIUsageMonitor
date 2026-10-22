@@ -11,6 +11,7 @@
 #include "config.h"
 #include "model.h"
 #include "ui.h"
+#include <Wire.h>
 
 #if AIMON_USE_WIFI
 #include <WiFi.h>
@@ -25,6 +26,29 @@ static size_t lineLen = 0;
 static bool overflow = false;
 static uint32_t lastDraw = 0;
 static uint32_t badLines = 0;
+static bool touchReady = false;
+
+// CST820: a whole-screen button needs no coordinate calibration/rotation.
+static void pollTouch() {
+  static uint32_t lastPoll = 0, pressedAt = 0;
+  static bool pressed = false;
+  uint32_t now = millis();
+  if (!touchReady || now - lastPoll < 25) return;
+  lastPoll = now;
+  Wire.beginTransmission(0x15);
+  Wire.write(0x02);
+  if (Wire.endTransmission(false) != 0) return;
+  if (Wire.requestFrom(0x15, 1) != 1) return;
+  bool down = (Wire.read() & 0x0f) != 0;
+  if (down && !pressed) { pressed = true; pressedAt = now; }
+  if (!down && pressed) {
+    pressed = false;
+    if (now - pressedAt >= 25 && now - pressedAt < 1500) {
+      uiNextView(model);
+      lastDraw = 0;
+    }
+  }
+}
 
 static const char* linkInfo();
 
@@ -56,6 +80,10 @@ static void handleCommand(const char* cmd) {
   } else if (!strcmp(cmd, "!SHOT")) {
     uiRender(model, millis(), linkInfo());
     if (!uiScreenshot(Serial)) Serial.print("@ERR no framebuffer\n");
+  } else if (!strcmp(cmd, "!NEXT")) {
+    uiNextView(model);
+    lastDraw = 0;
+    Serial.print("@VIEW next\n");
   } else if (!strncmp(cmd, "!ROT ", 5)) {
     uiSetRotation((uint8_t)atoi(cmd + 5));
     Serial.printf("@ROT %d w=%d h=%d\n", atoi(cmd + 5) & 3, tft.width(), tft.height());
@@ -114,6 +142,16 @@ void setup() {
   pinMode(PIN_BACKLIGHT, OUTPUT);
   digitalWrite(PIN_BACKLIGHT, HIGH);
   uiBegin(tft, DISPLAY_ROTATION);
+  pinMode(25, OUTPUT);
+  digitalWrite(25, LOW);
+  delay(5);
+  digitalWrite(25, HIGH);
+  delay(50);
+  Wire.begin(33, 32);
+  Wire.setTimeOut(20);
+  Wire.beginTransmission(0x15);
+  touchReady = Wire.endTransmission() == 0;
+  Serial.printf("@TOUCH ready=%d\n", touchReady);
   printHello();
 #if AIMON_USE_WIFI
   WiFi.mode(WIFI_STA);
@@ -124,6 +162,7 @@ void setup() {
 
 void loop() {
   pollSerial();
+  pollTouch();
 #if AIMON_USE_WIFI
   pollWifi();
 #endif

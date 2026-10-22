@@ -4,15 +4,15 @@
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
 // ============================================================================
 
-#define FW_VERSION "1.0.0"
+#define FW_VERSION "1.2.0"
 
 // ---------------------------------------------------------------------------
 // DISPLAY_ROTATION: the one setting to change when you remount the screen.
 // Values are TFT_eSPI rotations for the ILI9341 on this board. "Traditional"
 // means landscape rotation 1, the orientation all your earlier sketches used.
 //
-//   2 = Portrait, traditional RIGHT edge facing UP      (default)
-//   0 = Portrait, traditional LEFT edge facing up       (upside-down portrait)
+//   2 = Portrait, traditional RIGHT edge facing UP
+//   0 = Portrait, traditional LEFT edge facing up       (default)
 //   1 = Landscape, traditional orientation
 //   3 = Landscape, upside down
 //
@@ -21,7 +21,7 @@
 // at runtime, so changing this value and reflashing is all that's needed.
 // ---------------------------------------------------------------------------
 #ifndef DISPLAY_ROTATION
-#define DISPLAY_ROTATION 2
+#define DISPLAY_ROTATION 0
 #endif
 
 // SHOW_REMAINING: 1 = bars and percentages show quota LEFT (default),
@@ -50,8 +50,11 @@
 #endif
 #define WIFI_POLL_MS 5000
 
-// Show "NO DATA" and dim the dashboard when no payload arrives for this long.
+// Show "NO DATA" in the header; cached readings keep their normal brightness.
 #define DATA_TIMEOUT_MS 30000UL
 
 // Screen refresh period (countdowns and the activity pulse).
-#define REDRAW_MS 1000UL
+#define REDRAW_MS 50UL
+
+// Set to 0 for immediate value changes and a slower, static display.
+#define UI_ANIMATION 1

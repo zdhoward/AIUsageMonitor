@@ -10,6 +10,7 @@ void uiBegin(TFT_eSPI& tft, uint8_t rotation);
 void uiSetRotation(uint8_t rotation);
 
 bool uiHasFramebuffer();
+void uiNextView(const Model& m);
 
 // Dumps the current frame (RGB332) to `out` for host-side screenshots.
 bool uiScreenshot(Stream& out);

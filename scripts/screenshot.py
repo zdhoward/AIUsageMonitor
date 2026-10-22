@@ -78,13 +78,15 @@ def main() -> None:
     ap.add_argument("--scale", type=int, default=2)
     ap.add_argument("--feed", action="store_true")
     ap.add_argument("--payload", help="JSON file to send before capturing")
+    ap.add_argument("--next", type=int, default=0, help="advance this many views before capturing")
+    ap.add_argument("--wait", type=float, default=0, help="seconds to wait after feeding (max 40)")
     args = ap.parse_args()
 
     payload = json.loads(Path(args.payload).read_text(encoding="utf-8")) if args.payload else None
+    if args.feed and payload is None:
+        payload = api("GET", "/v1/device")
     paused = False
     try:
-        if args.feed and payload is None:
-            payload = api("GET", "/v1/device")
         api("POST", "/v1/serial/pause?seconds=60")
         paused = True
         time.sleep(0.8)
@@ -102,6 +104,10 @@ def main() -> None:
         if payload:
             s.write((json.dumps(payload, separators=(",", ":")) + "\n").encode())
             time.sleep(0.5)
+        for _ in range(args.next):
+            s.write(b"!NEXT\n")
+            time.sleep(0.1)
+        time.sleep(max(0, min(args.wait, 40)))
         s.reset_input_buffer()
         s.write(b"!SHOT\n")
         deadline = time.time() + 20

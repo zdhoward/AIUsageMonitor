@@ -99,7 +99,46 @@ bool parsePayload(const char* json, size_t len, Model& out) {
   m.orD = o["d"] | -1;
   m.orB = o["b"] | -1;
   m.orAge = o["age"] | -1;
+  if (!m.orOk && out.orOk) {
+    m.orOk = true;
+    m.orFu = out.orFu; m.orFl = out.orFl;
+    m.orD = out.orD; m.orB = out.orB;
+    m.orAge = out.orAge < 0 ? -1 : out.orAge + (millis() - out.rxMillis) / 1000;
+  }
 
+  // Merge by account/window identity, never by array position. Missing values
+  // are not measurements: retain the last reading and its reset countdown.
+  const int32_t elapsed = (millis() - out.rxMillis) / 1000;
+  for (int i = 0; i < out.nacc; ++i) {
+    const AccData& old = out.acc[i];
+    int index = -1;
+    for (int j = 0; j < m.nacc; ++j)
+      if (!strcmp(old.p, m.acc[j].p)) index = j;
+    if (index < 0 && m.nacc < 4) {
+      index = m.nacc++;
+      m.acc[index] = old;
+      if (old.age >= 0) m.acc[index].age = old.age + elapsed;
+      m.acc[index].nw = 0;
+      m.acc[index].stale = true;
+    }
+    if (index < 0) continue;
+    AccData& dest = m.acc[index];
+    for (int k = 0; k < old.nw; ++k) {
+      int wi = -1;
+      for (int j = 0; j < dest.nw; ++j)
+        if (!strcmp(old.w[k].l, dest.w[j].l)) wi = j;
+      if (wi < 0 && dest.nw < 3) {
+        wi = dest.nw++;
+        dest.w[wi] = old.w[k];
+        dest.w[wi].u = -1;
+        dest.w[wi].r = -1;
+      }
+      if (wi < 0) continue;
+      if (dest.w[wi].u < 0) dest.w[wi].u = old.w[k].u;
+      if (dest.w[wi].r < 0 && old.w[k].r >= 0)
+        dest.w[wi].r = max<int32_t>(0, old.w[k].r - elapsed);
+    }
+  }
   out = m;
   return true;
 }

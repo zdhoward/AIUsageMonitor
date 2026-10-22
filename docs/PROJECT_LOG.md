@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-10-22: v1.2.0 display refresh
+
+- Retain measured quota percentages through stale/missing readings and passed reset deadlines; keep readings bright during connection loss. Reset deadlines do not imply a refill. Cache is in device RAM, not flash.
+- Default to rotation 0, traditional landscape left edge up, for the clockwise portrait remount.
+- Add a glanceable overview, generated account focus pages, and the detailed dashboard. Whole-screen CST820 tap/release cycles views. Bars ease toward new readings; numeric percentages stay exact.
+- Keep UI tuning in `ui.cpp` and document extension points in `docs/UI.md` / `docs/UI_HANDOFF.md` for a later Claude pass. No additional provider calls or libraries.
+- User prefers practical runtime validation over an expanded suite. Existing 22 service tests pass; firmware build and framebuffer checks are used. Physical touch, orientation, and viewing distance remain user acceptance checks.
+
 ## 2026-10-21: v1.1.0
 
 - **Show quota left by default** (`SHOW_REMAINING 1`, user preference), keeping "used" as a config option. Colours stay keyed to usage so red always means "nearly out", whichever number is shown.
