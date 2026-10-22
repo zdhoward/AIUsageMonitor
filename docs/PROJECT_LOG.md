@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-22: session wrap-up
+
+- User accepted v1.4.1. Reconciled handoff, ticket status and current docs; recorded final UI decisions in GOALS.md and removed superseded guidance from current-facing docs.
+- Service healthy; 22 service tests pass; reused the green firmware build and final framebuffer. No open PRs to merge. Local commits/tags remain unpushed; retained partial worker checkouts.
+- Retro: early paid implementation missed the routing preference; later delegation worked until quota/transport failures. Repeated intention-only worker results require a behavior/diff check, and unavailable routes should be suppressed instead of retried. See shared retro log for placement audit and applied routing improvement.
+
 ## 2026-10-22: v1.4.1 shared ring headings
 
 - Grouped client count with the title; Session/Weekly column headings align with ring centers. Ring captions now show only reset countdowns, due, or unavailable. Cleared the data area below provider titles for future use.
