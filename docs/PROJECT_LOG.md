@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-22: v1.4.1 shared ring headings
+
+- Grouped client count with the title; Session/Weekly column headings align with ring centers. Ring captions now show only reset countdowns, due, or unavailable. Cleared the data area below provider titles for future use.
+- Delegated free-coder again returned only an intention and a version edit. Parent completed this small renderer adjustment locally; build and framebuffer inspection, no extra tests. Do not rely on this lane's terminal status as evidence of completion.
+
 ## 2026-10-22: v1.4.0 quota rings
 
 - Replaced console bars and duplicate large values with Session/Weekly rings, exact remaining percentages centered, and muted S/W reset-table rows under provider names. Weekly stays yellow; session follows capacity thresholds. Landscape default and two-view navigation remain.

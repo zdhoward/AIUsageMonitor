@@ -1,6 +1,6 @@
 # Handoff
 
-Current update: **v1.4.0, 2026-10-22** — exactly two tap-cycled views: the three-client ring console and original detailed dashboard. Landscape rotation 1, full-brightness cached readings, Session ring left / yellow Weekly ring right, centered remaining percentages, muted reset-table rows under provider titles, source freshness, eased progress, configurable PWM brightness. Explicit canvas clearing prevents landscape startup remnants. See [the UI handoff](docs/UI_HANDOFF.md) and [design/extension guide](docs/UI.md). The notes below describe the earlier v1.1 baseline; its rotation, dimming, and unused-touch statements are superseded.
+Current update: **v1.4.1, 2026-10-22** — exactly two tap-cycled views: the three-client ring console and original detailed dashboard. Landscape rotation 1, full-brightness cached readings, Session ring left / yellow Weekly ring right, centered remaining percentages, reset countdowns beneath rings, shared column headings and grouped title/client count. Data areas below provider names stay empty. Source freshness, eased progress, configurable PWM brightness remain. See [the UI handoff](docs/UI_HANDOFF.md) and [design/extension guide](docs/UI.md). The notes below describe the earlier v1.1 baseline; its rotation, dimming, and unused-touch statements are superseded.
 
 State as of 2026-10-21, tag `v1.1.0` on `main` (pushed to the private `zdhoward/AIUsageMonitor`). You reported the device working well.
 

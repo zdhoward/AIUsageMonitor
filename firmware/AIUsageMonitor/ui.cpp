@@ -224,6 +224,17 @@ static int windowIndex(const AccData* a, const char* label) {
   return -1;
 }
 
+// Shared by column headings and every row so they stay aligned on rotation.
+static int ringCenterX(int x, int w, bool weekly) {
+  return x + (w >= 280 ? (weekly ? 257 : 173) : (weekly ? w - 38 : w - 100));
+}
+
+static void resetCaption(char* dst, size_t size, const WinData* window, int32_t elapsed) {
+  if (!window || window->r < 0) strlcpy(dst, "--", size);
+  else if (window->r <= elapsed) strlcpy(dst, "due", size);
+  else fmtDur(dst, size, window->r - elapsed);
+}
+
 static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y, int w, int h) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
@@ -250,41 +261,10 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   const WinData* sw = si >= 0 ? &a->w[si] : nullptr;
   const WinData* ww = wi >= 0 ? &a->w[wi] : nullptr;
 
-  // Reset table: muted two-row entries under the provider title
-  // Compact separate Session and Weekly entries
-  int tableY = y + (h >= 75 ? 24 : 22);
-  int rowStep = (h >= 75) ? 14 : 12;
-
-  char sReset[24];
-  if (!sw || sw->r < 0) {
-    strlcpy(sReset, "S reset --", sizeof sReset);
-  } else {
-    int32_t rem = max<int32_t>(0, sw->r - elapsed);
-    if (rem == 0) strlcpy(sReset, "S reset due", sizeof sReset);
-    else {
-      char d[10];
-      fmtDur(d, sizeof d, rem);
-      snprintf(sReset, sizeof sReset, "S reset %s", d);
-    }
-  }
-
-  char wReset[24];
-  if (!ww || ww->r < 0) {
-    strlcpy(wReset, "W reset --", sizeof wReset);
-  } else {
-    int32_t rem = max<int32_t>(0, ww->r - elapsed);
-    if (rem == 0) strlcpy(wReset, "W reset due", sizeof wReset);
-    else {
-      char d[10];
-      fmtDur(d, sizeof d, rem);
-      snprintf(wReset, sizeof wReset, "W reset %s", d);
-    }
-  }
-
-  // Muted gray reset lines in left column (x10..135 region)
-  int tableW = w >= 280 ? 115 : 80;
-  text(sReset, ix, tableY, 1, C_MUTED, TL_DATUM, tableW);
-  text(wReset, ix, tableY + rowStep, 1, C_MUTED, TL_DATUM, tableW);
+  // The space below the provider title is intentionally reserved and empty.
+  char sReset[12], wReset[12];
+  resetCaption(sReset, sizeof sReset, sw, elapsed);
+  resetCaption(wReset, sizeof wReset, ww, elapsed);
 
   // Rings: Session on LEFT, Weekly on RIGHT
   // Landscape card width is ~300 (W=320, pad=10 -> w=300).
@@ -293,43 +273,38 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   int ringStroke = 4;
   int ringCy = y + h / 2 - 2;
 
-  int ring1Cx, ring2Cx;
-  if (w >= 280) {
-    // Landscape: centers around x183 and x267
-    ring1Cx = x + 173; // relative to card x (pad=10 -> 10 + 173 = 183)
-    ring2Cx = x + 257; // relative to card x (pad=10 -> 10 + 257 = 267)
-  } else {
-    // Portrait: derive centers across width
-    ring1Cx = x + w - 100;
-    ring2Cx = x + w - 38;
-  }
+  int ring1Cx = ringCenterX(x, w, false), ring2Cx = ringCenterX(x, w, true);
 
   int sUsed = sw ? sw->u : -1;
   int sEased = (idx >= 0 && si >= 0) ? (int)(eased[idx][si] + 0.5f) : sUsed;
-  drawQuotaRing(ring1Cx, ringCy, ringR, ringStroke, sUsed, sEased, 0, "Session");
+  drawQuotaRing(ring1Cx, ringCy, ringR, ringStroke, sUsed, sEased, 0, sReset);
 
   int wUsed = ww ? ww->u : -1;
   int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : wUsed;
-  drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, TFT_YELLOW, "Weekly");
+  drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, TFT_YELLOW, wReset);
 }
 
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
   TFT_eSPI& g = G();
   const int pad = W > H ? 10 : 8;
 
-  text("AI USAGE", pad, 4, 2, C_TEXT);
   int clients = 0;
   for (int slot = 0; slot < 3; ++slot)
     if (slotIndex(m, slot) >= 0) clients++;
-  char b[20];
-  snprintf(b, sizeof b, "%d CLIENTS", clients);
-  text(b, W - pad, 4, 2, C_MUTED, TR_DATUM);
-
-  g.drawFastHLine(pad, 22, W - 2 * pad, C_PANEL);
+  char b[28];
+  snprintf(b, sizeof b, "AI USAGE (%d CLIENTS)", clients);
+  bool portrait = H > W;
+  text(b, pad, portrait ? 4 : 8, portrait ? 2 : 1, C_TEXT);
+  int headingY = portrait ? 24 : 4;
+  text("Session", ringCenterX(pad, W - 2 * pad, false), headingY,
+       portrait ? 1 : 2, C_MUTED, TC_DATUM);
+  text("Weekly", ringCenterX(pad, W - 2 * pad, true), headingY,
+       portrait ? 1 : 2, C_MUTED, TC_DATUM);
+  g.drawFastHLine(pad, portrait ? 36 : 22, W - 2 * pad, C_PANEL);
 
   // Landscape fits three 64px cards under the slim header; portrait spends its
   // extra height on wider row spacing instead of stretching the type.
-  const int top = H > W ? 30 : 24, gap = H > W ? 4 : 2;
+  const int top = portrait ? 38 : 24, gap = portrait ? 4 : 2;
   int fy = H - 18;
   const int bottom = fy - 2;
   int ch = (bottom - top - 2 * gap) / 3;
