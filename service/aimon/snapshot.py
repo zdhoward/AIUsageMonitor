@@ -224,7 +224,7 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
             entry["pl"] = acct.plan
         if acct.unavailable:
             entry["x"] = acct.unavailable[:20]
-        if acct.reset_credits:
+        if acct.reset_credits is not None and acct.reset_credits >= 0:
             entry["rc"] = acct.reset_credits
         ws = []
         for w in acct.windows[:3]:

@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-10-22: v1.3.0 final two-view console
+
+- User clarified exactly two views: original details and one status console. Removed the extra generated account pages; the two-entry render registry remains easy to extend later.
+- Applied the supplied instrument-panel design: dark palette, fixed Claude A / Claude B / Codex rows, urgent measured quota prominent, separate secondary quota, resets, source age and visible stale status. Rotation 0 stays the portrait default; layout adapts to orientation. Brightness and warning thresholds are configurable.
+- Free OpenCode DeepSeek implemented the final UI and cache fixes; free Beam reviewed it. Existing 22 service tests and ESP32 build pass; no expanded test suite. Parent integrates and flashes, with framebuffer screenshots as render evidence.
+- Cached sections survive missing data; valid zeros replace old values, including reset credits. Retained-window countdowns age correctly and cached OpenRouter numbers remain visible during source errors.
+
 ## 2026-10-22: v1.2.0 display refresh
 
 - Retain measured quota percentages through stale/missing readings and passed reset deadlines; keep readings bright during connection loss. Reset deadlines do not imply a refill. Cache is in device RAM, not flash.

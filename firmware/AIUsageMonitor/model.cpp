@@ -132,11 +132,15 @@ bool parsePayload(const char* json, size_t len, Model& out) {
         int wi = -1;
         for (int j = 0; j < d.nw; ++j)
           if (!strcmp(d.w[j].l, ow.l)) wi = j;
-        if (wi < 0 && d.nw < 3) {
+        if (wi < 0) {
+          if (d.nw >= 3) continue;
           wi = d.nw++;
           d.w[wi] = ow;
+          // Retained window: age its reset countdown like every other cached
+          // field instead of presenting the old value as freshly measured.
+          if (d.w[wi].r >= 0) d.w[wi].r = max<int32_t>(0, d.w[wi].r - elapsed);
+          continue;
         }
-        if (wi < 0) continue;
         if (d.w[wi].u < 0) d.w[wi].u = ow.u;  // explicit zero stays zero
         if (d.w[wi].r < 0) d.w[wi].r = ow.r >= 0 ? max<int32_t>(0, ow.r - elapsed) : -1;
       }

@@ -1,55 +1,44 @@
-// Dashboard renderer. All positions derive from the canvas size after
-// rotation, so the same code serves portrait (single column) and landscape
-// (two columns) in any of the four orientations.
+// Dashboard renderer. Two tap-cycled views: a glanceable three-client console
+// (default) and the original detailed dashboard. All positions derive from the
+// canvas size after rotation, so the same code serves portrait and landscape.
 #include "ui.h"
 #include "config.h"
 
 static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
 static int W = 0, H = 0;
-static bool dim = false;            // no fresh data: grey everything out
+static bool dim = false;            // legacy detail dimming; console stays bright
 static float eased[4][3] = {};
 static char easedAccount[4][9] = {};
 static char easedWindow[4][3][5] = {};
 static uint32_t animationMillis = 0;
 
 // ---------------------------------------------------------------- view registry
-// Every tap stop is a descriptor with a render callback. Overview pages and
-// account focus pages are generated from the model; static pages live once in
-// kStaticViews. Navigation, dispatch and pagination dots all read this list,
-// so a new static view needs one entry here plus its renderer.
+// Every tap stop is one static descriptor with a render callback. Navigation
+// and pagination dots read this list, so a new page needs one entry plus its
+// renderer. Generated overview/focus pages are intentionally gone.
 struct ViewDef {
   void (*draw)(const Model&, uint32_t, const ViewDef&, int y);
-  int8_t account;  // focus account index, -1 for other views
-  uint8_t page;    // overview page, 0 for other views
-  char name[9];    // focus account name, empty otherwise
 };
 
-static void drawOverview(const Model&, uint32_t, const ViewDef&, int y);
-static void drawFocus(const Model&, uint32_t, const ViewDef&, int y);
+static void drawConsole(const Model&, uint32_t, const ViewDef&, int y);
 static void drawDetails(const Model&, uint32_t, const ViewDef&, int y);
 
 static const ViewDef kStaticViews[] = {
-  {drawDetails, -1, 0, ""},
+  {drawConsole},
+  {drawDetails},
 };
-static const uint8_t kStaticViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
+static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
+static uint8_t selView = 0;  // console is the default view
 
-enum { MAX_VIEWS = 8 };
-static ViewDef views[MAX_VIEWS];
-static uint8_t nviews = 0;
-
-// Selection keeps the account name, not its array index, so reordering the
-// payload keeps the current focus page. Function pointer plus page identifies
-// static views without another enum.
-static void (*selDraw)(const Model&, uint32_t, const ViewDef&, int) = drawOverview;
-static uint8_t selPage = 0;
-static char selAccount[9] = "";
-
-// Palette (RGB565)
-// Chosen to survive the 8-bit (RGB332) frame buffer without tinting.
-static const uint16_t C_BG = 0x0000, C_PANEL = 0x014B, C_TEXT = 0xFFFF, C_MUTED = 0x9CF3,
-                      C_FAINT = 0x4208, C_GREEN = 0x2E66, C_AMBER = 0xFD20, C_RED = 0xF186,
-                      C_BLUE = 0x5D7F, C_TRACK = 0x4A4A;
+// Palette (RGB565, quantized from the requested hex values).
+// #101923 bg, #202C3B panel, #F3F6FA text, #AEBCCC secondary,
+// #49D7A0 healthy, #F4BC52 warning, #FF6B6B critical.
+// Snap the panel's blue up one RGB332 step: literal #202C3B truncates
+// its blue to zero in the 8-bit sprite and produces an olive panel.
+static const uint16_t C_BG = 0x10C4, C_PANEL = 0x216B, C_TEXT = 0xF7BF, C_MUTED = 0xADF9,
+                      C_FAINT = 0x4ACD, C_GREEN = 0x4EB4, C_AMBER = 0xF5EA, C_RED = 0xFB4D,
+                      C_BLUE = 0x5D5F, C_TRACK = 0x29E9;
 
 // Dimmed mode keeps two grey levels so bars stay readable against their track.
 static uint16_t col(uint16_t c) {
@@ -61,6 +50,14 @@ static uint16_t levelColor(int u) {
   if (u < 0) return C_MUTED;
   if (u >= 80) return C_RED;
   if (u >= 50) return C_AMBER;
+  return C_GREEN;
+}
+
+// Threshold colour for a REMAINING percentage.
+static uint16_t leftColor(int left) {
+  if (left < 0) return C_MUTED;
+  if (left <= UI_CRITICAL_LEFT) return C_RED;
+  if (left <= UI_WARNING_LEFT) return C_AMBER;
   return C_GREEN;
 }
 
@@ -92,10 +89,12 @@ static void fmtUsd(char* b, size_t n, int32_t cents) {
 static TFT_eSPI& G() { return spr ? (TFT_eSPI&)*spr : *tftp; }
 
 // Draws text clipped to maxW pixels (adds '~' when cut). Returns width drawn.
-static int text(const char* s, int x, int y, uint8_t font, uint16_t fg, uint8_t datum = TL_DATUM, int maxW = 0) {
+static int text(const char* s, int x, int y, uint8_t font, uint16_t fg, uint8_t datum = TL_DATUM, int maxW = 0,
+                uint8_t size = 1) {
   TFT_eSPI& g = G();
   g.setTextFont(font);
   g.setTextDatum(datum);
+  g.setTextSize(size);
   g.setTextColor(col(fg));
   char buf[48];
   strlcpy(buf, s, sizeof buf);
@@ -106,11 +105,13 @@ static int text(const char* s, int x, int y, uint8_t font, uint16_t fg, uint8_t 
       buf[len - 1] = '~';
     }
   }
+  int w = g.textWidth(buf);
   g.drawString(buf, x, y);
-  return g.textWidth(buf);
+  g.setTextSize(1);
+  return w;
 }
 
-// Quota values arrive as percent USED; SHOW_REMAINING flips what is displayed.
+// Quota values arrive as percent USED; SHOW_REMAINING flips the detail view.
 static int shown(int used) { return used < 0 ? -1 : (SHOW_REMAINING ? 100 - min(used, 100) : used); }
 
 // `u` is percent used. The fill follows the display mode; the colour always
@@ -127,7 +128,210 @@ static void bar(int x, int y, int w, int h, int u) {
   if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, col(levelColor(u)));
 }
 
-// ---------------------------------------------------------------- sections
+// Console bar: always fills with REMAINING quota, coloured by the thresholds.
+static void leftBar(int x, int y, int w, int h, int used, int easedUsed) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 2, C_TRACK);
+  if (used < 0) {
+    g.drawRoundRect(x, y, w, h, 2, C_MUTED);
+    for (int i = x + 3; i < x + w - 2; i += 6) g.drawLine(i, y + h - 2, i + 3, y + 1, C_FAINT);
+    return;
+  }
+  int left = 100 - min(used, 100);
+  int easedLeft = 100 - min(easedUsed, 100);
+  int fw = (int)((long)w * easedLeft / 100);
+  if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, leftColor(left));
+}
+
+// ---------------------------------------------------------------- console
+
+static const char* const kClientName[3] = {"CLAUDE A", "CLAUDE B", "CODEX"};
+static const char* const kClientId[3] = {"CL1", "CL2", "Codex"};
+
+static bool eqNoCase(const char* a, const char* b) {
+  while (*a && *b) {
+    if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) return false;
+    ++a;
+    ++b;
+  }
+  return !*a && !*b;
+}
+
+static bool prefixNoCase(const char* s, const char* prefix) {
+  while (*prefix) {
+    if (!*s || tolower((unsigned char)*s) != tolower((unsigned char)*prefix)) return false;
+    ++s;
+    ++prefix;
+  }
+  return true;
+}
+
+// Stable slot mapping: CL1, CL2, Codex keep their rows even when the service
+// reorders accounts. Unknown names leave the row at "--" rather than guess.
+static int slotIndex(const Model& m, int slot) {
+  static const char* const ids[3] = {"cl1", "cl2", "codex"};
+  static const char* const longs[3] = {"claude a", "claude b", "codex"};
+  for (int i = 0; i < m.nacc; ++i)
+    if (eqNoCase(m.acc[i].p, ids[slot])) return i;
+  for (int i = 0; i < m.nacc; ++i)
+    if (prefixNoCase(m.acc[i].p, longs[slot])) return i;
+  return -1;
+}
+
+static bool clientStale(const Model& m, const AccData& a, uint32_t now) {
+  int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+  return a.stale || (a.age >= 0 && a.age + elapsed > CLIENT_STALE_S) ||
+         (now - m.rxMillis > DATA_TIMEOUT_MS);
+}
+
+static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y, int w, int h) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 5, C_PANEL);
+
+  int idx = slotIndex(m, slot);
+  const AccData* a = idx >= 0 ? &m.acc[idx] : nullptr;
+  int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+
+  const int ix = x + 8;
+  int nx = ix;
+  bool running = a && !strcmp(m.actS, "run") && eqNoCase(m.actP, a->p);
+  if (running) {
+    g.fillCircle(ix + 3, y + 11, 3, C_GREEN);  // only a measured running account
+    nx += 10;
+  }
+  int nameW = text(kClientName[slot], nx, y + 4, 2, a ? C_TEXT : C_MUTED, TL_DATUM, w - 20);
+  int idW = text(kClientId[slot], nx + nameW + 5, y + 8, 1, C_MUTED);
+  bool stale = a && clientStale(m, *a, now);
+  if (stale) text("STALE", nx + nameW + idW + 11, y + 6, 1, C_AMBER);
+
+  // The largest number is the exact remaining percentage of the most urgent
+  // measured window (highest used). Quotas are never averaged.
+  const WinData* uw = nullptr;
+  int uk = -1;
+  if (a) {
+    int best = -1;
+    for (int k = 0; k < a->nw; ++k)
+      if (a->w[k].u >= 0 && a->w[k].u > best) {
+        best = a->w[k].u;
+        uk = k;
+      }
+    if (uk < 0 && a->nw > 0) uk = 0;
+    if (uk >= 0) uw = &a->w[uk];
+  }
+  int left = uw && uw->u >= 0 ? 100 - min((int)uw->u, 100) : -1;
+  char pct[8];
+  if (left < 0) strcpy(pct, "--");
+  else snprintf(pct, sizeof pct, "%d%%", left);
+
+  // Grow the percentage when the card is tall enough for it.
+  uint8_t pctSize = (h >= 96 && w >= 210) ? 2 : 1;
+  int pw = text(pct, x + w - 8, y + 2, 4, leftColor(left), TR_DATUM, 0, pctSize);
+  if (uw) text(uw->l, x + w - 12 - pw, y + 7, 2, C_MUTED, TR_DATUM, 24);
+  text("REMAINING", ix, y + 21, 1, C_MUTED);
+
+  bool tall = h >= 72;
+  int barY = y + (tall ? 40 : 30);
+  int barH = tall ? 6 : 4;
+  int easedUsed = (idx >= 0 && uk >= 0) ? (int)(eased[idx][uk] + 0.5f) : (uw ? uw->u : -1);
+  leftBar(ix, barY, w - 16, barH, uw ? uw->u : -1, easedUsed);
+
+  char rst[24];
+  if (!uw || uw->r < 0) strlcpy(rst, "Reset unavailable", sizeof rst);
+  else {
+    int32_t rem = max<int32_t>(0, uw->r - elapsed);
+    if (rem == 0) strlcpy(rst, "Update due", sizeof rst);
+    else {
+      char d[10];
+      fmtDur(d, sizeof d, rem);
+      snprintf(rst, sizeof rst, "Reset %s", d);
+    }
+  }
+  int resetY = barY + barH + 2;
+  int rw = text(rst, ix, resetY, 2, left < 0 ? C_MUTED : C_TEXT);
+
+  // Second (and third) quota, smaller but legible. Space decides the line.
+  char sec[48] = "";
+  if (a) {
+    for (int k = 0; k < a->nw; ++k) {
+      if (k == uk) continue;
+      const WinData& wd = a->w[k];
+      char p2[8];
+      if (wd.u < 0) strcpy(p2, "--");
+      else snprintf(p2, sizeof p2, "%d%%", 100 - min((int)wd.u, 100));
+      char d[10] = "";
+      if (wd.r >= 0) fmtDur(d, sizeof d, max<int32_t>(0, wd.r - elapsed));
+      char item[24];
+      if (d[0]) snprintf(item, sizeof item, "%s %s %s", wd.l, p2, d);
+      else snprintf(item, sizeof item, "%s %s", wd.l, p2);
+      if (sec[0]) strlcat(sec, "  ", sizeof sec);
+      strlcat(sec, item, sizeof sec);
+      break;  // one secondary quota keeps the card calm
+    }
+  }
+  if (sec[0]) {
+    if (tall) text(sec, ix, resetY + 18, 1, C_MUTED, TL_DATUM, w - 16);
+    else text(sec, x + w - 8, resetY + 4, 1, C_MUTED, TR_DATUM, w - 16 - rw - 6);
+  }
+}
+
+static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
+  TFT_eSPI& g = G();
+  const int pad = W > H ? 10 : 8;
+
+  text("AI USAGE", pad, 8, 2, C_TEXT);
+  int clients = 0;
+  for (int slot = 0; slot < 3; ++slot)
+    if (slotIndex(m, slot) >= 0) clients++;
+  char b[20];
+  snprintf(b, sizeof b, "%d CLIENTS", clients);
+  text(b, W - pad, 8, 2, C_MUTED, TR_DATUM);
+
+  g.drawFastHLine(pad, 32, W - 2 * pad, C_PANEL);
+
+  const int top = 37, bottom = H - 38, gap = 3;
+  int ch = (bottom - top - 2 * gap) / 3;
+  if (ch < 24) return;
+  for (int slot = 0; slot < 3; ++slot)
+    drawClientCard(m, now, slot, pad, top + slot * (ch + gap), W - 2 * pad, ch);
+
+  // Footer: oldest provider source age (not the serial push age) + link health.
+  int fy = H - 26;
+  int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+  int32_t oldest = -1;
+  bool anyStale = now - m.rxMillis > DATA_TIMEOUT_MS;
+  for (int i = 0; i < m.nacc; ++i) {
+    if (m.acc[i].stale) anyStale = true;
+    if (m.acc[i].age >= 0) {
+      int32_t s = m.acc[i].age + elapsed;
+      if (s > oldest) oldest = s;
+      if (s > CLIENT_STALE_S) anyStale = true;
+    }
+  }
+  char d[10];
+  if (oldest < 0) strlcpy(b, "Updated --", sizeof b);
+  else {
+    if (oldest < 60) snprintf(d, sizeof d, "%lds", (long)oldest);
+    else fmtDur(d, sizeof d, oldest);
+    snprintf(b, sizeof b, "Updated %s", d);
+  }
+  text(b, pad, fy, 2, C_MUTED);
+
+  const char* st;
+  uint16_t sc;
+  if (!m.ok) {
+    st = "SOURCE ERROR";
+    sc = C_RED;
+  } else if (anyStale) {
+    st = "STALE";
+    sc = C_AMBER;
+  } else {
+    st = "CONNECTED";
+    sc = C_GREEN;
+  }
+  text(st, W - pad - 28, fy, 2, sc, TR_DATUM, W - 80);
+}
+
+// ---------------------------------------------------------------- detail sections
 
 static int drawHeader(const Model& m, uint32_t now, int x, int y, int w) {
   TFT_eSPI& g = G();
@@ -362,17 +566,27 @@ static int drawUsage(const Model& m, int x, int y, int w, int maxH) {
     const uint16_t cl[] = {C_TEXT, C_TEXT, C_MUTED};
     yy += flow(it, cl, 3, ix, yy, iw, left(), 1, 0b100);
   }
-  if (m.orOk) {
+  // Cached OpenRouter numbers stay visible even when the latest read failed:
+  // show whatever numbers exist plus a short error indicator. Never fake clean.
+  bool orNumbers = m.orFu >= 0 || m.orFl >= 0 || m.orD >= 0 || m.orB >= 0;
+  if (m.orOk || orNumbers) {
     bool hot = m.orFl > 0 && m.orFu * 100 / m.orFl >= 80;
     if (m.orFl > 0) snprintf(s1, sizeof s1, "OpenRouter free %d/%d", m.orFu, m.orFl);
     else snprintf(s1, sizeof s1, "OpenRouter");
+    if (!m.orOk) strlcat(s1, " !", sizeof s1);
     fmtUsd(a, sizeof a, m.orD);
     snprintf(s2, sizeof s2, "%s/day", a);
     fmtUsd(a, sizeof a, m.orB);
     snprintf(s3, sizeof s3, "%s left", a);
     const char* it[] = {s1, s2, s3};
-    const uint16_t cl[] = {hot ? C_AMBER : C_TEXT, C_MUTED, C_MUTED};
+    const uint16_t cl[] = {!m.orOk ? C_AMBER : (hot ? C_AMBER : C_TEXT), C_MUTED, C_MUTED};
     yy += flow(it, cl, 3, ix, yy, iw, left(), 1, 0b100);
+    if (!m.orOk) {
+      snprintf(s1, sizeof s1, "OpenRouter: %s", m.orX[0] ? m.orX : "unavailable");
+      const char* e[] = {s1};
+      const uint16_t ec[] = {C_AMBER};
+      yy += flow(e, ec, 1, ix, yy, iw, left(), 1);
+    }
   } else {
     snprintf(s1, sizeof s1, "OpenRouter: %s", m.orX[0] ? m.orX : "unavailable");
     const char* it[] = {s1};
@@ -409,162 +623,6 @@ static void drawWaiting(uint32_t now, const char* linkInfo) {
   (void)now;
 }
 
-// ---------------------------------------------------------------- view list
-
-// Generated order: overview page(s), one focus page per account, then the
-// static views. More than three accounts spills onto a second overview page
-// instead of shrinking the rows.
-static void buildViews(const Model& m) {
-  nviews = 0;
-  uint8_t pages = m.nacc > 3 ? 2 : 1;
-  for (uint8_t p = 0; p < pages && nviews < MAX_VIEWS; ++p) {
-    ViewDef& v = views[nviews++];
-    v.draw = drawOverview;
-    v.account = -1;
-    v.page = p;
-    v.name[0] = 0;
-  }
-  for (uint8_t i = 0; i < m.nacc && nviews < MAX_VIEWS; ++i) {
-    ViewDef& v = views[nviews++];
-    v.draw = drawFocus;
-    v.account = (int8_t)i;
-    v.page = 0;
-    strlcpy(v.name, m.acc[i].p, sizeof v.name);
-  }
-  for (uint8_t i = 0; i < kStaticViewCount && nviews < MAX_VIEWS; ++i)
-    views[nviews++] = kStaticViews[i];
-}
-
-static bool isSelected(const ViewDef& v) {
-  if (v.draw != selDraw) return false;
-  if (v.draw == drawFocus) return !strcmp(v.name, selAccount);
-  return v.page == selPage;
-}
-
-static void selectView(const ViewDef& v) {
-  selDraw = v.draw;
-  selPage = v.page;
-  strlcpy(selAccount, v.name, sizeof selAccount);
-}
-
-// Falls back to the first overview page when the selected account or page no
-// longer exists, so a stale selection can never read past the model arrays.
-static uint8_t currentView() {
-  for (uint8_t i = 0; i < nviews; ++i)
-    if (isSelected(views[i])) return i;
-  selDraw = drawOverview;
-  selPage = 0;
-  selAccount[0] = 0;
-  for (uint8_t i = 0; i < nviews; ++i)
-    if (views[i].draw == drawOverview && views[i].page == 0) return i;
-  return 0;
-}
-
-// ---------------------------------------------------------------- public
-
-void uiNextView(const Model& m) {
-  buildViews(m);
-  uint8_t next = (currentView() + 1) % nviews;
-  selectView(views[next]);
-}
-
-// All visual tuning lives here; transport/model retain exact measured values.
-// Ease bars only: percentages remain truthful and immediately readable.
-static void animate(const Model& m, uint32_t now) {
-  float alpha = UI_ANIMATION ? min(1.0f, (now - animationMillis) / 350.0f) : 1.0f;
-  animationMillis = now;
-  for (int i = 0; i < m.nacc; ++i) {
-    bool changed = strcmp(easedAccount[i], m.acc[i].p);
-    strlcpy(easedAccount[i], m.acc[i].p, sizeof easedAccount[i]);
-    for (int k = 0; k < m.acc[i].nw; ++k) {
-      int u = m.acc[i].w[k].u;
-      bool reset = changed || strcmp(easedWindow[i][k], m.acc[i].w[k].l);
-      strlcpy(easedWindow[i][k], m.acc[i].w[k].l, sizeof easedWindow[i][k]);
-      if (reset || u < 0) eased[i][k] = u;
-      else eased[i][k] += (u - eased[i][k]) * alpha;
-    }
-  }
-}
-
-// Overview rows are three per page, so four accounts get a second page
-// instead of being squeezed into unreadable rows. Focus keeps one account per
-// page. Account `account` >= 0 selects focus; `page` selects the overview page.
-static void drawQuotaView(const Model& m, uint32_t now, int y, int account, uint8_t page) {
-  bool focus = account >= 0;
-  int first = focus ? account : page * 3;
-  int count;
-  int rowSlots;
-  if (focus) {
-    count = 1;
-    rowSlots = 1;
-  } else {
-    int cap = m.nacc > 3 ? 3 : m.nacc;  // normal <=3 accounts keep their rows
-    count = m.nacc - first;
-    if (count > 3) count = 3;
-    rowSlots = cap > 0 ? cap : 1;
-  }
-  int available = H - y - 24;
-  if (count <= 0) {
-    text("Waiting for quota readings", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
-    return;
-  }
-  int rowH = available / rowSlots;
-  for (int row = 0; row < count; ++row) {
-    int i = first + row;
-    if (i < 0 || i >= m.nacc) break;
-    const AccData& a = m.acc[i];
-    int top = y + row * rowH;
-    G().drawFastVLine(8, top + 8, rowH - 16, a.color);
-    text(a.p, 18, top + 5, 4, C_TEXT);
-    text(a.stale ? "CACHED" : a.pl, W - 10, top + 12, 1,
-         a.stale ? C_AMBER : C_MUTED, TR_DATUM);
-    int cellSlots = max<int>(1, a.nw);
-    int slotH = (rowH - 32) / cellSlots;
-    if (!a.nw) text("No readings yet", 18, top + 36, 2, C_MUTED);
-    for (int k = 0; k < a.nw; ++k) {
-      const WinData& wd = a.w[k];
-      int yy = top + 32 + k * slotH;
-      char pct[12], reset[20], dur[12];
-      if (wd.u < 0) strcpy(pct, "--");
-      else snprintf(pct, sizeof pct, "%d%%", shown(wd.u));
-      int32_t remain = wd.r < 0 ? -1 : max<int32_t>(0, wd.r - (now - m.rxMillis) / 1000);
-      fmtDur(dur, sizeof dur, remain);
-      snprintf(reset, sizeof reset, remain == 0 ? "awaiting update" : "reset %s", dur);
-      if (!focus) {
-        int cellW = (W - 28) / cellSlots;
-        int xx = 18 + k * cellW;
-        text(wd.l, xx, top + 32, 1, C_MUTED);
-        text(pct, xx + cellW - 8, top + 29, 4, levelColor(wd.u), TR_DATUM);
-        bar(xx, top + 57, cellW - 8, 5, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
-        text(remain == 0 ? "update due" : reset, xx, top + 65, 1, C_TEXT, TL_DATUM, cellW - 4);
-        continue;
-      }
-      // Focus keeps the largest type the slot allows. Shorter slots drop the
-      // percentage, bar and reset label a step so three windows cannot overlap
-      // the next one (portrait keeps font 4 percentages for all slot counts).
-      int pctFont = slotH >= 64 ? 4 : 2;
-      int barH = slotH >= 64 ? 12 : 5;
-      int by = yy + (pctFont == 4 ? 30 : 20);
-      text(wd.l, 18, yy + (pctFont == 4 ? 3 : 2), 2, C_MUTED);
-      text(pct, W - 10, yy, pctFont, levelColor(wd.u), TR_DATUM);
-      bar(18, by, W - 28, barH, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
-      int resetFont = slotH >= 96 ? 4 : (slotH >= 64 ? 2 : 1);
-      int resetY = by + barH + (resetFont == 4 ? 4 : 3);
-      text(reset, 18, resetY, resetFont, C_TEXT, TL_DATUM, W - 28);
-    }
-  }
-}
-
-static void drawOverview(const Model& m, uint32_t now, const ViewDef& v, int y) {
-  text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
-  drawQuotaView(m, now, y + 25, -1, v.page);
-}
-
-static void drawFocus(const Model& m, uint32_t now, const ViewDef& v, int y) {
-  text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
-  drawQuotaView(m, now, y + 25, v.account, 0);
-}
-
 static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
   y += drawActivity(m, now, 0, y, W);
   y += drawPeak(m, 0, y, W);
@@ -578,6 +636,8 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
     drawUsage(m, 0, y, W, H - y);
   }
 }
+
+// ---------------------------------------------------------------- public
 
 void uiSetRotation(uint8_t rotation) {
   tftp->setRotation(rotation & 3);
@@ -612,24 +672,52 @@ bool uiScreenshot(Stream& out) {
   return true;
 }
 
+void uiNextView(const Model&) {
+  selView = (uint8_t)((selView + 1) % kViewCount);
+}
+
+static void drawDots(uint8_t current) {
+  for (uint8_t i = 0; i < kViewCount; ++i)
+    G().fillCircle(W - 10 - (kViewCount - 1 - i) * 10, H - 9, 2, i == current ? C_TEXT : C_FAINT);
+}
+
+// All visual tuning lives here; transport/model retain exact measured values.
+// Ease bars only: percentages remain truthful and immediately readable.
+static void animate(const Model& m, uint32_t now) {
+  float alpha = UI_ANIMATION ? min(1.0f, (now - animationMillis) / 350.0f) : 1.0f;
+  animationMillis = now;
+  for (int i = 0; i < m.nacc; ++i) {
+    bool changed = strcmp(easedAccount[i], m.acc[i].p);
+    strlcpy(easedAccount[i], m.acc[i].p, sizeof easedAccount[i]);
+    for (int k = 0; k < m.acc[i].nw; ++k) {
+      int u = m.acc[i].w[k].u;
+      bool reset = changed || strcmp(easedWindow[i][k], m.acc[i].w[k].l);
+      strlcpy(easedWindow[i][k], m.acc[i].w[k].l, sizeof easedWindow[i][k]);
+      if (reset || u < 0) eased[i][k] = u;
+      else eased[i][k] += (u - eased[i][k]) * alpha;
+    }
+  }
+}
+
 void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   TFT_eSPI& g = G();
   g.fillScreen(C_BG);
-  dim = false; // cached readings remain fully readable, regardless of link age
+  dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
-  buildViews(m);
-  uint8_t current = currentView();
-  int y = drawHeader(m, now, 0, 0, W);
+  uint8_t current = selView < kViewCount ? selView : 0;
   if (!m.valid) {
+    drawHeader(m, now, 0, 0, W);
     drawWaiting(now, linkInfo);
   } else {
-    views[current].draw(m, now, views[current], y);
-  }
-  if (m.valid) {
-    G().fillRect(0, H - 18, W, 18, C_BG);
-    text("tap to change view", 10, H - 13, 1, C_MUTED);
-    for (uint8_t i = 0; i < nviews; ++i)
-      G().fillCircle(W - 10 - (nviews - 1 - i) * 10, H - 9, 2, i == current ? C_TEXT : C_FAINT);
+    const ViewDef& v = kStaticViews[current];
+    if (v.draw == drawConsole) {
+      v.draw(m, now, v, 0);
+    } else {
+      int y = drawHeader(m, now, 0, 0, W);
+      v.draw(m, now, v, y);
+      text("tap to change view", 10, H - 13, 1, C_MUTED);
+    }
+    drawDots(current);
   }
   if (spr) spr->pushSprite(0, 0);
 }

@@ -1,31 +1,28 @@
-# Display design and extension guide
+# Display design
 
-The display is a quiet peripheral below a monitor: usage and resets take priority over diagnostics. Black background, white type, muted labels, account accents, and usage-based green/amber/red bars reuse TFT_eSPI's built-in fonts and RGB332 framebuffer. No web framework or extra graphics library is involved.
+A quiet instrument panel below a monitor. Percent remaining and reset timing dominate; cached readings stay bright even when the link or a source ages.
 
-## Views
+## Exactly two views
 
-Tap and release anywhere to advance: overview, one focus page per account, detailed dashboard, then overview. Long holds over 1.5 seconds are ignored. Serial `!NEXT` uses the same view action. Account pages are generated from the payload; adding an account needs no new screen code. The selected view survives incoming payloads, including account reorders, but resets on reboot.
+Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots, so a third static view would be one entry plus its renderer.
 
-- Overview: three accounts per page with large percentages and paired quota bars; small reset countdowns beneath each bar. A fourth account gets a second overview page instead of smaller rows.
-- Focus: a single account with generous spacing and large reset countdowns, designed for reading at a distance.
-- Details: the previous activity, quota, token, and cost dashboard.
+- **Console (default):** three fixed client cards — `CLAUDE A (CL1)`, `CLAUDE B (CL2)`, `CODEX` — mapped by account name, so service reordering does not move rows. Each card's largest number is the exact percent left in its most urgent measured window (highest used), labelled with that window (`5h`, `7d`). The second window is smaller and includes its reset where space allows. The main reset line reads `Reset 2h14m`, `Update due` after the deadline, or `Reset unavailable` when unknown. A green dot appears only for the account matching a measured running activity.
+- **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
 
-## State and motion
+Landscape uses 10px padding, header at y6..29, divider at 32, three 53px rows, and a footer near y213. Portrait stacks three ~80px cards with its own spacing. Both derive geometry from `width()`/`height()`, so all four rotations work.
 
-Known quota percentages stay visible at full brightness through link loss, stale readings, missing accounts/windows, and passed reset deadlines. A passed reset says `awaiting update` rather than claiming the quota replenished. Missing readings before any measurement remain `--`. Header link age and account `CACHED` labels expose freshness without hiding readings.
+## Freshness and unknown values
 
-The same fallback covers activity, subscription usage/sparkline/by-account, free/NIM, and OpenRouter: an absent or unavailable section keeps its last values, and countdowns/ages advance with elapsed time rather than looking refreshed. A present zero is a real reading and replaces the cached number. Account plan, accent, reset credits, and quota windows are kept by identity; an explicit zero reset-credit count clears them. The peak banner recomputes from retained windows and says `CACHED` when fresh peak data is absent. This is RAM caching, not persistence across power loss.
+A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (1200s), the serial link times out, or the payload flags it. Cached numbers stay at full brightness; stale is a label, never a reason to hide the reading. The footer shows the oldest provider source age (`Updated 4m`) rather than pretending a fresh serial push means fresh provider data, plus `CONNECTED`, `STALE`, or `SOURCE ERROR`.
 
-Bars interpolate toward new readings over roughly a second; numeric labels show the exact reading immediately. Set `UI_ANIMATION 0` in config.h to disable interpolation. Rendering uses a full framebuffer to avoid visible clears. Countdown timing is independent of animation.
+Unknown quotas show `--`, never `0%`. A real 0% remains distinct from unknown. Percentages are never averaged across windows.
 
-## Where to change things
+## Palette and configuration
 
-- `firmware/AIUsageMonitor/ui.cpp`: palette, text/bar primitives, `drawQuotaView`, easing, and the view registry. `buildViews()` prepends generated overview/focus pages; `kStaticViews` lists static pages. Add one `kStaticViews` entry plus a renderer and navigation, dispatch, and dots follow automatically. Keep renderers separate from transport/model logic.
-- `model.cpp`: merges each section by identity, keeping absent fields and aging countdowns. Present readings, including zero, replace cached measurements.
-- `AIUsageMonitor.ino`: CST820 I2C whole-screen button, debounce, serial commands.
-- `config.h`: rotation 0 (traditional landscape left edge up), remaining/used mode, animation.
-- `scripts/screenshot.py --feed --next 1 --out build/focus.png`: capture the next page without a physical tap. `--next` is relative to the current page.
+RGB565 values in `ui.cpp` come from: background `#101923`, panel `#202C3B`, text `#F3F6FA`, secondary `#AEBCCC`, healthy `#49D7A0`, warning `#F4BC52`, critical `#FF6B6B`. The 8-bit RGB332 framebuffer quantizes them; the panel blue is snapped up one step to retain a blue-gray surface rather than olive.
 
-## Hardware verification limits
+`config.h`: `DISPLAY_ROTATION` (0 default), `BACKLIGHT_LEVEL` (0..255, ESP32 LEDC on GPIO27), `UI_CRITICAL_LEFT` (20), `UI_WARNING_LEFT` (50), `CLIENT_STALE_S` (1200), `SHOW_REMAINING` (details mode), `UI_ANIMATION`. Bars ease quietly toward new values; exact numbers update immediately.
 
-Framebuffer screenshots prove layout and serial view cycling, not physical touch reliability, perceived motion, viewing distance, or panel orientation. Check those on the mounted device. Overview pages cap at three rows; focus pages keep larger reset text and, in portrait, drop to font 2 only when three windows share the page.
+## Where Claude edits later
+
+Start with `ui.cpp`: `drawConsole` and `drawClientCard` own the three-client console, `drawDetails` owns the legacy sections, and `kStaticViews` is the registry. Keep renderers separate from transport/model logic. `model.cpp` merges and ages cached data; `snapshot.py` builds the payload. `scripts/screenshot.py --feed --next 1 --out build/console.png` captures the next view without a tap.

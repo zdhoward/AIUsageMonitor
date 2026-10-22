@@ -139,9 +139,9 @@ static const char* linkInfo() {
 void setup() {
   Serial.setRxBufferSize(4096);
   Serial.begin(SERIAL_BAUD);
-  pinMode(PIN_BACKLIGHT, OUTPUT);
-  digitalWrite(PIN_BACKLIGHT, HIGH);
   uiBegin(tft, DISPLAY_ROTATION);
+  ledcAttach(PIN_BACKLIGHT, 5000, 8);  // ESP32 core 3.x: pin, Hz, bits
+  ledcWrite(PIN_BACKLIGHT, BACKLIGHT_LEVEL);
   pinMode(25, OUTPUT);
   digitalWrite(25, LOW);
   delay(5);
