@@ -51,8 +51,8 @@ Set `DISPLAY_ROTATION` in [`firmware/AIUsageMonitor/config.h`](firmware/AIUsageM
 | Value | Mounting | Screen |
 | --- | --- | --- |
 | `2` | Portrait, traditional **right** edge facing up | 240×320, one column |
-| `0` (default) | Portrait, traditional **left** edge facing up | 240×320, one column |
-| `1` | Landscape, traditional | 320×240, two columns |
+| `0` | Portrait, traditional **left** edge facing up | 240×320, one column |
+| `1` (default) | Landscape, traditional | 320×240, console rows / detailed columns |
 | `3` | Landscape, upside down | 320×240, two columns |
 
 You can preview a rotation without reflashing; it reverts on reboot:

@@ -4,7 +4,7 @@
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
 // ============================================================================
 
-#define FW_VERSION "1.3.0"
+#define FW_VERSION "1.3.1"
 
 // ---------------------------------------------------------------------------
 // DISPLAY_ROTATION: the one setting to change when you remount the screen.
@@ -12,8 +12,8 @@
 // means landscape rotation 1, the orientation all your earlier sketches used.
 //
 //   2 = Portrait, traditional RIGHT edge facing UP
-//   0 = Portrait, traditional LEFT edge facing up       (default)
-//   1 = Landscape, traditional orientation
+//   0 = Portrait, traditional LEFT edge facing up
+//   1 = Landscape, traditional orientation             (default)
 //   3 = Landscape, upside down
 //
 // Rotations 1/3 make the screen 320x240 (two-column layout); 0/2 make it
@@ -21,7 +21,7 @@
 // at runtime, so changing this value and reflashing is all that's needed.
 // ---------------------------------------------------------------------------
 #ifndef DISPLAY_ROTATION
-#define DISPLAY_ROTATION 0
+#define DISPLAY_ROTATION 1
 #endif
 
 // SHOW_REMAINING: 1 = bars and percentages show quota LEFT (default),
