@@ -51,7 +51,7 @@ From the ILI9341 rotation table in TFT_eSPI:
 - `2` = MY
 - `3` = MX|MY|MV
 
-In rotation 1, the right edge of the landscape image is the bottom edge of the rotation 0 portrait. So "portrait with the traditional right-hand edge facing up" is **rotation 2**. Version 1.2 defaults to **rotation 0**, traditional left edge up, for the requested clockwise remount. See the README to change it.
+In rotation 1, the right edge of the landscape image is the bottom edge of the rotation 0 portrait. So "portrait with the traditional right-hand edge facing up" is **rotation 2**. The accepted v1.4.1 default is **rotation 1**, landscape; this supersedes earlier portrait requests. See the README to change it.
 
 ## Remaining uncertainty
 

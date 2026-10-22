@@ -1,70 +1,42 @@
-# Handoff
+# Handoff — 2026-10-22
 
-Current update: **v1.4.1, 2026-10-22** — exactly two tap-cycled views: the three-client ring console and original detailed dashboard. Landscape rotation 1, full-brightness cached readings, Session ring left / yellow Weekly ring right, centered remaining percentages, reset countdowns beneath rings, shared column headings and grouped title/client count. Data areas below provider names stay empty. Source freshness, eased progress, configurable PWM brightness remain. See [the UI handoff](docs/UI_HANDOFF.md) and [design/extension guide](docs/UI.md). The notes below describe the earlier v1.1 baseline; its rotation, dimming, and unused-touch statements are superseded.
+## Current state
 
-State as of 2026-10-21, tag `v1.1.0` on `main` (pushed to the private `zdhoward/AIUsageMonitor`). You reported the device working well.
+Firmware **v1.4.1** is flashed on the ESP32-2432S024C / COM6. The user accepted the display and asked to wrap up. Latest implementation commit: `9759d32`, tag `v1.4.1`; the wrap-up documentation commit follows it on `main`.
 
-## What exists
+- Landscape rotation **1**, 320×240. Configurable four-way rotation and responsive portrait layout remain available.
+- Exactly two tap-cycled views: ring console (default) and original detailed dashboard.
+- Console: `AI USAGE (3 CLIENTS)` at left, Session/Weekly column headers aligned over rings. Session (`5h`) left, Weekly (`7d`) right; numbers show exact percent remaining. Weekly is yellow, session uses capacity warning colors. Rings ease toward updated readings.
+- Reset countdowns sit beneath each ring. `due` means the deadline passed without a new provider reading; `--` means unavailable. The space below each provider name stays empty for future data.
+- Cached readings stay visible at full brightness through stale/missing data. Valid zeros replace cached measurements. Cache is RAM only and resets on power loss. Stale/source status remains visible.
+- `config.h` controls rotation, brightness, warning thresholds and animation. Rendering and extension points: [docs/UI.md](docs/UI.md) and [docs/UI_HANDOFF.md](docs/UI_HANDOFF.md).
 
-- **Firmware** (`firmware/AIUsageMonitor`) is flashed to the ESP32-2432S024C on COM6. Settings in `config.h`:
-  - `DISPLAY_ROTATION 2`: portrait, traditional right edge up
-  - `SHOW_REMAINING 1`: shows quota left
-  - USB-serial transport (Wi-Fi is opt-in and untested)
-- **Service** (`service/aimon`, Python 3.13 + pyserial):
-  - Runs hidden via `pythonw` and serves `127.0.0.1:8797`.
-  - Pushes a JSON line to the display every 5 s.
-  - Starts at logon through the per-user scheduled task `AI Usage Monitor (aimon)`.
-  - Control it with `scripts/service.ps1 start|stop|restart|status|install|uninstall`.
-- **Tools:**
-  - `scripts/build.ps1` (arduino-cli; TFT pins as flags)
-  - `scripts/flash.ps1` (pauses and resumes the service's port)
-  - `scripts/screenshot.py` (frame-buffer PNG; `--rot`, `--payload`)
-- **Docs:**
-  - `README.md`: usage, orientation and remaining/used settings
-  - `docs/HARDWARE.md`
-  - `docs/DATA_SOURCES.md`
-  - `docs/TEST_REPORT.md`
-  - `docs/PROJECT_LOG.md`
+## Running service and tools
 
-## Key decisions (details in docs/PROJECT_LOG.md)
+The existing Python service runs hidden, autostarts at logon, and serves `127.0.0.1:8797`. USB serial sends/acknowledges payloads normally; wrap-up health showed v1.4.1, `rot=1 w=320 h=240`, no source errors, port unpaused.
 
-- **Quota and reset credits** come from T3's provider caches (`~/.t3/caches/*.json`). There are no direct provider calls and no OAuth tokens are read.
-- **Tokens and cost** come from local Claude and Codex transcripts, priced with T3's rate table. They are labelled as estimates.
-- **Free models** come from OpenCode's DB. OpenRouter key status is polled every 10 min.
-- **USB serial instead of Wi-Fi:** the PC is on Ethernet with a Public firewall profile.
-- **Port 8797:** 8787 is used by another local service.
+- `scripts/service.ps1 start|stop|restart|status|install|uninstall`
+- `scripts/build.ps1` compiles into `build/`; `scripts/flash.ps1` coordinates port release/resume.
+- `scripts/screenshot.py --feed --out build/shot.png`; `--next 1` cycles a view before capture, `--rot N` temporarily changes rotation, `--wait N` delays capture.
+- Logs: `logs/aimon.log`. Current framebuffer evidence: [docs/img/v1.4.1-rings.png](docs/img/v1.4.1-rings.png).
 
-## Validation
+Quota/reset credits come from T3 caches and newer Codex transcript limits. Token costs are API-price estimates from local transcripts; no credentials or provider quota calls were added. See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md).
 
-- 22 service unit tests pass (`cd service; python -m unittest discover -s tests -t .`).
-- On-device checks are listed in `docs/TEST_REPORT.md`:
-  - boot and pin report
-  - all four rotations
-  - malformed input
-  - no-data dimming
-  - waiting screen
-  - service restart
-  - flashing while the service runs
-  - remaining mode
-  - reset label (fixture)
+## Validation and repository status
 
-## Remaining / unverified
+- Latest firmware build passed (413,263 bytes flash, 28,648 bytes static RAM); upload hash verified.
+- Framebuffer inspection verified final landscape header alignment, countdown captions, visible empty 0% ring tracks, and empty provider data areas. Serial navigation uses the same action as touch release.
+- Wrap-up service suite: **22 tests passed**. Reused the latest green firmware build/capture for documentation-only wrap-up. Details/history: [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
+- No open repository PRs and no PRs linked to this thread; nothing needed merging.
+- Local commits/tags remain **unpushed**. After the wrap-up commit, `main` is 15 commits ahead of fetched `origin/main`. No remote publication was requested.
+- Delegated checkout branches retain partial/superseded worker edits, preserved rather than deleted. They are not extra deliverables. No child task remains active.
 
-- Physical orientation and panel colours were not confirmed by a separate check; you reported the device working.
-- A real USB unplug/replug, PC sleep, and the logon task firing at an actual logon have not been observed.
-- `SHOW_REMAINING 0` and Wi-Fi mode compile but have never been flashed.
-- Cost estimates have not been reconciled against T3's Usage page.
+## Remaining work
 
-## Related changes made this session (outside this repo)
+No implementation task is pending. If more data is wanted later, use the intentionally empty provider area; preserve [GOALS.md](GOALS.md). Physical unplug/replug, PC sleep and actual logon-task execution remain unobserved; optional Wi-Fi and cost-estimate reconciliation remain outside scope. Final portrait ring-heading changes were built but not captured on hardware; landscape is the accepted target.
 
-- `~/.claude/CLAUDE.md` (repo `zdhoward/claude-config`, private) has two commits ahead of origin, not pushed:
-  - "delegate by default when running as Opus"
-  - "create GitHub repos as private"
-- `~/.agents/model-router` (repo `zdhoward/model-router`, private) has one commit ahead, not pushed: the lesson about the first real routing test, and HANDOFF item 5.
-- `git status` in `~/.claude` warns about missing `skills-library/*` directories (agents-sdk, cloudflare, wrangler, ...). These are probably dangling links. Not investigated.
+## Routing / next agent
 
-## Next actions
+Plan with Sol 6.1 at standard speed; delegate bounded implementation through model-router to available free/local workers. DeepSeek completed T-002/003/004; Beam reviewed early changes, then exhausted free quota. Later `litellm/free-coder` returned intention-only or partial work twice, Qwen timed out, and a later GPT-OSS review never responded. Parent completed small renderer fixes and inspected hardware output; no independent pass is claimed for those later changes. Treat the failing route as unavailable until repaired/rechecked, and verify behavior rather than trusting terminal status. See router lessons and the wrap-up retro log.
 
-1. Push `claude-config` and `model-router` if you want those rule changes on GitHub.
-2. Re-run a small multi-part task in a fresh session to test the new delegate-by-default rule. Record the results in the model-router scoreboard.
-3. Optional: add an OpenRouter or NIM alert on the display, or a touch control to toggle remaining/used. The CST820 touch controller is present but unused.
+Wrap-up added the repeated-incomplete-result rule to shared model-router step 6, updated its lessons, and wrote `C:/Users/ZECHS/.agents/retro/LOG.md`. `sync-instances` reports in sync. The model-router repository already contains other session changes in configuration, skill, lessons and scoreboard; those shared edits were preserved uncommitted rather than mixed into this project's commit. No pending policy approval or model promotion.

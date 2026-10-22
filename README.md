@@ -22,6 +22,8 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 | [docs/TEST_REPORT.md](docs/TEST_REPORT.md) | What was verified on the device vs. assumed |
 | [docs/PROJECT_LOG.md](docs/PROJECT_LOG.md) | Decisions and why |
 | [HANDOFF.md](HANDOFF.md) | Current state, open items, next actions |
+| [GOALS.md](GOALS.md) | Final accepted display choices |
+| [docs/UI.md](docs/UI.md) | Renderer design, settings and extension points |
 
 ![portrait](docs/img/rot2.png) ![landscape](docs/img/rot1.png)
 
@@ -29,7 +31,7 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 
 Version 1.4 has exactly two views. **Tap anywhere** to toggle between the three-client status console and the original detailed dashboard. Each client has Session and Weekly rings side by side, with percent remaining inside and a muted reset countdown beneath each ring. Shared column headers identify the rings; the area below provider names stays empty. Rings ease toward new readings; percentages show the exact measurement. See [the UI guide](docs/UI.md) for customization and future Claude work.
 
-Last measured quota values remain bright and visible during stale connections, missing readings, and passed reset deadlines. `CACHED` / the header status indicates freshness. After a reset deadline, `awaiting update` means a fresh provider reading is needed; the display does not assume a refill. Cache lives in RAM and resets on reboot.
+Last measured quota values remain bright and visible during stale connections, missing readings, and passed reset deadlines. `STALE` and the footer status indicate freshness. A `due` ring caption means a fresh provider reading is needed after the deadline; the display does not assume a refill. Cache lives in RAM and resets on reboot. The following sections describe the detailed dashboard.
 
 - **Header:** the green dot plus a time means the last payload is fresh. `!` (amber) means a source failed (named in the detailed footer). `NO DATA 2m` (red) means nothing has arrived for 30 s; the last values stay fully visible.
 - **Activity:** a pulsing green dot means a T3 turn is running: account, model, elapsed time, and `+N` other running threads. Otherwise it shows `idle` with the last account and model.
@@ -65,7 +67,7 @@ The PNG shows the frame buffer exactly as sent to the panel.
 
 ## Remaining vs. used
 
-`SHOW_REMAINING` in `config.h` (default `1`) shows quota **left**: a full bar is a full allowance. Set it to `0` to show quota **used**; the banner then becomes `PEAK n% used`. Rebuild and flash after changing it.
+`SHOW_REMAINING` in `config.h` (default `1`) controls the **detailed dashboard**: a full bar is a full allowance. Set it to `0` to show quota **used** there; the banner becomes `PEAK n% used`. Console rings always show remaining capacity. Rebuild and flash after changing it.
 
 ## Build, flash, run
 

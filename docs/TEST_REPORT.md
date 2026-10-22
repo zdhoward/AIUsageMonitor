@@ -1,4 +1,6 @@
-# Test report: v1.0.0 (2026-10-21)
+# Test report
+
+Wrap-up 2026-10-22: all 22 existing service tests pass; service healthy on COM6 with v1.4.1 / rotation 1. Latest firmware build and final framebuffer evidence below are reused for documentation-only wrap-up. Historical v1.0 dimming/rotation observations below describe old firmware, not current behavior.
 
 ## v1.4.1 ring headings and captions (2026-10-22)
 
