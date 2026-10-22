@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-22: v1.4.0 quota rings
+
+- Replaced console bars and duplicate large values with Session/Weekly rings, exact remaining percentages centered, and muted S/W reset-table rows under provider names. Weekly stays yellow; session follows capacity thresholds. Landscape default and two-view navigation remain.
+- Free-coder left a partial patch; the local Qwen continuation timed out before responding. Parent completed the two bounded renderer fixes (12-o'clock arc origin and portrait table spacing) and docs locally rather than restarting implementation. Runtime framebuffer inspection verifies the final layout.
+- Local GPT-OSS review also produced no response/tool activity and was cancelled after three minutes. Parent reviewed the renderer and flashed frame directly. Empty-ring track contrast was raised after RGB332 inspection; no independent review pass is claimed.
+
 ## 2026-10-22: v1.3.4 weekly bar color
 
 - Weekly bar fills are always yellow so they are distinct at a glance. Session bars and numeric warning colors retain their existing thresholds. Small renderer-only change performed inline; build/flash and framebuffer check, no extra tests.
