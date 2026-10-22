@@ -17,6 +17,8 @@ A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (1200s)
 
 Unknown quotas show `--`, never `0%`. A real 0% remains distinct from unknown. Percentages are never averaged across windows.
 
+Weekly bar fills are always yellow for quick identification. Session bars and percentage text retain the remaining-capacity warning colors. Unknown windows keep their hatched bars.
+
 ## Palette and configuration
 
 RGB565 values in `ui.cpp` come from: background `#101923`, panel `#202C3B`, text `#F3F6FA`, secondary `#AEBCCC`, healthy `#49D7A0`, warning `#F4BC52`, critical `#FF6B6B`. The 8-bit RGB332 framebuffer quantizes them; the panel blue is snapped up one step to retain a blue-gray surface rather than olive.

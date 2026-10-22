@@ -129,7 +129,7 @@ static void bar(int x, int y, int w, int h, int u) {
 }
 
 // Console bar: always fills with REMAINING quota, coloured by the thresholds.
-static void leftBar(int x, int y, int w, int h, int used, int easedUsed) {
+static void leftBar(int x, int y, int w, int h, int used, int easedUsed, uint16_t fillColor = 0) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 2, C_TRACK);
   if (used < 0) {
@@ -140,7 +140,7 @@ static void leftBar(int x, int y, int w, int h, int used, int easedUsed) {
   int left = 100 - min(used, 100);
   int easedLeft = 100 - min(easedUsed, 100);
   int fw = (int)((long)w * easedLeft / 100);
-  if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, leftColor(left));
+  if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, fillColor ? fillColor : leftColor(left));
 }
 
 // ---------------------------------------------------------------- console
@@ -278,7 +278,7 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   text(wr, wx, weekLineY, 2, C_MUTED, TL_DATUM, w - 8 - wx);
 
   int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : (ww ? ww->u : -1);
-  leftBar(ix, weekBarY, w - 16, barH, ww ? ww->u : -1, wEased);
+  leftBar(ix, weekBarY, w - 16, barH, ww ? ww->u : -1, wEased, TFT_YELLOW);
 }
 
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
