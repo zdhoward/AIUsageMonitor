@@ -6,7 +6,7 @@ A quiet instrument panel below a monitor. Percent remaining and reset timing dom
 
 Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots, so a third static view would be one entry plus its renderer.
 
-- **Console (default):** three fixed client rows — `CLAUDE A`, `CLAUDE B`, `CODEX` — mapped by account name, so service reordering does not move rows. Each row has two circular gauges: **Session** (`5h`) left, **Weekly** (`7d`) right. The centered number is exact percent remaining; the ring eases clockwise from 12 o'clock. Muted gray reset-table entries under the provider name use `S reset` and `W reset`, with `due` after a deadline and `--` when unavailable. Unknown quotas have dashed tracks and `--`, distinct from empty 0% or full 100% rings. Redundant account IDs and large extra percentages are removed.
+- **Console (default):** three fixed client rows — `CLAUDE A`, `CLAUDE B`, `CODEX` — mapped by account name, so service reordering does not move rows. The header groups `AI USAGE (3 CLIENTS)` at left and aligns **Session** (`5h`) and **Weekly** (`7d`) headings above their ring columns. Each ring centers exact percent remaining and eases clockwise from 12 o'clock. Its muted caption shows time until reset, `due` after a deadline, or `--` when unavailable. The data area beneath provider titles is intentionally empty for future use. Unknown quotas show `--`, distinct from empty 0% or full 100% rings.
 - **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
 
 Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.
@@ -17,7 +17,7 @@ A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (1200s)
 
 Unknown quotas show `--`, never `0%`. A real 0% remains distinct from unknown. Percentages are never averaged across windows.
 
-Weekly rings and their centered numbers are yellow for quick identification. Session rings and numbers follow remaining-capacity warning colors. Reset details are muted gray so the rings dominate.
+Weekly rings and their centered numbers are yellow for quick identification. Session rings and numbers follow remaining-capacity warning colors. Reset captions are muted gray so the rings dominate.
 
 ## Palette and configuration
 

@@ -1,6 +1,6 @@
-# UI handoff — v1.4.0
+# UI handoff — v1.4.1
 
-The console now uses Session and Weekly circular progress rings side by side, with percent remaining centered. Weekly is yellow; session follows capacity thresholds. Muted S/W reset rows sit below the provider title. No horizontal quota bars or duplicate large percentages remain in this view.
+The console uses Session and Weekly circular progress rings side by side, with percent remaining centered. Weekly is yellow; session follows capacity thresholds. Shared column headings sit above the rings; reset countdowns are the captions beneath each ring. The area below provider titles stays empty. The title groups `AI USAGE (3 CLIENTS)` at left. Heading and ring alignment share `ringCenterX`.
 
 Landscape rotation 1 is the persistent default, matching the user's final mounting instruction. The earlier portrait default was superseded. Both layouts remain available through `DISPLAY_ROTATION`.
 

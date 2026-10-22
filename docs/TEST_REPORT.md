@@ -1,5 +1,10 @@
 # Test report: v1.0.0 (2026-10-21)
 
+## v1.4.1 ring headings and captions (2026-10-22)
+
+- Build and diff check pass; flashed device reports `rot=1 w=320 h=240` and normal acknowledgements. Framebuffer `img/v1.4.1-rings.png` verifies grouped title/client count, aligned Session/Weekly headers, reset countdowns under rings, and empty space beneath provider names.
+- Parent completed and reviewed the small renderer adjustment after the delegated worker returned only a version edit; no independent review pass or additional test suite is claimed.
+
 ## v1.4.0 ring console (2026-10-22)
 
 - ESP32 build and diff check pass. Framebuffer capture `img/v1.4.0-rings.png` shows Session and Weekly rings, correct real 0% readings, independent yellow weekly gauges, and muted reset rows. No test suite additions.
