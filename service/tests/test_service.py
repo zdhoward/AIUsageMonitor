@@ -213,11 +213,11 @@ class PayloadTests(unittest.TestCase):
         self.assertEqual(p["acc"][0]["w"][0], {"l": "5h", "u": 37, "r": 3600})
         self.assertLess(len(json.dumps(p, separators=(",", ":"))), 2048)
 
-    def test_reset_credits_only_sent_when_available(self):
+    def test_reset_credits_sent_including_zero(self):
         st = self.state()
         self.assertNotIn("rc", build_payload(st, NOW, PRICING, self.settings())["acc"][0])
         st.accounts[0].reset_credits = 0
-        self.assertNotIn("rc", build_payload(st, NOW, PRICING, self.settings())["acc"][0])
+        self.assertEqual(build_payload(st, NOW, PRICING, self.settings())["acc"][0]["rc"], 0)
         st.accounts[0].reset_credits = 1
         self.assertEqual(build_payload(st, NOW, PRICING, self.settings())["acc"][0]["rc"], 1)
 

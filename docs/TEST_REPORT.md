@@ -66,3 +66,10 @@
 - Existing 22 service tests pass, including the revised requirement that expired windows retain their last measurement.
 - Framebuffer captures: `img/v1.2-overview.png`, `img/v1.2-focus.png`, `img/v1.2-cached.png`. Serial `!NEXT` exercises the same view action as touch release.
 - CST820 physical tapping, mounted orientation, perceived smoothness, and reading distance require user confirmation. No expanded test suite was added.
+
+## v1.3.0 two-view console (2026-10-22)
+
+- OpenCode DeepSeek implemented; OpenCode Beam reviewed with no blockers. Ticket verification passed: ESP32 build and scoped diff check. Existing service tests: 22 passed.
+- Exactly two registry entries: console and original details. New renderer shows Claude A / Claude B / Codex, urgent remaining quota, reset countdown, a separate secondary window, stale labels, and oldest source age. PWM brightness and remaining-capacity thresholds are configurable.
+- Device flashed with hash verification. Captures: `img/v1.3-console.png`, `img/v1.3-details.png`, `img/v1.3-landscape.png`. The blue component of the panel palette was adjusted after framebuffer inspection because RGB332 truncation made the literal requested color olive.
+- Physical tap reliability, mounted orientation, and comfortable reading distance remain user checks; serial view cycling and rendered frames are observable here.

@@ -4,7 +4,7 @@
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
 // ============================================================================
 
-#define FW_VERSION "1.2.0"
+#define FW_VERSION "1.3.0"
 
 // ---------------------------------------------------------------------------
 // DISPLAY_ROTATION: the one setting to change when you remount the screen.
@@ -50,8 +50,28 @@
 #endif
 #define WIFI_POLL_MS 5000
 
+// Backlight PWM level, 0..255 (ESP32 LEDC on PIN_BACKLIGHT).
+#ifndef BACKLIGHT_LEVEL
+#define BACKLIGHT_LEVEL 255
+#endif
+
 // Show "NO DATA" in the header; cached readings keep their normal brightness.
 #define DATA_TIMEOUT_MS 30000UL
+
+// Console thresholds, in percent quota REMAINING. <= critical is red,
+// <= warning is amber, everything else healthy green.
+#ifndef UI_CRITICAL_LEFT
+#define UI_CRITICAL_LEFT 20
+#endif
+#ifndef UI_WARNING_LEFT
+#define UI_WARNING_LEFT 50
+#endif
+
+// A console client is marked STALE when its provider source is older than
+// this many seconds (or the link timed out, or the service flagged it).
+#ifndef CLIENT_STALE_S
+#define CLIENT_STALE_S 1200
+#endif
 
 // Screen refresh period (countdowns and the activity pulse).
 #define REDRAW_MS 50UL
