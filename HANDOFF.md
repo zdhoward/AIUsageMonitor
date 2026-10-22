@@ -1,4 +1,4 @@
-# Handoff — public documentation preparation, 2026-10-22
+# Handoff — public release wrap-up, 2026-10-22
 
 Firmware **v1.4.2** is flashed on the verified ESP32-2432S024C. Implementation commit `315d70c` is tagged `v1.4.2`; later documentation commits do not change the firmware version.
 
@@ -10,7 +10,7 @@ Firmware **v1.4.2** is flashed on the verified ESP32-2432S024C. Implementation c
 
 ## Public preparation
 
-The owner chose **MIT** and **prepare locally for review**. Keep GitHub private: no push, visibility change or release without later authorization. Review [PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md), especially its history disclosure. Earlier commits contain a board MAC address and local Windows paths; current-file cleanup does not erase history.
+The owner selected **MIT**, pushed the completed docs, and directed the repository to be made public. GitHub now reports the repository as public, with a project description and topics. `main` was pushed through `a7f2dd7`; no subsequent source changes are pending in the published tree. The docs and current-source secret scan are complete. Earlier Git history includes the board MAC address and local Windows paths described in [PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md); no history rewrite was performed.
 
 The README leads with the [v1.4.2 framebuffer](docs/img/v1.4.2-rings.png). Setup, complete implemented GPIO mapping, data sources, protocol/API and contribution guidance support reproduction. The safe example config disables optional OpenRouter access; the code default is still enabled. Python USB dependency is pinned in `service/requirements.txt`.
 
@@ -27,6 +27,6 @@ The README leads with the [v1.4.2 framebuffer](docs/img/v1.4.2-rings.png). Setup
 
 From the root: `scripts/service.ps1 status`, `scripts/build.ps1`, `scripts/flash.ps1`, and `python scripts/screenshot.py --feed --out build/dashboard.png`. From `service/`: `python -m unittest discover -s tests -t .`. The service binds to localhost port 8797; screenshots/flashing coordinate serial-port release. Logs and builds are Git-ignored.
 
-Owner next reviews README, pinout, screenshot and public-history considerations. After explicit publication authorization, verify remote state and push only intended branch/tags before changing visibility. No PR or remote release was created during preparation. Preserve unrelated partial worker checkouts.
+GitHub URL: https://github.com/zdhoward/AIUsageMonitor. Remote `main` and local `main` were synchronized at `a7f2dd7`; the repository description is “An ESP32 dashboard for AI subscription quotas, reset countdowns, and local usage telemetry.” Topics: `esp32`, `arduino`, `python`, `dashboard`, `embedded`, `usage-monitor`. No open PRs were found. No version bump is needed for docs-only work; firmware remains v1.4.2. Preserve unrelated partial worker checkouts.
 
 Documentation routing: hosted free worker hit quota; local fallback was cancelled after producing no edits in the allotted time. Coordinator completed the documentation; no independent model review is claimed. Shadow routing run and validation details are in the project log.
