@@ -7,6 +7,7 @@
 - Clarified that deadline refresh rereads local data, optional OpenRouter access reads an existing key, and framebuffer evidence does not verify physical viewing comfort. Updated handoff, test baseline and ticket/goal status. Firmware remains v1.4.2; no new firmware release is implied.
 - Validation: 44 local documentation targets resolve, example settings load with localhost/115200 baud/OpenRouter disabled, CLI help confirms install syntax, installed library versions match the guide. Reused unchanged firmware build/flash/capture and 22-test baseline. No clean-machine install or new board verification claimed.
 - Routing: hosted DeepSeek hit free quota; local Qwen produced no edits before cancellation. Coordinator completed documentation. Shadow run `94914ea8-9729-4c44-86c9-6899ccf6d2bb` recorded timeouts from both advisory backends; no independent model review claimed.
+- Final integrated Gitleaks scan: 26 `main` commits through `3700cd0`, no leaks, exit 0. GitHub is still private with unchanged last-push time; local work remains unpushed. Advisory routing review has insufficient evaluation evidence for promotion; routing labels remain pending rather than treating fallback completion as proof of the cheapest lane.
 
 ## 2026-10-22: v1.4.2 reset readability
 
