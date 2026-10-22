@@ -6,10 +6,10 @@ A quiet instrument panel below a monitor. Percent remaining and reset timing dom
 
 Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots, so a third static view would be one entry plus its renderer.
 
-- **Console (default):** three fixed client cards — `CLAUDE A (CL1)`, `CLAUDE B (CL2)`, `CODEX` — mapped by account name, so service reordering does not move rows. Each card's largest number is the exact percent left in its most urgent measured window (highest used), labelled with that window (`5h`, `7d`). The second window is smaller and includes its reset where space allows. The main reset line reads `Reset 2h14m`, `Update due` after the deadline, or `Reset unavailable` when unknown. A green dot appears only for the account matching a measured running activity.
+- **Console (default):** three fixed client cards — `CLAUDE A (CL1)`, `CLAUDE B (CL2)`, `CODEX` — mapped by account name, so service reordering does not move rows. Each card's main number is the exact percent left in the session window (`5h`), with the weekly window (`7d`) underneath as its own percentage, bar, and reset. Windows are chosen by label, not urgency, so the session number stays in place even when weekly use is higher. Reset lines name their window: `Session reset 1h48m` and `Weekly 53% reset 4d21h`, with `update due` after the deadline and `unavailable` when the service did not report that window. An unreported window keeps `--` and a hatched unknown bar instead of borrowing another quota. A green dot appears only for the account matching a measured running activity.
 - **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
 
-Landscape uses 10px padding, header at y6..29, divider at 32, three 53px rows, and a footer near y213. Portrait stacks three ~80px cards with its own spacing. Both derive geometry from `width()`/`height()`, so all four rotations work.
+Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.
 
 ## Freshness and unknown values
 

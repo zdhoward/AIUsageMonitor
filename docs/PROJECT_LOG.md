@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-22: v1.3.3 separate quota bars
+
+- Session (5h) is now always first, with weekly (7d) in its own bar underneath. Each has an independent percentage, color, and explicitly labeled reset countdown; missing windows stay unknown. Kept landscape default and exactly two views.
+- OpenCode DeepSeek implemented; local Ollama GPT-OSS reviewed after Beam's free quota was exhausted and the configured LiteLLM review model was absent. Build and scoped verification passed; parent checks the flashed framebuffer. No test suite expansion.
+
 ## 2026-10-22: v1.3.2 landscape redraw
 
 - Framebuffer inspection after flashing landscape caught startup pixels at the right edge. Clear the explicit rotated canvas dimensions rather than the TFT base class's screen extent.
