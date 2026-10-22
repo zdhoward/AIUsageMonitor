@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-22: v1.4.2 reset readability
+
+- Move console rings up 6px and use bright font 2 reset captions instead of muted font 1, for reading beneath a monitor.
+- Wake the collector at upcoming reset deadlines; continue normal polling if the cached deadline remains due. This rereads T3's cache and transcripts, not provider endpoints; provider refresh still belongs to T3.
+- Validation: 22 service tests pass; firmware built and flashed to COM6. Inspected `docs/img/v1.4.2-rings.png`: all six larger captions fit within their cards. Service restarted with deadline scheduling.
+
 ## 2026-10-22: session wrap-up
 
 - User accepted v1.4.1. Reconciled handoff, ticket status and current docs; recorded final UI decisions in GOALS.md and removed superseded guidance from current-facing docs.

@@ -44,7 +44,19 @@ class App:
             except Exception as e:
                 log.warn("collector.crashed", err=type(e).__name__, detail=str(e)[:160])
             log.debug("collector.timing", ms=int((time.time() - t0) * 1000))
-            self._stop.wait(self.s.refresh_s)
+            # Wake at the next reset as well as the regular polling cadence.
+            # Past deadlines use normal polling: an unchanged cache must not spin.
+            now = time.time()
+            deadlines = [
+                w.resets_at
+                for a in self.collector.snapshot().accounts
+                for w in a.windows
+                if w.resets_at is not None and w.resets_at > now
+            ]
+            delay = self.s.refresh_s
+            if deadlines:
+                delay = min(delay, min(deadlines) - now)
+            self._stop.wait(delay)
 
     def health(self) -> dict:
         st = self.collector.snapshot()
