@@ -12,4 +12,9 @@ Final user choices from 2026-10-22; these supersede earlier portrait/bar/extra-p
 - Keep animation restrained and the renderer easy for a future Claude pass to modify.
 - Practical verification: build, run, inspect the display. Avoid expanding the test suite for visual refinements.
 
-No feature request is pending. Source/configuration are authoritative for implementation values; [docs/UI.md](docs/UI.md) explains the renderer.
+## Public project decisions
+
+- MIT license, selected 2026-10-22. Prepare documentation locally for owner review; keep GitHub private and do not push or publish yet.
+- README uses the actual current dashboard framebuffer as the portfolio image. Document implemented pinout, reproducible setup and verified limitations.
+
+No implementation request is pending. Owner review of the public documentation and historical machine identifiers remains before publication. Source/configuration are authoritative for implementation values; [docs/UI.md](docs/UI.md) explains the renderer.

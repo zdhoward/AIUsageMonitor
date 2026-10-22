@@ -1,120 +1,109 @@
 # AI Usage Monitor
 
-A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activity, and usage. The data comes from what T3 Code, Claude Code, Codex, OpenCode, and OpenRouter already record on this PC.
+A small, always-visible AI usage dashboard for your desk. An ESP32 touchscreen shows subscription quota remaining and reset countdowns, while a Python service collects usage telemetry from local developer tools.
 
-```
- PC (localhost only)                                    ESP32-2432S024C
- ┌───────────────────────────────────────────┐  USB    ┌──────────────────┐
- │ aimon service (Python, stdlib + pyserial)  │ serial  │ firmware         │
- │  ~/.t3/caches  → quota windows             ├────────►│ JSON line / 5 s  │
- │  statev2.sqlite → running / idle           │ CH340   │ → dashboard      │
- │  Claude + Codex transcripts → tokens, est. │ COM6    │ no credentials   │
- │  opencode.db → free-model activity         │         └──────────────────┘
- │  OpenRouter /key → free req/day, spend     │
- │  HTTP 127.0.0.1:8797 (/v1/device, /healthz)│
- └───────────────────────────────────────────┘
+![AI Usage Monitor dashboard showing Claude A, Claude B and Codex with separate Session and Weekly quota rings and reset countdowns](docs/img/v1.4.2-rings.png)
+
+*Actual v1.4.2 device framebuffer, captured over USB. The console renders at 320×240; the image is enlarged 2× for readability. This is a screen capture, not a hardware photograph.*
+
+Built to sit beneath a monitor and answer a quick question: how much allowance is left, and when does it reset?
+
+## What it does
+
+- Three stable client rows: Claude A, Claude B and Codex, with separate Session and Weekly rings.
+- Exact percent remaining, bright reset countdowns and a yellow weekly ring for quick recognition.
+- A whole-screen tap switches between the clean console and a detailed activity, token and cost dashboard.
+- Cached measurements remain visible when data is stale or disconnected; unknown is distinct from zero.
+- USB serial carries compact JSON from the PC. The display holds no account credentials.
+- The collector combines T3 status caches, Claude/Codex transcripts and OpenCode history. Optional OpenRouter key-status polling adds reported allowance and spend data.
+
+This is a working, board-specific project, tested on Windows with an ESP32-2432S024C. It is not a universal usage API: subscription readings depend on the data your local tools have already recorded.
+
+## How it works
+
+```text
+T3 caches + local transcripts + OpenCode history
+                     |
+              Python collector
+                     |
+         compact JSON over USB serial
+                     |
+       ESP32 -> TFT framebuffer -> display
 ```
 
-| Doc | Purpose |
+The service also exposes a localhost HTTP API for diagnostics and optional Wi-Fi polling. Collection normally runs every 10 seconds and USB pushes every 5 seconds. At a known reset deadline the collector rereads local sources; it does **not** force a provider request or assume the quota has refilled. See [data sources and freshness](docs/DATA_SOURCES.md).
+
+## Hardware
+
+- **ESP32-2432S024C**, integrated 2.4-inch ILI9341 240×320 display and CST820 capacitive touch.
+- A USB **data** cable and a PC; no external jumper wiring is required for this integrated board.
+- Optional desk mount or enclosure; none is included in this repository.
+
+The display is used in landscape at 320×240. The implemented TFT connections are MISO 12, MOSI 13, SCLK 14, CS 15, DC 2 and backlight 27. Touch uses SDA 33, SCL 32 and reset 25. See the [complete pinout and board-variant notes](docs/HARDWARE.md) before adapting it to another board.
+
+## Get started
+
+The tested baseline is Python 3.13, pyserial 3.5, Arduino CLI 1.2.0, ESP32 Arduino core 3.3.1, TFT_eSPI 2.5.43 and ArduinoJson 7.4.2. The helper scripts use Windows PowerShell.
+
+After installing the toolchain and libraries in the [setup guide](docs/SETUP.md), run from the repository root:
+
+```powershell
+python -m pip install -r service/requirements.txt
+Copy-Item service/aimon.config.example.json service/aimon.config.json
+.\scripts\build.ps1
+.\scripts\flash.ps1
+.\scripts\service.ps1 start
+.\scripts\service.ps1 status
+```
+
+The example config keeps HTTP on localhost and disables optional OpenRouter access. Without it, code defaults enable that source. Local settings and Wi-Fi credentials are Git-ignored.
+
+For the default three console rows, use T3 display names `CL1`, `CL2` and `Codex`, or the supported Claude A / Claude B prefixes. Other account layouts require adapting the renderer. T3 must have populated its local provider cache; missing readings show as unknown. See [setup and customization](docs/SETUP.md).
+
+## Reading the display
+
+Rings show **remaining** quota: full means all allowance remains. Session colors follow capacity thresholds; Weekly stays yellow. `--` means unavailable, `due` means a reset deadline passed, and `STALE` means the source or link has aged. A fresh USB connection does not guarantee a fresh provider measurement.
+
+Tap to open the detailed dashboard for activity, quota windows, reset credits, token totals, free-model activity and API-equivalent cost estimates. Those estimates are **not subscription charges**. Cached values are held in RAM and are lost on device reboot.
+
+## Development and verification
+
+Service tests use fixtures and make no network requests:
+
+```powershell
+Push-Location service
+python -m unittest discover -s tests -t .
+Pop-Location
+```
+
+Capture the connected device after starting the service:
+
+```powershell
+python scripts/screenshot.py --feed --out build/dashboard.png
+```
+
+The firmware has been built and flashed on the documented board; the service suite has 22 passing tests. Framebuffer inspection verifies the rendered layout. Physical viewing comfort, actual logon execution and optional Wi-Fi have separate limits documented in the [test report](docs/TEST_REPORT.md).
+
+## Documentation
+
+| Guide | Contents |
 | --- | --- |
-| [docs/HARDWARE.md](docs/HARDWARE.md) | Verified board, chip, pinout, orientation, uncertainties |
-| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) | Each usage source, its metrics, and what's unavailable |
-| [docs/TEST_REPORT.md](docs/TEST_REPORT.md) | What was verified on the device vs. assumed |
-| [docs/PROJECT_LOG.md](docs/PROJECT_LOG.md) | Decisions and why |
-| [HANDOFF.md](HANDOFF.md) | Current state, open items, next actions |
-| [GOALS.md](GOALS.md) | Final accepted display choices |
-| [docs/UI.md](docs/UI.md) | Renderer design, settings and extension points |
+| [Setup](docs/SETUP.md) | Fresh-machine installation, configuration, running and troubleshooting |
+| [Hardware](docs/HARDWARE.md) | Board identity, GPIO pinout, buses, touch and orientation |
+| [Data sources](docs/DATA_SOURCES.md) | What is collected, refresh timing and integration limitations |
+| [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
+| [UI](docs/UI.md) | Renderer layout, configuration and extension points |
+| [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
+| [Contributing](CONTRIBUTING.md) | Development and validation expectations |
+| [Project log](docs/PROJECT_LOG.md) | Implementation decisions and milestones |
+| [Release preparation](docs/PUBLIC_RELEASE.md) | Owner review and remaining publication decisions |
 
-![portrait](docs/img/rot2.png) ![landscape](docs/img/rot1.png)
+## Privacy and limitations
 
-## Reading the screen
+The firmware receives display metadata and aggregate measurements, not prompts, transcript text or credentials. The collector reads local histories and databases without modifying them. Optional OpenRouter access uses an existing API key from the environment or OpenCode's auth file; [the data-source guide](docs/DATA_SOURCES.md) explains that exception.
 
-Version 1.4 has exactly two views. **Tap anywhere** to toggle between the three-client status console and the original detailed dashboard. Each client has Session and Weekly rings side by side, with percent remaining inside and a large, bright reset countdown beneath each ring. Shared column headers identify the rings; the area below provider names stays empty. Rings ease toward new readings; percentages show the exact measurement. See [the UI guide](docs/UI.md) for customization and future Claude work.
+The HTTP API is unauthenticated and intended for localhost. Optional LAN/Wi-Fi operation needs deliberate network configuration and has not been tested on hardware. Local application cache/database schemas may change. Similar-looking ESP32 display boards can use different controllers or pins.
 
-Last measured quota values remain bright and visible during stale connections, missing readings, and passed reset deadlines. `STALE` and the footer status indicate freshness. A `due` ring caption means a fresh provider reading is needed after the deadline; the display does not assume a refill. Cache lives in RAM and resets on reboot. The following sections describe the detailed dashboard.
+## License
 
-- **Header:** the green dot plus a time means the last payload is fresh. `!` (amber) means a source failed (named in the detailed footer). `NO DATA 2m` (red) means nothing has arrived for 30 s; the last values stay fully visible.
-- **Activity:** a pulsing green dot means a T3 turn is running: account, model, elapsed time, and `+N` other running threads. Otherwise it shows `idle` with the last account and model.
-- **LOWEST … left** (or **PEAK … used**): the most-depleted *fresh* quota window, naming the account and window it comes from. Windows are not averaged together.
-- **Accounts:** one block per subscription (CL1, CL2, Codex). Each shows its 5 h session and 7 d weekly windows: bar, percent **left** (default; see below), time to reset, and how old T3's reading is. Colours always track usage: red means nearly exhausted.
-  - `Pro (1x reset)` in blue means the provider reports banked limit resets you can redeem in T3 (Usage → Limits → account → **Use reset**). With none, it shows just the plan.
-  - `STALE` means older than 20 min.
-  - `--` with a hatched bar means no measurement has been received. It is never shown as 0.
-- **est $ today / 7d:** the **API-price estimate** of tokens used by the subscription accounts, per account, with a 24 h hourly sparkline. It is *not* money billed to a subscription. `+unpriced` means some models had no known price.
-- **Free / OpenRouter / NIM:**
-  - Free-model calls and tokens today (OpenCode history).
-  - OpenRouter's free-model daily allowance, actual spend today, and budget left.
-  - NVIDIA NIM requests. NIM exposes no quota API.
-
-## Display orientation
-
-Set `DISPLAY_ROTATION` in [`firmware/AIUsageMonitor/config.h`](firmware/AIUsageMonitor/config.h), then build and flash. "Traditional" means the landscape orientation all your earlier sketches used (`setRotation(1)`).
-
-| Value | Mounting | Screen |
-| --- | --- | --- |
-| `2` | Portrait, traditional **right** edge facing up | 240×320, one column |
-| `0` | Portrait, traditional **left** edge facing up | 240×320, one column |
-| `1` (default) | Landscape, traditional | 320×240, console rows / detailed columns |
-| `3` | Landscape, upside down | 320×240, two columns |
-
-You can preview a rotation without reflashing; it reverts on reboot:
-
-```powershell
-python scripts\screenshot.py --rot 1 --out build\preview.png
-```
-
-The PNG shows the frame buffer exactly as sent to the panel.
-
-## Remaining vs. used
-
-`SHOW_REMAINING` in `config.h` (default `1`) controls the **detailed dashboard**: a full bar is a full allowance. Set it to `0` to show quota **used** there; the banner becomes `PEAK n% used`. Console rings always show remaining capacity. Rebuild and flash after changing it.
-
-## Build, flash, run
-
-Prerequisites already on this PC: Arduino IDE 2 (bundled `arduino-cli`), `esp32:esp32` 3.3.1, TFT_eSPI, ArduinoJson, Python 3.13 with pyserial.
-
-```powershell
-.\scripts\build.ps1              # compile (add -Rotation N to override config.h)
-.\scripts\flash.ps1              # upload to the CH340 port; pauses/resumes the service itself
-.\scripts\service.ps1 start      # run the service in the background (pythonw, no window)
-.\scripts\service.ps1 status     # health: serial port, last push/ack, device firmware
-.\scripts\service.ps1 restart
-.\scripts\service.ps1 stop
-.\scripts\service.ps1 install    # start at logon (per-user task "AI Usage Monitor (aimon)") - installed
-.\scripts\service.ps1 uninstall
-```
-
-Opening the Arduino IDE serial monitor, or any other program on COM6, competes with the service for the port. Stop the service first, or use `flash.ps1`, which coordinates.
-
-Building from the Arduino IDE also works, because your sketchbook's `TFT_eSPI/User_Setup.h` has the same pins. Select **ESP32 Dev Module**, 4 MB flash.
-
-### Service
-
-- Logs are in `logs/aimon.log`, one `key=value` line per event, e.g. `evt=source.failed src=openrouter err=offline`.
-- One-shot payload dump: `cd service; python -m aimon --once`.
-- Tests: `cd service; python -m unittest discover -s tests -t .` (22 tests, fixtures only, no network).
-- Settings (`service/aimon/config.py`) can be overridden in `service/aimon.config.json` (git-ignored) or with `AIMON_<NAME>` env vars:
-  - port: `bind_port` (default 8797)
-  - serial: `serial_port` (default `auto`)
-  - refresh: `refresh_s` (default 10)
-  - OpenRouter polling: `openrouter_refresh_s` (default 600)
-  - staleness: `limits_stale_s` (default 1200)
-
-### Optional Wi-Fi mode (not enabled, untested)
-
-USB is used because the PC is on wired Ethernet with a *Public* firewall profile, and the device is always plugged in.
-
-To use Wi-Fi anyway:
-
-1. Copy `firmware/AIUsageMonitor/secrets.example.h` to `secrets.h`. It is git-ignored. Use a 2.4 GHz SSID.
-2. Set `AIMON_USE_WIFI 1` in `config.h`.
-3. Set `bind_host` to the PC's LAN IP in `aimon.config.json`.
-4. Allow inbound TCP 8797 from the local subnet only.
-
-The service has no credentials to expose, but the HTTP API's pause/resume endpoints would then be reachable on the LAN.
-
-## Privacy and safety
-
-- The firmware receives only display names (CL1, CL2, Codex), percentages, counts, and estimates. E-mails, tokens, and keys never leave the PC.
-- The service opens T3/OpenCode databases read-only and never refreshes logins.
-- The only outbound call is OpenRouter's `/api/v1/key` status endpoint, every 10 min, using the key already in your environment. It sends no prompt and uses no quota.
+[MIT](LICENSE). Third-party dependencies retain their own licenses. This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads.

@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-10-22: public documentation preview
+
+- Owner selected MIT and local preparation only. Added license, safe example config and pinned pyserial dependency. GitHub stays private; no push, visibility change or release.
+- Reworked README around the actual v1.4.2 framebuffer; added fresh-machine setup, implemented GPIO/power/bus details, serial/API reference and contribution guide. Removed current hardware identifiers/personal paths; preserved history and documented older MAC/path entries for owner review.
+- Clarified that deadline refresh rereads local data, optional OpenRouter access reads an existing key, and framebuffer evidence does not verify physical viewing comfort. Updated handoff, test baseline and ticket/goal status. Firmware remains v1.4.2; no new firmware release is implied.
+- Validation: 44 local documentation targets resolve, example settings load with localhost/115200 baud/OpenRouter disabled, CLI help confirms install syntax, installed library versions match the guide. Reused unchanged firmware build/flash/capture and 22-test baseline. No clean-machine install or new board verification claimed.
+- Routing: hosted DeepSeek hit free quota; local Qwen produced no edits before cancellation. Coordinator completed documentation. Shadow run `94914ea8-9729-4c44-86c9-6899ccf6d2bb` recorded timeouts from both advisory backends; no independent model review claimed.
+
 ## 2026-10-22: v1.4.2 reset readability
 
 - Move console rings up 6px and use bright font 2 reset captions instead of muted font 1, for reading beneath a monitor.

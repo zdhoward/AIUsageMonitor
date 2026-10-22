@@ -1,60 +1,77 @@
-# Hardware report
+# Hardware and pinout
 
-Verified 2026-10-21. Facts come from the device itself (esptool) and from Arduino sketches you previously ran on it.
+The verified target is an **ESP32-2432S024C** integrated 2.4-inch display board with an **ILI9341** TFT and **CST820** capacitive touch. This is one tested variant of a board family often called “Cheap Yellow Display”; a similar product name does not prove matching hardware.
 
-## Identity
+## Bill of materials
 
-| Item | Value | Evidence |
-| --- | --- | --- |
-| MCU | ESP32-D0WD-V3, revision v3.1, dual core 240 MHz, Wi-Fi + BT | `esptool chip-id` on COM6 |
-| MAC | `ac:15:18:d4:4c:dc` | esptool |
-| Flash | 4 MB (manufacturer 0x68, device 0x4016), 3.3 V | `esptool flash-id` |
-| PSRAM | none reported (D0WD has no in-package PSRAM) | chip type |
-| USB | Separate USB-serial bridge: WCH **CH340** (`VID_1A86&PID_7523`), currently **COM6**. No native USB, and USB is not a network interface. | Windows PnP |
-| Board | **ESP32-2432S024C** "Cheap Yellow Display" clone (2.4", capacitive) | Matches every sketch in `Documents/Arduino` (`MonDeck2/README.txt`: "ESP32-2432S024 board with ILI9341 (TFT_eSPI) and CST820 capacitive touch") |
-| Display | **ILI9341**, 240×320, SPI | `libraries/TFT_eSPI/User_Setup.h` (`ILI9341_DRIVER`), used by all sketches |
-| Touch | CST820 capacitive, I²C at 0x15 | `MonDeck2/touch_driver.h`, `tft_example.ino` |
-
-## Pinout (from the working `TFT_eSPI/User_Setup.h` and the sketches)
-
-| Signal | GPIO |
+| Item | Purpose |
 | --- | --- |
-| TFT MISO | 12 |
-| TFT MOSI | 13 |
-| TFT SCLK | 14 |
-| TFT CS | 15 |
-| TFT DC | 2 |
-| TFT RST | not connected (-1, shared with EN) |
-| TFT backlight | 27 (active high) |
-| Touch SDA / SCL | 33 / 32 |
-| Touch INT / RST | 21 / 25 |
+| ESP32-2432S024C, ILI9341 + CST820 variant | MCU, display, touch and USB-UART bridge on one board |
+| USB data cable matching the board connector | Firmware upload, power and telemetry |
+| PC with Windows and a USB port | Tested host for the Python service and PowerShell helpers |
+| Optional mount/enclosure | Position the screen beneath a monitor; design not supplied |
 
-SPI is 40 MHz for writes and 20 MHz for reads.
+No external wiring is needed on the integrated board. USB supplies board power; GPIO signal levels are 3.3 V. A measured power/current budget and external-power wiring have not been established here. Do not infer connector positions or power-input ratings from the GPIO table.
 
-The firmware build passes these same values as compiler flags (`USER_SETUP_LOADED`), so it doesn't depend on, or modify, the shared `User_Setup.h`. The values are identical to the ones you already used.
+## Verified identity
 
-## Toolchain found
+| Component | Tested unit |
+| --- | --- |
+| MCU | ESP32-D0WD-V3, revision v3.1, dual-core 240 MHz |
+| Flash | 4 MB, reported by esptool |
+| PSRAM | Not used; none reported on the tested unit |
+| USB-UART | WCH CH340, VID `1A86`, PID `7523` |
+| TFT | ILI9341, native 240×320, SPI |
+| Touch | CST820, I²C address `0x15` |
+| Default orientation | Rotation 1, landscape 320×240 |
 
-- Arduino IDE 2, bundled `arduino-cli` 1.2.0.
-- Board package `esp32:esp32` 3.3.1, target `esp32:esp32:esp32` (ESP32 Dev Module), 4 MB flash.
-- Libraries in the sketchbook: TFT_eSPI 2.5.43, ArduinoJson 7.4.2, bb_captouch.
-- Sketchbook: `C:\Users\ZECHS\Documents\Arduino`. The IDE keeps no custom sketchbook path, so this default applies.
+MCU/flash identity was read using esptool. Display pin mapping was established from an existing working configuration and confirmed by this project's successful build, flash and framebuffer output. Touch initialization reports a device at `0x15`; physical tap reliability remains a user acceptance check. No physical board schematic or connector survey is claimed.
 
-## Orientation
+## Implemented GPIO mapping
 
-Every earlier sketch (`MonDeck`, `MonDeck2`, `TouchDeck`, `blank`, `tft_example`, `OldMakerMon`) used `setRotation(1)`. That landscape view is how the board is "traditionally" held.
+These are ESP32 **GPIO numbers**, not connector pin numbers.
 
-From the ILI9341 rotation table in TFT_eSPI:
+| Function | GPIO / value | Firmware behavior |
+| --- | --- | --- |
+| TFT MISO | 12 | SPI data input |
+| TFT MOSI | 13 | SPI data output |
+| TFT SCLK | 14 | SPI clock |
+| TFT CS | 15 | TFT chip select |
+| TFT DC | 2 | Command/data select |
+| TFT RST | `-1` | No dedicated reset GPIO configured in TFT_eSPI |
+| TFT backlight | 27 | Active high, LEDC PWM at 5 kHz, 8-bit duty |
+| Touch SDA | 33 | I²C data, `Wire.begin(33, 32)` |
+| Touch SCL | 32 | I²C clock; default Wire bus frequency, no explicit override |
+| Touch reset | 25 | Driven low then high at startup |
+| Touch interrupt | 21 | Historical board mapping; **unused by this firmware**, which polls |
 
-- `0` = MX
-- `1` = MV
-- `2` = MY
-- `3` = MX|MY|MV
+The TFT pin definitions are supplied by [scripts/build.ps1](../scripts/build.ps1) using `USER_SETUP_LOADED`; building with that script does not edit a shared TFT_eSPI `User_Setup.h`.
 
-In rotation 1, the right edge of the landscape image is the bottom edge of the rotation 0 portrait. So "portrait with the traditional right-hand edge facing up" is **rotation 2**. The accepted v1.4.1 default is **rotation 1**, landscape; this supersedes earlier portrait requests. See the README to change it.
+SPI write frequency is **40 MHz**, with **20 MHz** configured for reads. The build also defines `SPI_TOUCH_FREQUENCY=2.5 MHz`, but this is not the CST820 bus: touch is read over I²C directly through Wire. TFT_eSPI's `TOUCH_CS` warning is expected because no SPI touch controller is used.
 
-## Remaining uncertainty
+The application polls touch register `0x02` every 25 ms. A release after a press of 25 ms to under 1.5 seconds switches views. Coordinates are unnecessary because the whole screen acts as one button. The firmware does not require `bb_captouch`.
 
-- Physical markings were not inspected. ILI9341 vs ST7789 variants exist for this board family; the earlier sketches show ILI9341 worked on this unit.
-- v1.2 uses CST820 touch on SDA 33 / SCL 32, reset 25, address 0x15, for whole-screen tap cycling. Physical tap reliability still needs user confirmation.
-- The flash held TickrTrackr/older test firmware. You said it was disposable, so no backup was kept.
+## USB and display memory
+
+USB connects through the CH340 to the ESP32 UART; it is not native USB or a network adapter. Serial uses **115200 baud, 8N1**, one JSON payload per line. The host opens the port with DTR/RTS deasserted to avoid an automatic reset during normal service operation.
+
+The renderer normally uses an 8-bit RGB332 framebuffer: 320×240 = **76,800 bytes**, independent of orientation. TFT_eSPI converts it for display output; screenshots capture those quantized colors. If allocation fails, the renderer falls back to direct drawing and framebuffer capture is unavailable.
+
+## Orientation and brightness
+
+Set `DISPLAY_ROTATION` in [config.h](../firmware/AIUsageMonitor/config.h), then rebuild and flash:
+
+| Rotation | Logical size | Orientation |
+| --- | --- | --- |
+| 0 | 240×320 | Portrait |
+| 1 | 320×240 | Landscape, default |
+| 2 | 240×320 | Opposite portrait |
+| 3 | 320×240 | Opposite landscape |
+
+For a temporary preview, `python scripts/screenshot.py --rot 3 --feed --out build/rotation3.png` changes rotation until reboot. Rotation numbers describe this driver/panel combination; confirm upright text on your own mount.
+
+`BACKLIGHT_LEVEL` is an 8-bit PWM duty from 0 to 255, default 255. It is not a calibrated brightness measurement.
+
+## Adapting another board
+
+Check its display controller, resolution, GPIO assignments, touch controller, reset behavior and backlight polarity first. ST7789 and resistive-touch variants require changes; this pinout is not a generic ESP32 wiring recipe. The validated software baseline is in [SETUP.md](SETUP.md), and test scope is in [TEST_REPORT.md](TEST_REPORT.md).
