@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-10-22: v1.3.1 landscape default
+
+- Corrected the default to rotation 1 (320×240 landscape). The final UI instructions superseded the earlier portrait request; firmware and current UI docs now agree. This is a small configuration fix performed inline, followed by build/flash and a framebuffer capture.
+
 ## 2026-10-22: v1.3.0 final two-view console
 
 - User clarified exactly two views: original details and one status console. Removed the extra generated account pages; the two-entry render registry remains easy to extend later.
