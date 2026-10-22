@@ -7,7 +7,7 @@ The owner selected the MIT license and requested local preparation for review on
 - MIT [license](../LICENSE), attributed to Zach Howard.
 - Current dashboard framebuffer image: [v1.4.2](img/v1.4.2-rings.png). This is rendered on the actual device, not a photograph or mockup. It shows subscription percentages and reset durations, without account emails or credentials.
 - Hardware pinout, build/setup instructions, data-source limitations and contributor guidance.
-- Source and history secret scan using Gitleaks, with full redaction. The pre-documentation `main` scan covered 24 commits and reported no leaks. A final scan is recorded in the project log after integration. This is a scanner result, not a guarantee of absence.
+- Source and history secret scan using Gitleaks, with full redaction. The integrated documentation scan covered 26 commits on `main` through `3700cd0` and reported no leaks. This is a scanner result, not a guarantee of absence.
 - Generated builds, logs, local service configuration and Wi-Fi credentials are excluded by `.gitignore`.
 
 ## Owner review before publication
