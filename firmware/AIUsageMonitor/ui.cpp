@@ -8,11 +8,42 @@ static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
 static int W = 0, H = 0;
 static bool dim = false;            // no fresh data: grey everything out
-static uint8_t viewIndex = 0;       // overview, each account, detailed dashboard
 static float eased[4][3] = {};
 static char easedAccount[4][9] = {};
 static char easedWindow[4][3][5] = {};
 static uint32_t animationMillis = 0;
+
+// ---------------------------------------------------------------- view registry
+// Every tap stop is a descriptor with a render callback. Overview pages and
+// account focus pages are generated from the model; static pages live once in
+// kStaticViews. Navigation, dispatch and pagination dots all read this list,
+// so a new static view needs one entry here plus its renderer.
+struct ViewDef {
+  void (*draw)(const Model&, uint32_t, const ViewDef&, int y);
+  int8_t account;  // focus account index, -1 for other views
+  uint8_t page;    // overview page, 0 for other views
+  char name[9];    // focus account name, empty otherwise
+};
+
+static void drawOverview(const Model&, uint32_t, const ViewDef&, int y);
+static void drawFocus(const Model&, uint32_t, const ViewDef&, int y);
+static void drawDetails(const Model&, uint32_t, const ViewDef&, int y);
+
+static const ViewDef kStaticViews[] = {
+  {drawDetails, -1, 0, ""},
+};
+static const uint8_t kStaticViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
+
+enum { MAX_VIEWS = 8 };
+static ViewDef views[MAX_VIEWS];
+static uint8_t nviews = 0;
+
+// Selection keeps the account name, not its array index, so reordering the
+// payload keeps the current focus page. Function pointer plus page identifies
+// static views without another enum.
+static void (*selDraw)(const Model&, uint32_t, const ViewDef&, int) = drawOverview;
+static uint8_t selPage = 0;
+static char selAccount[9] = "";
 
 // Palette (RGB565)
 // Chosen to survive the 8-bit (RGB332) frame buffer without tinting.
@@ -161,9 +192,17 @@ static int drawPeak(const Model& m, int x, int y, int w) {
     text(b, x + 8, y + 3, 2, C_BG, TL_DATUM);
     snprintf(b, sizeof b, "%s %s", m.hiP, m.hiW);
     text(b, x + w - 8, y + 3, 2, C_BG, TR_DATUM);
+  } else if (m.hiU >= 0) {  // retained window, not a fresh measurement
+    uint16_t c = levelColor(m.hiU);
+    g.drawRoundRect(x + 2, y, w - 4, h - 2, 4, col(c));
+    if (SHOW_REMAINING) snprintf(b, sizeof b, "CACHED LOW %d%% left", shown(m.hiU));
+    else snprintf(b, sizeof b, "CACHED PEAK %d%%", m.hiU);
+    text(b, x + 8, y + 3, 2, c, TL_DATUM, w - 70);
+    snprintf(b, sizeof b, "%s %s", m.hiP, m.hiW);
+    text(b, x + w - 8, y + 3, 2, c, TR_DATUM);
   } else {
     g.drawRoundRect(x + 2, y, w - 4, h - 2, 4, col(C_MUTED));
-    text(SHOW_REMAINING ? "LOWEST --  no fresh quota data" : "PEAK --  no fresh quota data", x + 8, y + 3, 2, C_MUTED, TL_DATUM, w - 14);
+    text(SHOW_REMAINING ? "LOWEST --  no quota data" : "PEAK --  no quota data", x + 8, y + 3, 2, C_MUTED, TL_DATUM, w - 14);
   }
   return h + 2;
 }
@@ -370,10 +409,63 @@ static void drawWaiting(uint32_t now, const char* linkInfo) {
   (void)now;
 }
 
+// ---------------------------------------------------------------- view list
+
+// Generated order: overview page(s), one focus page per account, then the
+// static views. More than three accounts spills onto a second overview page
+// instead of shrinking the rows.
+static void buildViews(const Model& m) {
+  nviews = 0;
+  uint8_t pages = m.nacc > 3 ? 2 : 1;
+  for (uint8_t p = 0; p < pages && nviews < MAX_VIEWS; ++p) {
+    ViewDef& v = views[nviews++];
+    v.draw = drawOverview;
+    v.account = -1;
+    v.page = p;
+    v.name[0] = 0;
+  }
+  for (uint8_t i = 0; i < m.nacc && nviews < MAX_VIEWS; ++i) {
+    ViewDef& v = views[nviews++];
+    v.draw = drawFocus;
+    v.account = (int8_t)i;
+    v.page = 0;
+    strlcpy(v.name, m.acc[i].p, sizeof v.name);
+  }
+  for (uint8_t i = 0; i < kStaticViewCount && nviews < MAX_VIEWS; ++i)
+    views[nviews++] = kStaticViews[i];
+}
+
+static bool isSelected(const ViewDef& v) {
+  if (v.draw != selDraw) return false;
+  if (v.draw == drawFocus) return !strcmp(v.name, selAccount);
+  return v.page == selPage;
+}
+
+static void selectView(const ViewDef& v) {
+  selDraw = v.draw;
+  selPage = v.page;
+  strlcpy(selAccount, v.name, sizeof selAccount);
+}
+
+// Falls back to the first overview page when the selected account or page no
+// longer exists, so a stale selection can never read past the model arrays.
+static uint8_t currentView() {
+  for (uint8_t i = 0; i < nviews; ++i)
+    if (isSelected(views[i])) return i;
+  selDraw = drawOverview;
+  selPage = 0;
+  selAccount[0] = 0;
+  for (uint8_t i = 0; i < nviews; ++i)
+    if (views[i].draw == drawOverview && views[i].page == 0) return i;
+  return 0;
+}
+
 // ---------------------------------------------------------------- public
 
 void uiNextView(const Model& m) {
-  viewIndex = (viewIndex + 1) % (m.nacc + 2);
+  buildViews(m);
+  uint8_t next = (currentView() + 1) % nviews;
+  selectView(views[next]);
 }
 
 // All visual tuning lives here; transport/model retain exact measured values.
@@ -394,25 +486,40 @@ static void animate(const Model& m, uint32_t now) {
   }
 }
 
-static void drawQuotaView(const Model& m, uint32_t now, int y, int account) {
+// Overview rows are three per page, so four accounts get a second page
+// instead of being squeezed into unreadable rows. Focus keeps one account per
+// page. Account `account` >= 0 selects focus; `page` selects the overview page.
+static void drawQuotaView(const Model& m, uint32_t now, int y, int account, uint8_t page) {
   bool focus = account >= 0;
-  int count = focus ? 1 : m.nacc;
+  int first = focus ? account : page * 3;
+  int count;
+  int rowSlots;
+  if (focus) {
+    count = 1;
+    rowSlots = 1;
+  } else {
+    int cap = m.nacc > 3 ? 3 : m.nacc;  // normal <=3 accounts keep their rows
+    count = m.nacc - first;
+    if (count > 3) count = 3;
+    rowSlots = cap > 0 ? cap : 1;
+  }
   int available = H - y - 24;
-  if (!count) {
+  if (count <= 0) {
     text("Waiting for quota readings", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
     return;
   }
-  int rowH = available / count;
+  int rowH = available / rowSlots;
   for (int row = 0; row < count; ++row) {
-    int i = focus ? account : row;
+    int i = first + row;
+    if (i < 0 || i >= m.nacc) break;
     const AccData& a = m.acc[i];
     int top = y + row * rowH;
     G().drawFastVLine(8, top + 8, rowH - 16, a.color);
     text(a.p, 18, top + 5, 4, C_TEXT);
     text(a.stale ? "CACHED" : a.pl, W - 10, top + 12, 1,
          a.stale ? C_AMBER : C_MUTED, TR_DATUM);
-    int slots = max<int>(1, a.nw);
-    int slotH = (rowH - 32) / slots;
+    int cellSlots = max<int>(1, a.nw);
+    int slotH = (rowH - 32) / cellSlots;
     if (!a.nw) text("No readings yet", 18, top + 36, 2, C_MUTED);
     for (int k = 0; k < a.nw; ++k) {
       const WinData& wd = a.w[k];
@@ -424,7 +531,7 @@ static void drawQuotaView(const Model& m, uint32_t now, int y, int account) {
       fmtDur(dur, sizeof dur, remain);
       snprintf(reset, sizeof reset, remain == 0 ? "awaiting update" : "reset %s", dur);
       if (!focus) {
-        int cellW = (W - 28) / slots;
+        int cellW = (W - 28) / cellSlots;
         int xx = 18 + k * cellW;
         text(wd.l, xx, top + 32, 1, C_MUTED);
         text(pct, xx + cellW - 8, top + 29, 4, levelColor(wd.u), TR_DATUM);
@@ -432,12 +539,43 @@ static void drawQuotaView(const Model& m, uint32_t now, int y, int account) {
         text(remain == 0 ? "update due" : reset, xx, top + 65, 1, C_TEXT, TL_DATUM, cellW - 4);
         continue;
       }
-      text(wd.l, 18, yy + (focus ? 3 : 0), 2, C_MUTED);
-      text(pct, W - 10, yy, focus ? 4 : 2, levelColor(wd.u), TR_DATUM);
-      int by = yy + (focus ? 34 : 18);
-      bar(18, by, W - 28, focus ? 12 : 5, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
-      text(reset, 18, by + (focus ? 22 : 7), focus ? 4 : 1, C_TEXT, TL_DATUM, W - 28);
+      // Focus keeps the largest type the slot allows. Shorter slots drop the
+      // percentage, bar and reset label a step so three windows cannot overlap
+      // the next one (portrait keeps font 4 percentages for all slot counts).
+      int pctFont = slotH >= 64 ? 4 : 2;
+      int barH = slotH >= 64 ? 12 : 5;
+      int by = yy + (pctFont == 4 ? 30 : 20);
+      text(wd.l, 18, yy + (pctFont == 4 ? 3 : 2), 2, C_MUTED);
+      text(pct, W - 10, yy, pctFont, levelColor(wd.u), TR_DATUM);
+      bar(18, by, W - 28, barH, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
+      int resetFont = slotH >= 96 ? 4 : (slotH >= 64 ? 2 : 1);
+      int resetY = by + barH + (resetFont == 4 ? 4 : 3);
+      text(reset, 18, resetY, resetFont, C_TEXT, TL_DATUM, W - 28);
     }
+  }
+}
+
+static void drawOverview(const Model& m, uint32_t now, const ViewDef& v, int y) {
+  text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
+  drawQuotaView(m, now, y + 25, -1, v.page);
+}
+
+static void drawFocus(const Model& m, uint32_t now, const ViewDef& v, int y) {
+  text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
+  drawQuotaView(m, now, y + 25, v.account, 0);
+}
+
+static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
+  y += drawActivity(m, now, 0, y, W);
+  y += drawPeak(m, 0, y, W);
+  if (W > H) {  // landscape: quotas left, usage right
+    int cw = W / 2;
+    drawAccounts(m, now, 0, y, cw - 2, H - y);
+    G().drawFastVLine(cw, y, H - y, col(C_FAINT));
+    drawUsage(m, cw + 2, y, W - cw - 2, H - y);
+  } else {
+    y += drawAccounts(m, now, 0, y, W, H - y);
+    drawUsage(m, 0, y, W, H - y);
   }
 }
 
@@ -479,31 +617,19 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   g.fillScreen(C_BG);
   dim = false; // cached readings remain fully readable, regardless of link age
   animate(m, now);
-  if (viewIndex >= m.nacc + 2) viewIndex = 0;
+  buildViews(m);
+  uint8_t current = currentView();
   int y = drawHeader(m, now, 0, 0, W);
   if (!m.valid) {
     drawWaiting(now, linkInfo);
-  } else if (viewIndex <= m.nacc) {
-    text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
-    drawQuotaView(m, now, y + 25, viewIndex == 0 ? -1 : viewIndex - 1);
   } else {
-    y += drawActivity(m, now, 0, y, W);
-    y += drawPeak(m, 0, y, W);
-    if (W > H) {  // landscape: quotas left, usage right
-      int cw = W / 2;
-      drawAccounts(m, now, 0, y, cw - 2, H - y);
-      G().drawFastVLine(cw, y, H - y, col(C_FAINT));
-      drawUsage(m, cw + 2, y, W - cw - 2, H - y);
-    } else {
-      y += drawAccounts(m, now, 0, y, W, H - y);
-      drawUsage(m, 0, y, W, H - y);
-    }
+    views[current].draw(m, now, views[current], y);
   }
   if (m.valid) {
     G().fillRect(0, H - 18, W, 18, C_BG);
     text("tap to change view", 10, H - 13, 1, C_MUTED);
-    for (int i = 0; i < m.nacc + 2; ++i)
-      G().fillCircle(W - 10 - (m.nacc + 1 - i) * 10, H - 9, 2, i == viewIndex ? C_TEXT : C_FAINT);
+    for (uint8_t i = 0; i < nviews; ++i)
+      G().fillCircle(W - 10 - (nviews - 1 - i) * 10, H - 9, 2, i == current ? C_TEXT : C_FAINT);
   }
   if (spr) spr->pushSprite(0, 0);
 }
