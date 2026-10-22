@@ -59,3 +59,10 @@
 - **Cost estimates:**
   - They use T3's price table. Claude cache writes are priced at the input rate unless the table lists a cache-write price. Codex `input_tokens` are treated as including cached tokens (OpenAI convention).
   - The figures were not reconciled against T3's Usage page totals.
+
+## v1.2.0 update (2026-10-22)
+
+- Firmware compiles for the actual ESP32 target; 395,423 bytes flash and 28,432 bytes static RAM. Flashed with hash verification.
+- Existing 22 service tests pass, including the revised requirement that expired windows retain their last measurement.
+- Framebuffer captures: `img/v1.2-overview.png`, `img/v1.2-focus.png`, `img/v1.2-cached.png`. Serial `!NEXT` exercises the same view action as touch release.
+- CST820 physical tapping, mounted orientation, perceived smoothness, and reading distance require user confirmation. No expanded test suite was added.

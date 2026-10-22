@@ -51,10 +51,10 @@ From the ILI9341 rotation table in TFT_eSPI:
 - `2` = MY
 - `3` = MX|MY|MV
 
-In rotation 1, the right edge of the landscape image is the bottom edge of the rotation 0 portrait. So "portrait with the traditional right-hand edge facing up" is that portrait turned upside down, which is **rotation 2**. That is the default `DISPLAY_ROTATION`. See the README to change it.
+In rotation 1, the right edge of the landscape image is the bottom edge of the rotation 0 portrait. So "portrait with the traditional right-hand edge facing up" is **rotation 2**. Version 1.2 defaults to **rotation 0**, traditional left edge up, for the requested clockwise remount. See the README to change it.
 
 ## Remaining uncertainty
 
 - Physical markings were not inspected. ILI9341 vs ST7789 variants exist for this board family; the earlier sketches show ILI9341 worked on this unit.
-- Touch is present but unused: the dashboard needs no input.
+- v1.2 uses CST820 touch on SDA 33 / SCL 32, reset 25, address 0x15, for whole-screen tap cycling. Physical tap reliability still needs user confirmation.
 - The flash held TickrTrackr/older test firmware. You said it was disposable, so no backup was kept.

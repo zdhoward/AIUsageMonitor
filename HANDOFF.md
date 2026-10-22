@@ -1,5 +1,7 @@
 # Handoff
 
+Current update: **v1.2.0, 2026-10-22** — portrait rotation 0, cached readings, tap-cycling overview/account/detail views, and eased bars. See [the UI handoff](docs/UI_HANDOFF.md) and [design/extension guide](docs/UI.md). The notes below describe the earlier v1.1 baseline; its rotation, dimming, and unused-touch statements are superseded.
+
 State as of 2026-10-21, tag `v1.1.0` on `main` (pushed to the private `zdhoward/AIUsageMonitor`). You reported the device working well.
 
 ## What exists

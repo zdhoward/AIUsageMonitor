@@ -221,11 +221,11 @@ class PayloadTests(unittest.TestCase):
         st.accounts[0].reset_credits = 1
         self.assertEqual(build_payload(st, NOW, PRICING, self.settings())["acc"][0]["rc"], 1)
 
-    def test_expired_window_is_unknown_not_zero(self):
+    def test_expired_window_retains_last_measured_usage(self):
         st = self.state()
         st.accounts[0].windows[0].resets_at = NOW - 5
         p = build_payload(st, NOW, PRICING, self.settings())
-        self.assertEqual(p["acc"][0]["w"][0], {"l": "5h", "u": -1, "r": 0})
+        self.assertEqual(p["acc"][0]["w"][0], {"l": "5h", "u": 37, "r": 0})
 
     def test_unreported_percent_is_minus_one(self):
         st = self.state()

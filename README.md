@@ -27,13 +27,17 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 
 ## Reading the screen
 
-- **Header:** the green dot plus a time means the last payload is fresh. `!` (amber) means a source failed (named in the footer). `NO DATA 2m` (red) means nothing has arrived for 30 s; the last values stay up, dimmed.
+Version 1.2 starts with a larger quota overview. **Tap anywhere** to cycle through each account's large usage/reset view and the detailed dashboard, then back to the overview. Bars ease toward new readings; percentages show the exact measurement. See [the UI guide](docs/UI.md) for customization and future Claude work.
+
+Last measured quota values remain bright and visible during stale connections, missing readings, and passed reset deadlines. `CACHED` / the header status indicates freshness. After a reset deadline, `awaiting update` means a fresh provider reading is needed; the display does not assume a refill. Cache lives in RAM and resets on reboot.
+
+- **Header:** the green dot plus a time means the last payload is fresh. `!` (amber) means a source failed (named in the detailed footer). `NO DATA 2m` (red) means nothing has arrived for 30 s; the last values stay fully visible.
 - **Activity:** a pulsing green dot means a T3 turn is running: account, model, elapsed time, and `+N` other running threads. Otherwise it shows `idle` with the last account and model.
 - **LOWEST … left** (or **PEAK … used**): the most-depleted *fresh* quota window, naming the account and window it comes from. Windows are not averaged together.
 - **Accounts:** one block per subscription (CL1, CL2, Codex). Each shows its 5 h session and 7 d weekly windows: bar, percent **left** (default; see below), time to reset, and how old T3's reading is. Colours always track usage: red means nearly exhausted.
   - `Pro (1x reset)` in blue means the provider reports banked limit resets you can redeem in T3 (Usage → Limits → account → **Use reset**). With none, it shows just the plan.
   - `STALE` means older than 20 min.
-  - `--` with a hatched bar means not reported or already reset since the last reading. It is never shown as 0.
+  - `--` with a hatched bar means no measurement has been received. It is never shown as 0.
 - **est $ today / 7d:** the **API-price estimate** of tokens used by the subscription accounts, per account, with a 24 h hourly sparkline. It is *not* money billed to a subscription. `+unpriced` means some models had no known price.
 - **Free / OpenRouter / NIM:**
   - Free-model calls and tokens today (OpenCode history).
@@ -46,8 +50,8 @@ Set `DISPLAY_ROTATION` in [`firmware/AIUsageMonitor/config.h`](firmware/AIUsageM
 
 | Value | Mounting | Screen |
 | --- | --- | --- |
-| `2` (default) | Portrait, traditional **right** edge facing up | 240×320, one column |
-| `0` | Portrait, traditional **left** edge facing up | 240×320, one column |
+| `2` | Portrait, traditional **right** edge facing up | 240×320, one column |
+| `0` (default) | Portrait, traditional **left** edge facing up | 240×320, one column |
 | `1` | Landscape, traditional | 320×240, two columns |
 | `3` | Landscape, upside down | 320×240, two columns |
 

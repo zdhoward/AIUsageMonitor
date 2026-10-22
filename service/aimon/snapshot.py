@@ -87,7 +87,8 @@ class Collector:
     def refresh(self, now: float | None = None) -> State:
         now = now or time.time()
         prev = self.state
-        st = State(openrouter=prev.openrouter, free_records=prev.free_records, refreshed_at=now)
+        st = State(accounts=prev.accounts, records=prev.records,
+                   openrouter=prev.openrouter, free_records=prev.free_records, refreshed_at=now)
 
         def guarded(name, fn):
             try:
@@ -231,7 +232,7 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
             if w.resets_at is None:
                 remain = -1
             elif w.resets_at <= now:
-                remain, used = 0, -1  # the window reset after the reading; value is unknown now
+                remain = 0  # retain the last measured usage until a new reading arrives
             else:
                 remain = int(w.resets_at - now)
             ws.append({"l": w.label, "u": used, "r": remain})

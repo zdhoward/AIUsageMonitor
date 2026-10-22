@@ -8,6 +8,11 @@ static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
 static int W = 0, H = 0;
 static bool dim = false;            // no fresh data: grey everything out
+static uint8_t viewIndex = 0;       // overview, each account, detailed dashboard
+static float eased[4][3] = {};
+static char easedAccount[4][9] = {};
+static char easedWindow[4][3][5] = {};
+static uint32_t animationMillis = 0;
 
 // Palette (RGB565)
 // Chosen to survive the 8-bit (RGB332) frame buffer without tinting.
@@ -198,7 +203,7 @@ static int drawAccounts(const Model& m, uint32_t now, int x, int y, int w, int m
       const int labelW = 22, pctW = 34, rstW = (w >= 200) ? 50 : 40;
       text(wd.l, x + 16, yy, 2, C_MUTED);
       int bx = x + 16 + labelW, bw = w - 16 - labelW - pctW - rstW - 8;
-      bar(bx, yy + 3, bw, 10, a.stale ? -1 : wd.u);
+      bar(bx, yy + 3, bw, 10, wd.u);
       if (wd.u < 0) snprintf(b, sizeof b, "--");
       else snprintf(b, sizeof b, "%d%%", shown(wd.u));
       text(b, bx + bw + pctW, yy, 2, a.stale ? C_MUTED : levelColor(wd.u), TR_DATUM);
@@ -367,6 +372,75 @@ static void drawWaiting(uint32_t now, const char* linkInfo) {
 
 // ---------------------------------------------------------------- public
 
+void uiNextView(const Model& m) {
+  viewIndex = (viewIndex + 1) % (m.nacc + 2);
+}
+
+// All visual tuning lives here; transport/model retain exact measured values.
+// Ease bars only: percentages remain truthful and immediately readable.
+static void animate(const Model& m, uint32_t now) {
+  float alpha = UI_ANIMATION ? min(1.0f, (now - animationMillis) / 350.0f) : 1.0f;
+  animationMillis = now;
+  for (int i = 0; i < m.nacc; ++i) {
+    bool changed = strcmp(easedAccount[i], m.acc[i].p);
+    strlcpy(easedAccount[i], m.acc[i].p, sizeof easedAccount[i]);
+    for (int k = 0; k < m.acc[i].nw; ++k) {
+      int u = m.acc[i].w[k].u;
+      bool reset = changed || strcmp(easedWindow[i][k], m.acc[i].w[k].l);
+      strlcpy(easedWindow[i][k], m.acc[i].w[k].l, sizeof easedWindow[i][k]);
+      if (reset || u < 0) eased[i][k] = u;
+      else eased[i][k] += (u - eased[i][k]) * alpha;
+    }
+  }
+}
+
+static void drawQuotaView(const Model& m, uint32_t now, int y, int account) {
+  bool focus = account >= 0;
+  int count = focus ? 1 : m.nacc;
+  int available = H - y - 24;
+  if (!count) {
+    text("Waiting for quota readings", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+    return;
+  }
+  int rowH = available / count;
+  for (int row = 0; row < count; ++row) {
+    int i = focus ? account : row;
+    const AccData& a = m.acc[i];
+    int top = y + row * rowH;
+    G().drawFastVLine(8, top + 8, rowH - 16, a.color);
+    text(a.p, 18, top + 5, 4, C_TEXT);
+    text(a.stale ? "CACHED" : a.pl, W - 10, top + 12, 1,
+         a.stale ? C_AMBER : C_MUTED, TR_DATUM);
+    int slots = max<int>(1, a.nw);
+    int slotH = (rowH - 32) / slots;
+    if (!a.nw) text("No readings yet", 18, top + 36, 2, C_MUTED);
+    for (int k = 0; k < a.nw; ++k) {
+      const WinData& wd = a.w[k];
+      int yy = top + 32 + k * slotH;
+      char pct[12], reset[20], dur[12];
+      if (wd.u < 0) strcpy(pct, "--");
+      else snprintf(pct, sizeof pct, "%d%%", shown(wd.u));
+      int32_t remain = wd.r < 0 ? -1 : max<int32_t>(0, wd.r - (now - m.rxMillis) / 1000);
+      fmtDur(dur, sizeof dur, remain);
+      snprintf(reset, sizeof reset, remain == 0 ? "awaiting update" : "reset %s", dur);
+      if (!focus) {
+        int cellW = (W - 28) / slots;
+        int xx = 18 + k * cellW;
+        text(wd.l, xx, top + 32, 1, C_MUTED);
+        text(pct, xx + cellW - 8, top + 29, 4, levelColor(wd.u), TR_DATUM);
+        bar(xx, top + 57, cellW - 8, 5, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
+        text(remain == 0 ? "update due" : reset, xx, top + 65, 1, C_TEXT, TL_DATUM, cellW - 4);
+        continue;
+      }
+      text(wd.l, 18, yy + (focus ? 3 : 0), 2, C_MUTED);
+      text(pct, W - 10, yy, focus ? 4 : 2, levelColor(wd.u), TR_DATUM);
+      int by = yy + (focus ? 34 : 18);
+      bar(18, by, W - 28, focus ? 12 : 5, wd.u < 0 ? -1 : (int)(eased[i][k] + 0.5f));
+      text(reset, 18, by + (focus ? 22 : 7), focus ? 4 : 1, C_TEXT, TL_DATUM, W - 28);
+    }
+  }
+}
+
 void uiSetRotation(uint8_t rotation) {
   tftp->setRotation(rotation & 3);
   tftp->fillScreen(C_BG);
@@ -403,10 +477,15 @@ bool uiScreenshot(Stream& out) {
 void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   TFT_eSPI& g = G();
   g.fillScreen(C_BG);
-  dim = m.valid && (now - m.rxMillis > DATA_TIMEOUT_MS);
+  dim = false; // cached readings remain fully readable, regardless of link age
+  animate(m, now);
+  if (viewIndex >= m.nacc + 2) viewIndex = 0;
   int y = drawHeader(m, now, 0, 0, W);
   if (!m.valid) {
     drawWaiting(now, linkInfo);
+  } else if (viewIndex <= m.nacc) {
+    text(SHOW_REMAINING ? "ALLOWANCE LEFT" : "ALLOWANCE USED", 10, y + 4, 2, C_MUTED);
+    drawQuotaView(m, now, y + 25, viewIndex == 0 ? -1 : viewIndex - 1);
   } else {
     y += drawActivity(m, now, 0, y, W);
     y += drawPeak(m, 0, y, W);
@@ -419,6 +498,12 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       y += drawAccounts(m, now, 0, y, W, H - y);
       drawUsage(m, 0, y, W, H - y);
     }
+  }
+  if (m.valid) {
+    G().fillRect(0, H - 18, W, 18, C_BG);
+    text("tap to change view", 10, H - 13, 1, C_MUTED);
+    for (int i = 0; i < m.nacc + 2; ++i)
+      G().fillCircle(W - 10 - (m.nacc + 1 - i) * 10, H - 9, 2, i == viewIndex ? C_TEXT : C_FAINT);
   }
   if (spr) spr->pushSprite(0, 0);
 }
