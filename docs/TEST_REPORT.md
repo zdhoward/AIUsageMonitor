@@ -1,5 +1,10 @@
 # Test report: v1.0.0 (2026-10-21)
 
+## v1.3.3 quota bars (2026-10-22)
+
+- Build and scoped ticket verification pass; no new tests needed for the renderer-only refinement. Local Ollama GPT-OSS review found no blockers after the cloud reviewer exhausted free quota.
+- Flashed to COM6 and confirmed `rot=1 w=320 h=240`, normal serial acknowledgements. `img/v1.3.3-landscape.png` shows separate session and weekly bars with explicitly labeled resets and no clipping for the current three clients, including real 0% readings.
+
 ## Verified on the real device (COM6, ESP32-D0WD-V3)
 
 | Check | Result | Evidence |

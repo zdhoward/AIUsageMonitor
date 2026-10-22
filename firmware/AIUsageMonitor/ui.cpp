@@ -184,6 +184,15 @@ static bool clientStale(const Model& m, const AccData& a, uint32_t now) {
          (now - m.rxMillis > DATA_TIMEOUT_MS);
 }
 
+// Windows are identified by their service label, never by urgency: the
+// session window stays the main number and the weekly window sits beneath it.
+static int windowIndex(const AccData* a, const char* label) {
+  if (!a) return -1;
+  for (int k = 0; k < a->nw; ++k)
+    if (eqNoCase(a->w[k].l, label)) return k;
+  return -1;
+}
+
 static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y, int w, int h) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
@@ -204,98 +213,99 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   bool stale = a && clientStale(m, *a, now);
   if (stale) text("STALE", nx + nameW + idW + 11, y + 6, 1, C_AMBER);
 
-  // The largest number is the exact remaining percentage of the most urgent
-  // measured window (highest used). Quotas are never averaged.
-  const WinData* uw = nullptr;
-  int uk = -1;
-  if (a) {
-    int best = -1;
-    for (int k = 0; k < a->nw; ++k)
-      if (a->w[k].u >= 0 && a->w[k].u > best) {
-        best = a->w[k].u;
-        uk = k;
-      }
-    if (uk < 0 && a->nw > 0) uk = 0;
-    if (uk >= 0) uw = &a->w[uk];
-  }
-  int left = uw && uw->u >= 0 ? 100 - min((int)uw->u, 100) : -1;
+  // Session (5h) is always the main percentage. Weekly (7d) is drawn below,
+  // with its own percentage, bar, warning colour and reset. A window the
+  // service did not report stays unknown instead of borrowing another quota.
+  int si = windowIndex(a, "5h");
+  int wi = windowIndex(a, "7d");
+  const WinData* sw = si >= 0 ? &a->w[si] : nullptr;
+  const WinData* ww = wi >= 0 ? &a->w[wi] : nullptr;
+
+  int sLeft = sw && sw->u >= 0 ? 100 - min((int)sw->u, 100) : -1;
   char pct[8];
-  if (left < 0) strcpy(pct, "--");
-  else snprintf(pct, sizeof pct, "%d%%", left);
+  if (sLeft < 0) strcpy(pct, "--");
+  else snprintf(pct, sizeof pct, "%d%%", sLeft);
 
   // Grow the percentage when the card is tall enough for it.
-  uint8_t pctSize = (h >= 96 && w >= 210) ? 2 : 1;
-  int pw = text(pct, x + w - 8, y + 2, 4, leftColor(left), TR_DATUM, 0, pctSize);
-  if (uw) text(uw->l, x + w - 12 - pw, y + 7, 2, C_MUTED, TR_DATUM, 24);
-  text("REMAINING", ix, y + 21, 1, C_MUTED);
+  uint8_t pctSize = (h >= 118 && w >= 210) ? 2 : 1;
+  int pw = text(pct, x + w - 8, y + 2, 4, leftColor(sLeft), TR_DATUM, 0, pctSize);
+  text(sw ? sw->l : "5h", x + w - 12 - pw, y + 7, 2, C_MUTED, TR_DATUM, 24);
 
-  bool tall = h >= 72;
-  int barY = y + (tall ? 40 : 30);
-  int barH = tall ? 6 : 4;
-  int easedUsed = (idx >= 0 && uk >= 0) ? (int)(eased[idx][uk] + 0.5f) : (uw ? uw->u : -1);
-  leftBar(ix, barY, w - 16, barH, uw ? uw->u : -1, easedUsed);
+  // Landscape needs compact rows; portrait has room for a calmer rhythm.
+  bool tall = h >= 80;
+  int barH = tall ? 4 : 3;
+  int sessResetY = y + (tall ? 30 : 24);
+  int sessBarY = y + (tall ? 48 : 40);
+  int weekLineY = y + (tall ? 58 : 44);
+  int weekBarY = y + (tall ? 80 : 61);
 
-  char rst[24];
-  if (!uw || uw->r < 0) strlcpy(rst, "Reset unavailable", sizeof rst);
+  char rst[32];
+  if (!sw || sw->r < 0) strlcpy(rst, "Session reset unavailable", sizeof rst);
   else {
-    int32_t rem = max<int32_t>(0, uw->r - elapsed);
-    if (rem == 0) strlcpy(rst, "Update due", sizeof rst);
+    int32_t rem = max<int32_t>(0, sw->r - elapsed);
+    if (rem == 0) strlcpy(rst, "Session update due", sizeof rst);
     else {
       char d[10];
       fmtDur(d, sizeof d, rem);
-      snprintf(rst, sizeof rst, "Reset %s", d);
+      snprintf(rst, sizeof rst, "Session reset %s", d);
     }
   }
-  int resetY = barY + barH + 2;
-  int rw = text(rst, ix, resetY, 2, left < 0 ? C_MUTED : C_TEXT);
+  // Landscape shares the top rows with the large percentage, so reserve it.
+  text(rst, ix, sessResetY, 2, sLeft < 0 ? C_MUTED : C_TEXT, TL_DATUM,
+       tall ? w - 16 : w - 16 - pw - 4);
 
-  // Second (and third) quota, smaller but legible. Space decides the line.
-  char sec[48] = "";
-  if (a) {
-    for (int k = 0; k < a->nw; ++k) {
-      if (k == uk) continue;
-      const WinData& wd = a->w[k];
-      char p2[8];
-      if (wd.u < 0) strcpy(p2, "--");
-      else snprintf(p2, sizeof p2, "%d%%", 100 - min((int)wd.u, 100));
-      char d[10] = "";
-      if (wd.r >= 0) fmtDur(d, sizeof d, max<int32_t>(0, wd.r - elapsed));
-      char item[24];
-      if (d[0]) snprintf(item, sizeof item, "%s %s %s", wd.l, p2, d);
-      else snprintf(item, sizeof item, "%s %s", wd.l, p2);
-      if (sec[0]) strlcat(sec, "  ", sizeof sec);
-      strlcat(sec, item, sizeof sec);
-      break;  // one secondary quota keeps the card calm
+  int sEased = (idx >= 0 && si >= 0) ? (int)(eased[idx][si] + 0.5f) : (sw ? sw->u : -1);
+  leftBar(ix, sessBarY, w - 16, barH, sw ? sw->u : -1, sEased);
+
+  // Weekly: label, exact remaining percentage, explicit reset, then its bar.
+  int wLeft = ww && ww->u >= 0 ? 100 - min((int)ww->u, 100) : -1;
+  char wp[8];
+  if (wLeft < 0) strcpy(wp, "--");
+  else snprintf(wp, sizeof wp, "%d%%", wLeft);
+  int wx = ix + text("Weekly ", ix, weekLineY, 2, C_MUTED);
+  wx += text(wp, wx, weekLineY, 2, wLeft < 0 ? C_MUTED : leftColor(wLeft));
+  char wr[24];
+  if (!ww || ww->r < 0) strlcpy(wr, " reset unavailable", sizeof wr);
+  else {
+    int32_t rem = max<int32_t>(0, ww->r - elapsed);
+    if (rem == 0) strlcpy(wr, " update due", sizeof wr);
+    else {
+      char d[10];
+      fmtDur(d, sizeof d, rem);
+      snprintf(wr, sizeof wr, " reset %s", d);
     }
   }
-  if (sec[0]) {
-    if (tall) text(sec, ix, resetY + 18, 1, C_MUTED, TL_DATUM, w - 16);
-    else text(sec, x + w - 8, resetY + 4, 1, C_MUTED, TR_DATUM, w - 16 - rw - 6);
-  }
+  text(wr, wx, weekLineY, 2, C_MUTED, TL_DATUM, w - 8 - wx);
+
+  int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : (ww ? ww->u : -1);
+  leftBar(ix, weekBarY, w - 16, barH, ww ? ww->u : -1, wEased);
 }
 
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
   TFT_eSPI& g = G();
   const int pad = W > H ? 10 : 8;
 
-  text("AI USAGE", pad, 8, 2, C_TEXT);
+  text("AI USAGE", pad, 4, 2, C_TEXT);
   int clients = 0;
   for (int slot = 0; slot < 3; ++slot)
     if (slotIndex(m, slot) >= 0) clients++;
   char b[20];
   snprintf(b, sizeof b, "%d CLIENTS", clients);
-  text(b, W - pad, 8, 2, C_MUTED, TR_DATUM);
+  text(b, W - pad, 4, 2, C_MUTED, TR_DATUM);
 
-  g.drawFastHLine(pad, 32, W - 2 * pad, C_PANEL);
+  g.drawFastHLine(pad, 22, W - 2 * pad, C_PANEL);
 
-  const int top = 37, bottom = H - 38, gap = 3;
+  // Landscape fits three 64px cards under the slim header; portrait spends its
+  // extra height on wider row spacing instead of stretching the type.
+  const int top = H > W ? 30 : 24, gap = H > W ? 4 : 2;
+  int fy = H - 18;
+  const int bottom = fy - 2;
   int ch = (bottom - top - 2 * gap) / 3;
   if (ch < 24) return;
   for (int slot = 0; slot < 3; ++slot)
     drawClientCard(m, now, slot, pad, top + slot * (ch + gap), W - 2 * pad, ch);
 
   // Footer: oldest provider source age (not the serial push age) + link health.
-  int fy = H - 26;
   int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
   int32_t oldest = -1;
   bool anyStale = now - m.rxMillis > DATA_TIMEOUT_MS;
