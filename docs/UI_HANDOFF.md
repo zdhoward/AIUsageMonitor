@@ -1,4 +1,6 @@
-# UI handoff — v1.3.3
+# UI handoff — v1.3.4
+
+Weekly bar fills are fixed yellow by user preference; session fills and numeric percentage colors still follow capacity thresholds.
 
 Landscape rotation 1 is the persistent default, matching the user's final mounting instruction. The earlier portrait default was superseded. Both layouts remain available through `DISPLAY_ROTATION`.
 

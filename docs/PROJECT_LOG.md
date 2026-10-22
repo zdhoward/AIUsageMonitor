@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-10-22: v1.3.4 weekly bar color
+
+- Weekly bar fills are always yellow so they are distinct at a glance. Session bars and numeric warning colors retain their existing thresholds. Small renderer-only change performed inline; build/flash and framebuffer check, no extra tests.
+
 ## 2026-10-22: v1.3.3 separate quota bars
 
 - Session (5h) is now always first, with weekly (7d) in its own bar underneath. Each has an independent percentage, color, and explicitly labeled reset countdown; missing windows stay unknown. Kept landscape default and exactly two views.
