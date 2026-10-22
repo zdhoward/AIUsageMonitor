@@ -6,7 +6,7 @@ Final user choices from 2026-10-22; these supersede earlier portrait/bar/extra-p
 - Exactly two views toggled by tapping: clean console and original details.
 - Three stable providers: Claude A, Claude B, Codex.
 - Two rings per provider: Session left, Weekly right. Show quota remaining, preserve window identity, keep weekly yellow and session capacity colors.
-- Shared Session/Weekly column headers. Group `AI USAGE (3 CLIENTS)` on the left. Ring captions show reset countdowns.
+- Shared Session/Weekly column headers. Group `AI USAGE (3 CLIENTS)` on the left. Ring captions show large, bright reset countdowns; rings sit higher to make room.
 - Keep the area under provider titles empty until the user requests content there. T3 is available for detailed information.
 - Keep last known values bright during stale/missing data, while visibly reporting freshness. Unknown differs from zero; a reset deadline does not imply a refill.
 - Keep animation restrained and the renderer easy for a future Claude pass to modify.

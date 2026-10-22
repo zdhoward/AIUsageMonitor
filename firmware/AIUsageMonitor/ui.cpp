@@ -170,7 +170,7 @@ static void drawQuotaRing(int cx, int cy, int r, int stroke, int used, int eased
   }
 
   if (label && label[0]) {
-    text(label, cx, cy + r + 3, 1, C_MUTED, TC_DATUM);
+    text(label, cx, cy + r + 2, 2, C_TEXT, TC_DATUM);
   }
 }
 
@@ -271,7 +271,7 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   // Recommended layout: left column x10..135, rings side by side in right region centered around x183 and x267.
   int ringR = 21;
   int ringStroke = 4;
-  int ringCy = y + h / 2 - 2;
+  int ringCy = y + h / 2 - 8;
 
   int ring1Cx = ringCenterX(x, w, false), ring2Cx = ringCenterX(x, w, true);
 
