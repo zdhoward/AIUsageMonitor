@@ -27,7 +27,7 @@ A small dashboard on the ESP32-2432S024C (2.4" ILI9341) showing AI quota, activi
 
 ## Reading the screen
 
-Version 1.3 has exactly two views. **Tap anywhere** to toggle between the three-client status console and the original detailed dashboard. Each client has a session bar followed by a weekly bar, with separately labeled reset countdowns. Bars ease toward new readings; percentages show the exact measurement. See [the UI guide](docs/UI.md) for customization and future Claude work.
+Version 1.4 has exactly two views. **Tap anywhere** to toggle between the three-client status console and the original detailed dashboard. Each client has Session and Weekly rings side by side, with percent remaining inside and muted reset details under the provider name. Rings ease toward new readings; percentages show the exact measurement. See [the UI guide](docs/UI.md) for customization and future Claude work.
 
 Last measured quota values remain bright and visible during stale connections, missing readings, and passed reset deadlines. `CACHED` / the header status indicates freshness. After a reset deadline, `awaiting update` means a fresh provider reading is needed; the display does not assume a refill. Cache lives in RAM and resets on reboot.
 

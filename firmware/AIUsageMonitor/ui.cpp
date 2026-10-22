@@ -128,19 +128,50 @@ static void bar(int x, int y, int w, int h, int u) {
   if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, col(levelColor(u)));
 }
 
-// Console bar: always fills with REMAINING quota, coloured by the thresholds.
-static void leftBar(int x, int y, int w, int h, int used, int easedUsed, uint16_t fillColor = 0) {
+// Console ring: circular quota gauge filling clockwise from 12 o'clock with REMAINING quota.
+// Underlying track is subdued C_TRACK. Outer radius r, stroke width, percent centered.
+static void drawQuotaRing(int cx, int cy, int r, int stroke, int used, int easedUsed, uint16_t fillColor, const char* label) {
   TFT_eSPI& g = G();
-  g.fillRoundRect(x, y, w, h, 2, C_TRACK);
+  int ir = r - stroke;
+  if (ir < 1) ir = 1;
+
+  // Background track - full circle
+  // C_TRACK and C_PANEL quantize to the same RGB332 shade. Use the next
+  // subdued level so an empty 0% ring remains visible on this framebuffer.
+  g.drawArc(cx, cy, r, ir, 0, 360, C_FAINT, C_BG, false);
+
   if (used < 0) {
-    g.drawRoundRect(x, y, w, h, 2, C_MUTED);
-    for (int i = x + 3; i < x + w - 2; i += 6) g.drawLine(i, y + h - 2, i + 3, y + 1, C_FAINT);
-    return;
+    // Unknown quota: hatched or dashed track appearance with "--" inside
+    for (int deg = 0; deg < 360; deg += 30) {
+      g.drawArc(cx, cy, r, ir, deg, deg + 10, C_FAINT, C_BG, false);
+    }
+    text("--", cx, cy, 2, C_MUTED, MC_DATUM);
+  } else {
+    int left = 100 - min(used, 100);
+    int easedLeft = 100 - min(easedUsed, 100);
+    if (easedLeft > 0) {
+      uint32_t endAngle = (uint32_t)((easedLeft * 360L + 50) / 100);
+      if (endAngle > 360) endAngle = 360;
+      if (endAngle > 0) {
+        uint16_t col = fillColor ? fillColor : leftColor(left);
+        // TFT_eSPI angles start at 6 o'clock. Start at 180 (12 o'clock)
+        // and split at 360 so the visible remaining arc grows clockwise.
+        if (endAngle <= 180) g.drawArc(cx, cy, r, ir, 180, 180 + endAngle, col, C_BG, false);
+        else {
+          g.drawArc(cx, cy, r, ir, 180, 360, col, C_BG, false);
+          g.drawArc(cx, cy, r, ir, 0, endAngle - 180, col, C_BG, false);
+        }
+      }
+    }
+    char pct[8];
+    snprintf(pct, sizeof pct, "%d%%", left);
+    uint16_t numColor = fillColor ? fillColor : leftColor(left);
+    text(pct, cx, cy, 2, numColor, MC_DATUM);
   }
-  int left = 100 - min(used, 100);
-  int easedLeft = 100 - min(easedUsed, 100);
-  int fw = (int)((long)w * easedLeft / 100);
-  if (fw > 0) g.fillRoundRect(x, y, max(fw, 3), h, 2, fillColor ? fillColor : leftColor(left));
+
+  if (label && label[0]) {
+    text(label, cx, cy + r + 3, 1, C_MUTED, TC_DATUM);
+  }
 }
 
 // ---------------------------------------------------------------- console
@@ -208,77 +239,78 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
     g.fillCircle(ix + 3, y + 11, 3, C_GREEN);  // only a measured running account
     nx += 10;
   }
-  int nameW = text(kClientName[slot], nx, y + 4, 2, a ? C_TEXT : C_MUTED, TL_DATUM, w - 20);
-  int idW = text(kClientId[slot], nx + nameW + 5, y + 8, 1, C_MUTED);
+  // Title (font 2)
+  int nameW = text(kClientName[slot], nx, y + 4, 2, a ? C_TEXT : C_MUTED, TL_DATUM, 110);
   bool stale = a && clientStale(m, *a, now);
-  if (stale) text("STALE", nx + nameW + idW + 11, y + 6, 1, C_AMBER);
+  if (stale) text("STALE", nx + nameW + 6, y + 6, 1, C_AMBER);
 
-  // Session (5h) is always the main percentage. Weekly (7d) is drawn below,
-  // with its own percentage, bar, warning colour and reset. A window the
-  // service did not report stays unknown instead of borrowing another quota.
+  // Windows
   int si = windowIndex(a, "5h");
   int wi = windowIndex(a, "7d");
   const WinData* sw = si >= 0 ? &a->w[si] : nullptr;
   const WinData* ww = wi >= 0 ? &a->w[wi] : nullptr;
 
-  int sLeft = sw && sw->u >= 0 ? 100 - min((int)sw->u, 100) : -1;
-  char pct[8];
-  if (sLeft < 0) strcpy(pct, "--");
-  else snprintf(pct, sizeof pct, "%d%%", sLeft);
+  // Reset table: muted two-row entries under the provider title
+  // Compact separate Session and Weekly entries
+  int tableY = y + (h >= 75 ? 24 : 22);
+  int rowStep = (h >= 75) ? 14 : 12;
 
-  // Grow the percentage when the card is tall enough for it.
-  uint8_t pctSize = (h >= 118 && w >= 210) ? 2 : 1;
-  int pw = text(pct, x + w - 8, y + 2, 4, leftColor(sLeft), TR_DATUM, 0, pctSize);
-  text(sw ? sw->l : "5h", x + w - 12 - pw, y + 7, 2, C_MUTED, TR_DATUM, 24);
-
-  // Landscape needs compact rows; portrait has room for a calmer rhythm.
-  bool tall = h >= 80;
-  int barH = tall ? 4 : 3;
-  int sessResetY = y + (tall ? 30 : 24);
-  int sessBarY = y + (tall ? 48 : 40);
-  int weekLineY = y + (tall ? 58 : 44);
-  int weekBarY = y + (tall ? 80 : 61);
-
-  char rst[32];
-  if (!sw || sw->r < 0) strlcpy(rst, "Session reset unavailable", sizeof rst);
-  else {
+  char sReset[24];
+  if (!sw || sw->r < 0) {
+    strlcpy(sReset, "S reset --", sizeof sReset);
+  } else {
     int32_t rem = max<int32_t>(0, sw->r - elapsed);
-    if (rem == 0) strlcpy(rst, "Session update due", sizeof rst);
+    if (rem == 0) strlcpy(sReset, "S reset due", sizeof sReset);
     else {
       char d[10];
       fmtDur(d, sizeof d, rem);
-      snprintf(rst, sizeof rst, "Session reset %s", d);
+      snprintf(sReset, sizeof sReset, "S reset %s", d);
     }
   }
-  // Landscape shares the top rows with the large percentage, so reserve it.
-  text(rst, ix, sessResetY, 2, sLeft < 0 ? C_MUTED : C_TEXT, TL_DATUM,
-       tall ? w - 16 : w - 16 - pw - 4);
 
-  int sEased = (idx >= 0 && si >= 0) ? (int)(eased[idx][si] + 0.5f) : (sw ? sw->u : -1);
-  leftBar(ix, sessBarY, w - 16, barH, sw ? sw->u : -1, sEased);
-
-  // Weekly: label, exact remaining percentage, explicit reset, then its bar.
-  int wLeft = ww && ww->u >= 0 ? 100 - min((int)ww->u, 100) : -1;
-  char wp[8];
-  if (wLeft < 0) strcpy(wp, "--");
-  else snprintf(wp, sizeof wp, "%d%%", wLeft);
-  int wx = ix + text("Weekly ", ix, weekLineY, 2, C_MUTED);
-  wx += text(wp, wx, weekLineY, 2, wLeft < 0 ? C_MUTED : leftColor(wLeft));
-  char wr[24];
-  if (!ww || ww->r < 0) strlcpy(wr, " reset unavailable", sizeof wr);
-  else {
+  char wReset[24];
+  if (!ww || ww->r < 0) {
+    strlcpy(wReset, "W reset --", sizeof wReset);
+  } else {
     int32_t rem = max<int32_t>(0, ww->r - elapsed);
-    if (rem == 0) strlcpy(wr, " update due", sizeof wr);
+    if (rem == 0) strlcpy(wReset, "W reset due", sizeof wReset);
     else {
       char d[10];
       fmtDur(d, sizeof d, rem);
-      snprintf(wr, sizeof wr, " reset %s", d);
+      snprintf(wReset, sizeof wReset, "W reset %s", d);
     }
   }
-  text(wr, wx, weekLineY, 2, C_MUTED, TL_DATUM, w - 8 - wx);
 
-  int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : (ww ? ww->u : -1);
-  leftBar(ix, weekBarY, w - 16, barH, ww ? ww->u : -1, wEased, TFT_YELLOW);
+  // Muted gray reset lines in left column (x10..135 region)
+  int tableW = w >= 280 ? 115 : 80;
+  text(sReset, ix, tableY, 1, C_MUTED, TL_DATUM, tableW);
+  text(wReset, ix, tableY + rowStep, 1, C_MUTED, TL_DATUM, tableW);
+
+  // Rings: Session on LEFT, Weekly on RIGHT
+  // Landscape card width is ~300 (W=320, pad=10 -> w=300).
+  // Recommended layout: left column x10..135, rings side by side in right region centered around x183 and x267.
+  int ringR = 21;
+  int ringStroke = 4;
+  int ringCy = y + h / 2 - 2;
+
+  int ring1Cx, ring2Cx;
+  if (w >= 280) {
+    // Landscape: centers around x183 and x267
+    ring1Cx = x + 173; // relative to card x (pad=10 -> 10 + 173 = 183)
+    ring2Cx = x + 257; // relative to card x (pad=10 -> 10 + 257 = 267)
+  } else {
+    // Portrait: derive centers across width
+    ring1Cx = x + w - 100;
+    ring2Cx = x + w - 38;
+  }
+
+  int sUsed = sw ? sw->u : -1;
+  int sEased = (idx >= 0 && si >= 0) ? (int)(eased[idx][si] + 0.5f) : sUsed;
+  drawQuotaRing(ring1Cx, ringCy, ringR, ringStroke, sUsed, sEased, 0, "Session");
+
+  int wUsed = ww ? ww->u : -1;
+  int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : wUsed;
+  drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, TFT_YELLOW, "Weekly");
 }
 
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {

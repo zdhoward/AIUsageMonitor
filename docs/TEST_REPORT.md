@@ -1,5 +1,10 @@
 # Test report: v1.0.0 (2026-10-21)
 
+## v1.4.0 ring console (2026-10-22)
+
+- ESP32 build and diff check pass. Framebuffer capture `img/v1.4.0-rings.png` shows Session and Weekly rings, correct real 0% readings, independent yellow weekly gauges, and muted reset rows. No test suite additions.
+- Track contrast was increased after the first framebuffer capture: RGB332 quantized the original track and panel to the same shade, hiding empty rings. Parent also corrected arc origin to 12 o'clock and portrait table width after the worker stopped early.
+
 ## v1.3.3 quota bars (2026-10-22)
 
 - Build and scoped ticket verification pass; no new tests needed for the renderer-only refinement. Local Ollama GPT-OSS review found no blockers after the cloud reviewer exhausted free quota.

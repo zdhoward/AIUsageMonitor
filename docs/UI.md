@@ -6,7 +6,7 @@ A quiet instrument panel below a monitor. Percent remaining and reset timing dom
 
 Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots, so a third static view would be one entry plus its renderer.
 
-- **Console (default):** three fixed client cards — `CLAUDE A (CL1)`, `CLAUDE B (CL2)`, `CODEX` — mapped by account name, so service reordering does not move rows. Each card's main number is the exact percent left in the session window (`5h`), with the weekly window (`7d`) underneath as its own percentage, bar, and reset. Windows are chosen by label, not urgency, so the session number stays in place even when weekly use is higher. Reset lines name their window: `Session reset 1h48m` and `Weekly 53% reset 4d21h`, with `update due` after the deadline and `unavailable` when the service did not report that window. An unreported window keeps `--` and a hatched unknown bar instead of borrowing another quota. A green dot appears only for the account matching a measured running activity.
+- **Console (default):** three fixed client rows — `CLAUDE A`, `CLAUDE B`, `CODEX` — mapped by account name, so service reordering does not move rows. Each row has two circular gauges: **Session** (`5h`) left, **Weekly** (`7d`) right. The centered number is exact percent remaining; the ring eases clockwise from 12 o'clock. Muted gray reset-table entries under the provider name use `S reset` and `W reset`, with `due` after a deadline and `--` when unavailable. Unknown quotas have dashed tracks and `--`, distinct from empty 0% or full 100% rings. Redundant account IDs and large extra percentages are removed.
 - **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
 
 Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.
@@ -17,7 +17,7 @@ A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (1200s)
 
 Unknown quotas show `--`, never `0%`. A real 0% remains distinct from unknown. Percentages are never averaged across windows.
 
-Weekly bar fills are always yellow for quick identification. Session bars and percentage text retain the remaining-capacity warning colors. Unknown windows keep their hatched bars.
+Weekly rings and their centered numbers are yellow for quick identification. Session rings and numbers follow remaining-capacity warning colors. Reset details are muted gray so the rings dominate.
 
 ## Palette and configuration
 
