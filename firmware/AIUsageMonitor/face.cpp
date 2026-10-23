@@ -98,7 +98,8 @@ void faceDraw(TFT_eSPI& g, int width, int height, uint16_t ink, uint16_t bg) {
     float curve = 1 - u * u;
     int y = my + lroundf(smile * scale * curve);
     int gap = lroundf(opening * scale * sqrtf(max(0.0f, curve)));
-    g.drawFastVLine(cx + x, y - gap / 2, max(2, gap + 2), ink);
+    // Use the same RGB332-safe rectangle path as the eye lids for each column.
+    g.fillRect(cx + x, y - gap / 2, 1, max(2, gap + 2), ink);
   }
   if (sweat > 0.02f) {
     float fall = effectClock / 1400.0f;
