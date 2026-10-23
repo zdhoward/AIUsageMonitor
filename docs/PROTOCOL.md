@@ -40,6 +40,29 @@ Minimal illustrative payload, with synthetic measurements:
 
 ## Payload fields
 
+### MINT extension (T-009B contract)
+
+Optional `mint` is `{ "sid":"18e0123456789abc", "n":1, "e":"content", "ttl":15000 }`.
+`sid` is exactly 16 lowercase hex digits (host startup time in nanoseconds),
+`n` is a positive uint32 loop revision, `e` is exactly content/happy/curious/
+bored/sleepy/surprised/stressed, and `ttl` is an integer 1..15000 milliseconds
+remaining at send time.
+Firmware accepts only increasing `(sid,n)` identities, retaining the identity
+after expiry; duplicates never extend a lease. A newer sid allows service restart.
+Host clock rollback requires device reboot or waiting for the clock to recover.
+No identity survives device reboot; this is ordered local transport, not an
+authenticated anti-replay protocol. Missing/invalid/replayed mint clears to
+content immediately; malformed whole JSON leaves the current lease to expire.
+Expiry uses device uptime even during disconnect or unrelated quota updates.
+Old firmware ignores mint; old service leaves new firmware neutral. Reconnect
+serializes current state and remaining lease, never queued reactions. The
+service bounds the complete UTF-8 JSON line to 4095 bytes excluding newline.
+
+`POST /v1/mint/react?action=pet|play|nap` (empty body) queues one finite reaction.
+Unknown/duplicate query fields or bodies return 400; same active/pending action
+coalesces, another action while busy returns 429. No reaction extends an active
+deadline. This route works with serial disabled and does not refresh sources.
+
 | Field | Meaning |
 | --- | --- |
 | `v`, `seq`, `hm` | Protocol version, acknowledgement sequence, host local `HH:MM` |
@@ -53,6 +76,7 @@ Minimal illustrative payload, with synthetic measurements:
 | `free` | Free-model history: `n` message/call records today, `t` tokens, optional most frequent `m` model |
 | `nim` | Observed NIM free-history record count `n`; not a provider quota |
 | `or` | Optional OpenRouter reported free used/limit `fu`/`fl`, daily spend `d` cents, budget `b` cents, age, or unavailable/error `x` |
+| `mint` | Optional face expression lease, session/revision identity and remaining TTL; contract above |
 
 The service emits at most three windows per account. Firmware stores at most four accounts and three windows each; the console intentionally shows three fixed slots and the 5h/7d labels. String fields have bounded buffers and may be truncated. See source for exact limits before extending the protocol.
 
@@ -86,8 +110,9 @@ Default base URL: `http://127.0.0.1:8797`. JSON responses use `Cache-Control: no
 | `GET /healthz` | Liveness, refresh timestamp, source errors, serial port/pause state, last push/ack and firmware hello |
 | `POST /v1/serial/pause?seconds=N` | Release serial port; default 120 seconds, clamped to 1–900 |
 | `POST /v1/serial/resume` | Resume serial operation |
+| `POST /v1/mint/react?action=pet` | Loopback-only finite reaction; action pet/play/nap, empty body |
 
-Unknown routes return 404, except POST requests with serial disabled return 409 before route handling. There is no HTTP route to force a provider refresh. Health `ok: true` is service liveness; inspect `source_errors` and timestamps for data health.
+Unknown routes return 404, except POST requests with serial disabled return 409 after MINT route handling. MINT works in HTTP-only mode. There is no HTTP route to force a provider refresh. Health `ok: true` is service liveness; inspect `source_errors` and timestamps for data health.
 
 Example:
 

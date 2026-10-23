@@ -53,6 +53,31 @@ bool parsePayload(const char* json, size_t len, Model& out) {
   m.rxMillis = millis();
   const int32_t elapsed = out.valid ? (int32_t)((m.rxMillis - out.rxMillis) / 1000) : 0;
   m.seq = doc["seq"] | 0;
+  // Lease identity survives missing fields and expiry. Invalid input clears the
+  // expression without erasing the high-water mark, so replay cannot renew it.
+  strlcpy(m.mintSid, out.mintSid, sizeof m.mintSid);
+  m.mintN = out.mintN;
+  JsonObjectConst mint = doc["mint"];
+  const char* sid = mint["sid"] | "";
+  const char* expression = mint["e"] | "";
+  bool sidValid = strlen(sid) == 16;
+  for (size_t i = 0; sidValid && i < 16; ++i)
+    sidValid = (sid[i] >= '0' && sid[i] <= '9') || (sid[i] >= 'a' && sid[i] <= 'f');
+  bool expressionValid = false;
+  const char* names[] = {"content", "happy", "curious", "bored", "sleepy", "surprised", "stressed"};
+  for (const char* name : names) if (!strcmp(name, expression)) expressionValid = true;
+  uint32_t n = mint["n"] | (uint32_t)0;
+  uint32_t ttl = mint["ttl"] | (uint32_t)0;
+  int order = strcmp(sid, out.mintSid);
+  if (sidValid && expressionValid && mint["n"].is<uint32_t>() && n > 0 &&
+      mint["ttl"].is<uint32_t>() && ttl > 0 && ttl <= 15000 &&
+      (order > 0 || (order == 0 && n > out.mintN))) {
+    strlcpy(m.mintSid, sid, sizeof m.mintSid);
+    strlcpy(m.mintExpression, expression, sizeof m.mintExpression);
+    m.mintN = n;
+    m.mintAt = m.rxMillis;
+    m.mintTtl = ttl;
+  }
   if (!doc["hm"].isNull()) copyStr(m.hm, sizeof m.hm, doc["hm"]);
   else strlcpy(m.hm, out.hm, sizeof m.hm);
 

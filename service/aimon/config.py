@@ -21,6 +21,7 @@ class Settings:
     serial_baud: int = 115200
     serial_enabled: bool = True
     push_interval_s: float = 5.0
+    mint_metrics_enabled: bool = False
 
     # Refresh cadence per source (seconds).
     refresh_s: float = 10.0

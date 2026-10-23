@@ -112,6 +112,20 @@ Background execution uses `pythonw` when available. Logs go to `logs/aimon.log`.
 
 ## 5. Customize the screen
 
+MINT behavior runs with the existing service. To react locally (no serial port
+is opened by the request):
+
+```powershell
+Invoke-RestMethod -Method Post 'http://127.0.0.1:8797/v1/mint/react?action=pet'
+```
+
+Use `play` or `nap` for the other finite reactions. No body is accepted. Same
+action repeats coalesce; a different action while busy returns 429. Reactions
+are loopback-only even when HTTP is bound to a LAN address. Optional Windows
+CPU/RAM stress is off by default; set `"mint_metrics_enabled": true` in
+`service/aimon.config.json` (or `AIMON_MINT_METRICS_ENABLED=true`) and restart.
+See [MINT](MINT.md) for timing and [protocol](PROTOCOL.md) for lease semantics.
+
 Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 
 - `DISPLAY_ROTATION`: 1 by default; 0/2 portrait, 1/3 landscape.

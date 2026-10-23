@@ -28,6 +28,7 @@ static bool overflow = false;
 static uint32_t lastDraw = 0;
 static uint32_t badLines = 0;
 static bool touchReady = false;
+static char selectedFace[10] = "content";
 
 // CST820: a whole-screen button needs no coordinate calibration/rotation.
 static void pollTouch() {
@@ -55,6 +56,7 @@ static const char* linkInfo();
 
 static void acceptPayload(const char* json, size_t len) {
   if (parsePayload(json, len, model)) {
+    selectedFace[0] = 0;  // payload authority also replaces a diagnostic !FACE
     Serial.printf("@ACK %lu\n", (unsigned long)model.seq);
     lastDraw = 0;  // redraw immediately
   } else {
@@ -174,6 +176,12 @@ void loop() {
   pollWifi();
 #endif
   uint32_t now = millis();
+  const char* expression = model.mintTtl && now - model.mintAt < model.mintTtl
+      ? model.mintExpression : "content";
+  if (strcmp(selectedFace, expression)) {
+    faceSelectExpression(expression);
+    strlcpy(selectedFace, expression, sizeof selectedFace);
+  }
   if (lastDraw == 0 || now - lastDraw >= uiFrameIntervalMs()) {
     lastDraw = now ? now : 1;
     uiRender(model, now, linkInfo());

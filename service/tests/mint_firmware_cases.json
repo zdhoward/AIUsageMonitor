@@ -1,0 +1,11 @@
+{
+  "instructions": "Sprint-end firmware fixture plan. Reset Model per case; feed frames at at_ms, call the loop expiry selector at observe_ms, compare expression. Not yet executed on a host harness or hardware.",
+  "cases": [
+    {"name":"disconnect expiry", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":1000}}}], "observe_ms":1100,"expression":"content"},
+    {"name":"duplicate does not renew", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"happy","ttl":1000}}},{"at_ms":200,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"happy","ttl":1000}}}],"observe_ms":200,"expression":"content"},
+    {"name":"quota only clears", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":15000}}},{"at_ms":200,"payload":{"v":1,"acc":[]}}],"observe_ms":200,"expression":"content"},
+    {"name":"invalid expression clears", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":15000}}},{"at_ms":200,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":2,"e":"angry","ttl":15000}}}],"observe_ms":200,"expression":"content"},
+    {"name":"restart and retired session", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":99,"e":"stressed","ttl":15000}}},{"at_ms":200,"payload":{"v":1,"mint":{"sid":"18e0123456789abd","n":1,"e":"happy","ttl":1000}}},{"at_ms":300,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":100,"e":"stressed","ttl":15000}}}],"observe_ms":300,"expression":"content"},
+    {"name":"uptime wrap expiry", "frames":[{"at_ms":4294967040,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"surprised","ttl":1000}}}],"observe_ms":744,"expression":"content"}
+  ]
+}
