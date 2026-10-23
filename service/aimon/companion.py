@@ -2,13 +2,53 @@
 from __future__ import annotations
 
 import math
+import os
 import random
+import re
+import sqlite3
 import threading
 import time
+from pathlib import Path
 
 EXPRESSIONS = ("content", "happy", "curious", "bored", "sleepy", "surprised", "stressed")
 REACTIONS = {"pet": ("happy", 4.0, 0.12), "play": ("surprised", 3.0, 0.08),
              "nap": ("sleepy", 8.0, -0.05)}
+
+
+def allocate_session(path=None, clock=time.time_ns):
+    """Commit an ordered uint64 before publishing; SQLite serializes startups.
+
+    Errors deliberately abort construction rather than publishing an unsafe sid.
+    TEXT avoids SQLite's signed-int64 limit on the wire's uint64 range.
+    """
+    if path is None:
+        base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local" / "share"))
+        path = base / "AIUsageMonitor" / "mint-session.sqlite3"
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(path, timeout=10, isolation_level=None)
+    try:
+        db.execute("PRAGMA synchronous=FULL")
+        db.execute("BEGIN IMMEDIATE")
+        exists = db.execute("SELECT 1 FROM sqlite_master WHERE name='session'").fetchone()
+        if exists:
+            rows = db.execute("SELECT sid FROM session").fetchall()
+            if len(rows) != 1 or not isinstance(rows[0][0], str) or not re.fullmatch(r"[0-9a-f]{16}", rows[0][0]):
+                raise ValueError("corrupt MINT session state; see docs/SETUP.md")
+            previous = int(rows[0][0], 16)
+        else:
+            db.execute("CREATE TABLE session (sid TEXT NOT NULL)")
+            previous = 0
+        value = max(previous + 1, clock())
+        if not 0 < value <= 0xffffffffffffffff:
+            raise ValueError("MINT session identity exhausted/out of range")
+        sid = f"{value:016x}"
+        db.execute("DELETE FROM session")
+        db.execute("INSERT INTO session VALUES (?)", (sid,))
+        db.execute("COMMIT")
+        return sid
+    finally:
+        db.close()  # rolls back any failed allocation
 
 
 class LocalMetrics:
@@ -46,10 +86,10 @@ class LocalMetrics:
 
 
 class Companion:
-    def __init__(self, now=None, rng=None):
+    def __init__(self, now=None, rng=None, session_allocator=None):
         now = time.monotonic() if now is None else now
         self.lock = threading.Lock()
-        self.sid = f"{time.time_ns():016x}"
+        self.sid = (session_allocator or allocate_session)()
         self.rng = rng or random.Random()
         self.mood = 0.5
         self.mood_target = 0.5

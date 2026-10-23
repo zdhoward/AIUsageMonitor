@@ -43,17 +43,23 @@ Minimal illustrative payload, with synthetic measurements:
 ### MINT extension (T-009B contract)
 
 Optional `mint` is `{ "sid":"18e0123456789abc", "n":1, "e":"content", "ttl":15000 }`.
-`sid` is exactly 16 lowercase hex digits (host startup time in nanoseconds),
+`sid` is exactly 16 lowercase hex digits (durably allocated host session),
 `n` is a positive uint32 loop revision, `e` is exactly content/happy/curious/
 bored/sleepy/surprised/stressed, and `ttl` is an integer 1..15000 milliseconds
 remaining at send time.
 Firmware accepts only increasing `(sid,n)` identities, retaining the identity
 after expiry; duplicates never extend a lease. A newer sid allows service restart.
-Host clock rollback requires device reboot or waiting for the clock to recover.
+Host startup commits `max(previous + 1, time_ns)` in user-local SQLite state
+before publishing. Clock rollback therefore preserves ordering. Allocation,
+corruption, lock timeout or uint64 exhaustion fails service startup closed.
+See [state recovery and instance assumptions](SETUP.md#mint-session-state).
 No identity survives device reboot; this is ordered local transport, not an
 authenticated anti-replay protocol. Missing/invalid/replayed mint clears to
 content immediately; malformed whole JSON leaves the current lease to expire.
 Expiry uses device uptime even during disconnect or unrelated quota updates.
+Observed expiry clears TTL permanently while retaining identity, preventing
+resurrection after a full uint32 uptime cycle. The loop must observe expiry
+before that cycle completes (normal loop cadence is 5ms).
 Old firmware ignores mint; old service leaves new firmware neutral. Reconnect
 serializes current state and remaining lease, never queued reactions. The
 service bounds the complete UTF-8 JSON line to 4095 bytes excluding newline.

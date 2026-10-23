@@ -50,7 +50,10 @@ personality or stress policy. See [the contract](PROTOCOL.md#mint-extension-t-00
 ## Service behavior
 
 `service/aimon/companion.py` is the small loop-owned behavior module. A dedicated
-250ms loop advances monotonic elapsed time. Mood stays in 0..1, approaches its
+startup allocator durably commits an increasing 16-hex session before publishing;
+clock rollback is safe. See [session state and recovery](SETUP.md#mint-session-state).
+Observed firmware expiry retires TTL while preserving session/revision high-water.
+A dedicated 250ms loop advances monotonic elapsed time. Mood stays in 0..1, approaches its
 reaction-adjusted target over 20 seconds, and the target drifts toward 0.5 over
 300 seconds. Every 12..25 seconds a weighted idle choice favors content, with
 happy/curious/bored/sleepy alternatives. No provider calls are added.
