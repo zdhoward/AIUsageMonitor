@@ -1,5 +1,13 @@
 # Test report
 
+## T-001 optional pages and screensaver (2026-10-23)
+
+- Production `scripts/build.ps1` succeeds with the default configuration (both optional pages enabled, screensaver disabled): 414,019 bytes flash, 28,648 bytes static RAM. The existing TFT_eSPI `TOUCH_CS` warning is expected for CST820 I2C touch.
+- Implementation uses the existing RGB332 framebuffer and drawing primitives; no image assets, secondary framebuffers, service or payload changes.
+- Source review covers registry-based cycling/dots, stable saver page IDs, compile-time rejection of unavailable saver content, and consuming the wake action without changing the selected page. This is not runtime evidence. Enabled-saver and optional-page-disabled builds were not executed.
+- COM6 is enumerated on this host, but this task did not flash or capture the device. New-page geometry, idle/happy animation, inactivity entry and physical tap wake/return remain pending device verification; existing historical captures below do not verify this feature.
+- No test suite was run, per the sprint-end testing phase. At device verification, capture both companion expressions and the Images page, then enable a short saver timeout and verify return from each selected page (including when saver content equals that page), followed by normal next-tap navigation. Check no-data startup, long holds and all rotations.
+
 Current baseline, 2026-10-22: all 22 existing service tests pass; the service is healthy with firmware v1.4.2 / rotation 1. The firmware build, flash and framebuffer capture were completed before the public documentation work. Historical dimming/rotation observations below describe old firmware, not current behavior.
 
 ## v1.4.2 reset readability (2026-10-22)

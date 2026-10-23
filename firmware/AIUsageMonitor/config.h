@@ -78,3 +78,37 @@
 
 // Set to 0 for immediate value changes and a slower, static display.
 #define UI_ANIMATION 1
+
+// Optional pages remain normal navigation stops when enabled.
+#ifndef UI_COMPANION_ENABLED
+#define UI_COMPANION_ENABLED 1
+#endif
+#ifndef UI_IMAGE_ENABLED
+#define UI_IMAGE_ENABLED 1
+#endif
+
+// Stable page IDs, independent of which optional pages are compiled in.
+#define UI_PAGE_CONSOLE 0
+#define UI_PAGE_DETAILS 1
+#define UI_PAGE_COMPANION 2
+#define UI_PAGE_IMAGE 3
+#ifndef UI_SCREENSAVER_ENABLED
+#define UI_SCREENSAVER_ENABLED 0
+#endif
+#ifndef UI_SCREENSAVER_PAGE
+#define UI_SCREENSAVER_PAGE UI_PAGE_COMPANION
+#endif
+#ifndef UI_SCREENSAVER_TIMEOUT_MS
+#define UI_SCREENSAVER_TIMEOUT_MS 60000UL
+#endif
+#if UI_SCREENSAVER_ENABLED
+#if UI_SCREENSAVER_TIMEOUT_MS < 1 || UI_SCREENSAVER_TIMEOUT_MS > 2147483647UL
+#error "Screensaver timeout must be 1..2147483647 milliseconds"
+#endif
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_IMAGE
+#error "Unknown screensaver page"
+#endif
+#if (UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION && !UI_COMPANION_ENABLED) || (UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE && !UI_IMAGE_ENABLED)
+#error "Screensaver page must be enabled"
+#endif
+#endif

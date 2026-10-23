@@ -121,7 +121,17 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `UI_ANIMATION`: restrained ring animation on/off.
 - `SHOW_REMAINING`: detailed dashboard only; console rings always show remaining quota.
 
-Tap and release anywhere to switch between the two views. Holds of 1.5 seconds or longer are ignored. [UI.md](UI.md) describes layout and extension points.
+Tap and release anywhere to cycle Console, Details, Companion and Images. Holds of 1.5 seconds or longer are ignored. Set `UI_COMPANION_ENABLED=0` or `UI_IMAGE_ENABLED=0` in `config.h` to omit an optional page.
+
+The screensaver is disabled by default. To enable it, edit these definitions in `config.h`, rebuild and flash:
+
+```cpp
+#define UI_SCREENSAVER_ENABLED 1
+#define UI_SCREENSAVER_PAGE UI_PAGE_COMPANION
+#define UI_SCREENSAVER_TIMEOUT_MS 60000UL
+```
+
+Choose `UI_PAGE_CONSOLE`, `UI_PAGE_DETAILS`, `UI_PAGE_COMPANION` or `UI_PAGE_IMAGE`; optional content must be enabled. Invalid selections and timeouts fail compilation when enabled. A valid tap returns from the saver to the page selected beforehand without advancing navigation. Backlight brightness and telemetry are unchanged. [UI.md](UI.md) describes behavior and extension points.
 
 ## Screenshots and checks
 

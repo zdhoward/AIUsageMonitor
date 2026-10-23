@@ -11,6 +11,8 @@ void uiSetRotation(uint8_t rotation);
 
 bool uiHasFramebuffer();
 void uiNextView(const Model& m);
+// Keep inactivity from expiring during a held touch; release uses uiNextView.
+void uiTouchState(bool down, uint32_t nowMs);
 
 // Dumps the current frame (RGB332) to `out` for host-side screenshots.
 bool uiScreenshot(Stream& out);

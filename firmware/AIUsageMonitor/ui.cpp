@@ -1,5 +1,4 @@
-// Dashboard renderer. Two tap-cycled views: a glanceable three-client console
-// (default) and the original detailed dashboard. All positions derive from the
+// Dashboard renderer with optional pages. All positions derive from the
 // canvas size after rotation, so the same code serves portrait and landscape.
 #include "ui.h"
 #include "config.h"
@@ -18,18 +17,34 @@ static uint32_t animationMillis = 0;
 // and pagination dots read this list, so a new page needs one entry plus its
 // renderer. Generated overview/focus pages are intentionally gone.
 struct ViewDef {
+  uint8_t id;
   void (*draw)(const Model&, uint32_t, const ViewDef&, int y);
 };
 
 static void drawConsole(const Model&, uint32_t, const ViewDef&, int y);
 static void drawDetails(const Model&, uint32_t, const ViewDef&, int y);
+#if UI_COMPANION_ENABLED
+static void drawCompanion(const Model&, uint32_t, const ViewDef&, int);
+#endif
+#if UI_IMAGE_ENABLED
+static void drawImage(const Model&, uint32_t, const ViewDef&, int);
+#endif
 
 static const ViewDef kStaticViews[] = {
-  {drawConsole},
-  {drawDetails},
+  {UI_PAGE_CONSOLE, drawConsole},
+  {UI_PAGE_DETAILS, drawDetails},
+#if UI_COMPANION_ENABLED
+  {UI_PAGE_COMPANION, drawCompanion},
+#endif
+#if UI_IMAGE_ENABLED
+  {UI_PAGE_IMAGE, drawImage},
+#endif
 };
 static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t selView = 0;  // console is the default view
+static uint32_t lastInteraction = 0;
+static bool saverActive = false;
+static bool touchDown = false;
 
 // Palette (RGB565, quantized from the requested hex values).
 // #101923 bg, #202C3B panel, #F3F6FA text, #AEBCCC secondary,
@@ -345,7 +360,7 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
     st = "CONNECTED";
     sc = C_GREEN;
   }
-  text(st, W - pad - 28, fy, 2, sc, TR_DATUM, W - 80);
+  text(st, W - pad - kViewCount * 10, fy, 2, sc, TR_DATUM, W - 80);
 }
 
 // ---------------------------------------------------------------- detail sections
@@ -656,6 +671,36 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
 
 // ---------------------------------------------------------------- public
 
+#if UI_COMPANION_ENABLED
+static void drawCompanion(const Model&, uint32_t now, const ViewDef&, int) {
+  const int cx = W / 2, cy = H / 2, r = min(W, H) / 4;
+  const bool happy = (now % 6000UL) >= 3000UL;
+  text("COMPANION", cx, 18, 2, C_TEXT, TC_DATUM);
+  G().drawCircle(cx, cy, r, C_GREEN);
+  for (int side = -1; side <= 1; side += 2) {
+    int ex = cx + side * r / 3;
+    if (happy) {
+      G().drawLine(ex - 6, cy - 8, ex, cy - 14, C_TEXT);
+      G().drawLine(ex, cy - 14, ex + 6, cy - 8, C_TEXT);
+    } else G().fillCircle(ex, cy - 10, 4, C_TEXT);
+  }
+  if (happy) {
+    G().drawLine(cx - 16, cy + 10, cx - 8, cy + 18, C_TEXT);
+    G().drawLine(cx - 8, cy + 18, cx + 8, cy + 18, C_TEXT);
+    G().drawLine(cx + 8, cy + 18, cx + 16, cy + 10, C_TEXT);
+  } else G().drawFastHLine(cx - 10, cy + 14, 20, C_TEXT);
+  text(happy ? "Happy" : "Idle", cx, cy + r + 12, 2, C_MUTED, TC_DATUM);
+}
+#endif
+
+#if UI_IMAGE_ENABLED
+static void drawImage(const Model&, uint32_t, const ViewDef&, int) {
+  text("Images / animation", W / 2, H / 2 - 24, 2, C_TEXT, MC_DATUM);
+  text("Placeholder for future content", W / 2, H / 2, 1, C_MUTED, MC_DATUM);
+  text("No images loaded", W / 2, H / 2 + 20, 2, C_MUTED, MC_DATUM);
+}
+#endif
+
 void uiSetRotation(uint8_t rotation) {
   tftp->setRotation(rotation & 3);
   tftp->fillScreen(C_BG);
@@ -677,6 +722,7 @@ void uiBegin(TFT_eSPI& tft, uint8_t rotation) {
   tftp = &tft;
   tft.init();
   uiSetRotation(rotation);
+  lastInteraction = millis();
 }
 
 bool uiHasFramebuffer() { return spr != nullptr; }
@@ -690,7 +736,14 @@ bool uiScreenshot(Stream& out) {
 }
 
 void uiNextView(const Model&) {
-  selView = (uint8_t)((selView + 1) % kViewCount);
+  lastInteraction = millis();
+  if (saverActive) saverActive = false;  // consume the waking tap
+  else selView = (uint8_t)((selView + 1) % kViewCount);
+}
+
+void uiTouchState(bool down, uint32_t now) {
+  touchDown = down;
+  if (down) lastInteraction = now;
 }
 
 static void drawDots(uint8_t current) {
@@ -724,19 +777,27 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
   uint8_t current = selView < kViewCount ? selView : 0;
-  if (!m.valid) {
+#if UI_SCREENSAVER_ENABLED
+  if (!touchDown && now - lastInteraction >= UI_SCREENSAVER_TIMEOUT_MS) saverActive = true;
+  if (saverActive) {
+    for (uint8_t i = 0; i < kViewCount; ++i)
+      if (kStaticViews[i].id == UI_SCREENSAVER_PAGE) current = i;
+  }
+#endif
+  const ViewDef& v = kStaticViews[current];
+  const bool dashboard = v.id == UI_PAGE_CONSOLE || v.id == UI_PAGE_DETAILS;
+  if (!m.valid && dashboard) {
     drawHeader(m, now, 0, 0, W);
     drawWaiting(now, linkInfo);
   } else {
-    const ViewDef& v = kStaticViews[current];
-    if (v.draw == drawConsole) {
+    if (v.id != UI_PAGE_DETAILS) {
       v.draw(m, now, v, 0);
     } else {
       int y = drawHeader(m, now, 0, 0, W);
       v.draw(m, now, v, y);
       text("tap to change view", 10, H - 13, 1, C_MUTED);
     }
-    drawDots(current);
   }
+  drawDots(current);
   if (spr) spr->pushSprite(0, 0);
 }

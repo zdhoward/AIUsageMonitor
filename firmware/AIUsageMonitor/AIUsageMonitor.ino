@@ -40,6 +40,7 @@ static void pollTouch() {
   if (Wire.endTransmission(false) != 0) return;
   if (Wire.requestFrom(0x15, 1) != 1) return;
   bool down = (Wire.read() & 0x0f) != 0;
+  uiTouchState(down, now);
   if (down && !pressed) { pressed = true; pressedAt = now; }
   if (!down && pressed) {
     pressed = false;
