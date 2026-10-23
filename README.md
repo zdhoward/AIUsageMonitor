@@ -93,6 +93,7 @@ The firmware has been built and flashed on the documented board; the service sui
 | [Data sources](docs/DATA_SOURCES.md) | What is collected, refresh timing and integration limitations |
 | [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
 | [UI](docs/UI.md) | Renderer layout, configuration and extension points |
+| [Image and animation research](docs/IMAGE_ANIMATION_RESEARCH.md) | Candidate authoring, conversion and playback workflow for future visual assets |
 | [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
 | [Contributing](CONTRIBUTING.md) | Development and validation expectations |
 | [Project log](docs/PROJECT_LOG.md) | Implementation decisions and milestones |
