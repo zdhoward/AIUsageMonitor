@@ -1,5 +1,11 @@
 # MINT face and PC behavior (T-009A / T-009B)
 
+Integration evidence: the 2026-10-23 COM6 development image at `7fead74`
+was flashed with hash verification. Actual happy and idle framebuffers show
+eyes and mouth; see [evidence and remaining checks](TEST_REPORT.md).
+Worker-only verification statements below describe their scope before this
+integration. Sustained smoothness and the deferred test suite remain unverified.
+
 Companion is a full-canvas face: Grobot eyes, a blending mouth and optional
 sweat. Tap still advances through the existing page registry. Companion has
 no labels, enclosure or pagination dots. Other pages retain their navigation
