@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-23: first visual-pages implementation attempt
+
+- Scoped T-008A and delegated to free routes. DeepSeek quota was exhausted; LiteLLM free-coder returned a patch with passing production build and scope checks.
+- Independent free-review rejected header formatting and navigation/preview layout defects. Preserved patch in worker checkout `t3-c3af3620`; did not integrate or flash. T-008A records exact blockers and next corrections. Remaining implementation waits at the bounded routing limit.
+
 ## 2026-10-23: visual-pages plan review
 
 - Reviewed T-008 against local main `60c67f2`, T-001/prototype `ed6355a`, firmware/service code and protocol/configuration/research docs. Main still has two views; installed prototype provenance is unconfirmed because flash records differ.
