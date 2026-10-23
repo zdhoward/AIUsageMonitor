@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: visual pages implementation plan
+
+- Consolidated optional navigation/screensaver requirements, PC-driven MINT, procedural scene ideas, and the future image/animation workflow into T-008 for Sol 6.1 review.
+- Confirmed the existing newline-delimited JSON serial path is owned by the PC service; the separate bare CPU/RAM bridge sample would conflict and is excluded from the plan.
+- Kept implementation details open and split delivery into reviewable slices; no firmware implementation was started.
+
 ## 2026-10-23: procedural screensaver scene research
 
 - Added the MINT digital-pet concept: layered behavior, animation, rendering, and optional PC telemetry; noted serial-protocol and malformed-bridge questions before implementation.
