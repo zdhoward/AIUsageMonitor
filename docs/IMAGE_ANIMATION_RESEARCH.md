@@ -8,6 +8,30 @@ The supplied direction is a good fit for this project: keep editable artwork and
 
 The recently flashed `t3/optional-pages-screensaver` prototype (`ed6355a`) contains a procedural companion face and a text-only Images placeholder. It has no image importer, asset converter, or frame playback engine yet. This note describes options for a later asset pipeline; it does not change that prototype's scope.
 
+## Procedural screensaver scene ideas
+
+The supplied TFT_eSPI sketch suggests a second, independent path for optional screensaver content: generate scenes with drawing primitives on the ESP32, without source images or a conversion pipeline. The two candidate scenes are:
+
+- **Starfield:** stars move outward from a vanishing point with perspective streaks and a dark gradient background.
+- **Tiny living world:** a synthwave sunset, layered mountains and city, blinking windows, a moving hover pod, rain, and a neon perspective road.
+
+These are exploratory scene concepts, not selected designs. If pursued, they should integrate as scene renderers in the existing page/screensaver framework, rather than becoming a separate Arduino sketch. Scene selection and page visibility belong in build-time configuration, consistent with the earlier optional-pages request. Procedural rendering does not need the image importer described below; the future engine may share page lifecycle and timing conventions while keeping drawing code separate from frame-based assets.
+
+### Memory and frame-rate constraints
+
+The example's 16-bit full-screen buffer arithmetic is correct: 240×240×2 = 115,200 bytes; 320×240×2 = 153,600 bytes. The current firmware renderer uses a single 320×240 8-bit buffer (76,800 bytes). A single 16-bit canvas would add about 76,800 bytes over that buffer; a second 16-bit full-screen buffer would add another 153,600 bytes. Reusing the existing canvas is therefore the initial option to investigate, subject to color-depth and renderer compatibility.
+
+The sketch's 30 FPS is a target cap, not evidence that the board can sustain that rate. At the project's configured 40 MHz SPI clock, transferring a 320×240 RGB565 frame alone takes a theoretical minimum of 30.72 ms (153,600 bytes × 8 ÷ 40,000,000 bits/s), leaving only about 2.6 ms of a 33.3 ms frame interval for rendering and driver overhead. Actual transfer time will be longer. The per-row gradient, many city-window primitives, and road/rain drawing also consume CPU time. Measure on the device before choosing a frame cap or pixel format; a lower rate or partial updates may be needed.
+
+### Candidate implementation plan
+
+1. Prototype each scene as an optional renderer using the existing framebuffer and page lifecycle; keep telemetry views responsive and the existing screensaver-off default.
+2. Start with a modest starfield and tiny-world scene, with compile-time selection/configuration and normal page navigation when enabled. Keep the user's chosen page as the screensaver target configurable at build time.
+3. Build each configuration and inspect on-device framebuffer captures. Record free heap and measured frame durations/FPS, including page changes and wake behavior when screensaver mode is enabled.
+4. Tune scene complexity and frame pacing from those measurements. Only consider RGB565 or another buffering strategy if color quality or measured performance requires it.
+
+Open implementation choices remain: one configurable procedural-scene page versus separate pages, whether the current RGB332 buffer can serve both scenes adequately, and what frame-rate target is comfortable on the actual board. No code or runtime evidence for these scenes has been added yet.
+
 ## Authoring inputs and metadata
 
 An accessible first format is named PNG frames organized by animation state, paired with a manifest. For example, an artist can keep separate `idle/` and `walk/` frame folders and list their frames in `animation.json`. Static images can be represented as one-frame animations. Keep original source art alongside generated runtime output so it remains editable.

@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: procedural screensaver scene research
+
+- Recorded starfield and synthwave tiny-world concepts as optional procedural renderers, separate from the image conversion pipeline.
+- Checked full-screen RGB565 buffer sizes and estimated the 40 MHz SPI transfer floor; 30 FPS remains unverified and requires on-device measurement.
+- Added a small candidate implementation and validation plan without changing firmware or selecting unresolved design details.
+
 ## 2026-10-23: image and animation workflow research
 
 - Recorded a source-backed recommendation to author separate named frames plus metadata and convert them offline to a compact ESP32 format; sprite sheets remain an import/packing option when mapped by metadata.
