@@ -45,10 +45,21 @@ class Pricing:
         r = self._lookup(model)
         if r is None:
             return None
-        inp = r.get("input_cost_per_token") or 0.0
+        inp = r.get("input_cost_per_token")
+        if inp is None:
+            inp = 0.0
+        cache_read_rate = r.get("cache_read_input_token_cost")
+        if cache_read_rate is None:
+            cache_read_rate = inp
+        cache_write_rate = r.get("cache_creation_input_token_cost")
+        if cache_write_rate is None:
+            cache_write_rate = inp
+        output_rate = r.get("output_cost_per_token")
+        if output_rate is None:
+            output_rate = 0.0
         return (
             uncached_in * inp
-            + cache_read * (r.get("cache_read_input_token_cost") or inp)
-            + cache_write * (r.get("cache_creation_input_token_cost") or inp)
-            + out * (r.get("output_cost_per_token") or 0.0)
+            + cache_read * cache_read_rate
+            + cache_write * cache_write_rate
+            + out * output_rate
         )
