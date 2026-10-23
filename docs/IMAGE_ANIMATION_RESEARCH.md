@@ -18,6 +18,31 @@ The supplied TFT_eSPI sketches suggest a second, independent path for optional s
 
 These are exploratory scene concepts, not selected designs. If pursued, they should integrate as scene renderers in the existing page/screensaver framework, rather than becoming a separate Arduino sketch. Scene selection and page visibility belong in build-time configuration, consistent with the earlier optional-pages request. Procedural rendering does not need the image importer described below; the future engine may share page lifecycle and timing conventions while keeping drawing code separate from frame-based assets.
 
+## Digital pet engine concept: MINT
+
+The supplied MINT proposal is an original pocket-sized robot character with a rounded shell, expressive face, and antenna. The goal is a small animated companion with behavior, rather than a collection of disconnected expressions. It can build on the existing placeholder Companion page and can optionally be selected as a screensaver page under the prior build-time configuration model.
+
+The proposed engine separates four responsibilities:
+
+- **Personality:** a bounded 0–100 mood value that changes gradually with time, interaction, and (if desired) PC conditions. Mood selects a weighted idle expression such as happy, bored, sleepy, or curious.
+- **Telemetry awareness:** a PC-side process sends CPU and RAM percentages over the existing USB serial connection. Fresh readings at or above 80% trigger a worried/sweating state; the sample clears each alert at 74%, providing hysteresis. Stale or absent telemetry should not keep an alert active.
+- **Animation:** independent, non-blocking timers drive blinking, eye gaze, breathing/bobbing, idle-expression changes, and temporary reactions.
+- **Rendering and input:** a renderer draws the original robot and current expression; serial commands such as `PET`, `PLAY`, and `NAP` provide a first interaction path. Keep behavior decisions outside the drawing routine.
+
+This remains a concept, not an approved behavior contract. In particular, mood effects from system load should be optional and gentle so a high CPU reading does not make the pet unpleasant during normal work. Interaction commands should remain usable even if telemetry is unavailable. Serial protocol ownership, telemetry cadence, and whether PC awareness is enabled by default need to be decided against the firmware's existing USB service protocol before implementation; the example's bare `CPU,RAM` line format must not be assumed compatible.
+
+The sample firmware's dual-depth sprite allocation is a useful experiment, not a settled memory strategy: it tries a 16-bit full-screen buffer, then an 8-bit buffer, while this firmware currently uses one 8-bit RGB332 framebuffer. Confirm TFT_eSPI color-depth behavior, available heap, and render/transfer time on the actual board before adopting it. Keep the pet page optional and disabled by default, with its visual state and reactions running without blocking delays.
+
+### Candidate MINT implementation sequence
+
+1. Define a small behavior model and serial message contract that coexist with the current device protocol; establish stale-data handling and threshold/hysteresis semantics.
+2. Draw an original static MINT face in the existing renderer, then add idle/happy expressions, blink timing, eye movement, and a subtle breathing motion.
+3. Add temporary `PET`/`PLAY`/`NAP` reactions and a bounded mood value, keeping input handling, behavior, animation timing, and drawing separate.
+4. Add an opt-in PC bridge using already-permitted local CPU/RAM metrics, then verify fresh/stale telemetry, alert entry/clear, and unaffected telemetry pages on hardware.
+5. Measure heap and frame timing; only then choose sprite depth, refresh rate, and any extra reactions.
+
+The supplied PC bridge excerpt is malformed as pasted (multiple statements are collapsed into one line and function boundaries are missing), so it is not runnable source. Reconstruct it as a separate, documented utility only when implementation is authorized. Its dependency proposal (`psutil` and `pyserial`) should be reconciled with this repo's existing Python service and serial ownership before adding dependencies or a second process that competes for the device port.
+
 ### Memory and frame-rate constraints
 
 The example's 16-bit full-screen buffer arithmetic is correct: 240×240×2 = 115,200 bytes; 320×240×2 = 153,600 bytes. The current firmware renderer uses a single 320×240 8-bit buffer (76,800 bytes). A single 16-bit canvas would add about 76,800 bytes over that buffer; a second 16-bit full-screen buffer would add another 153,600 bytes. Reusing the existing canvas is therefore the initial option to investigate, subject to color-depth and renderer compatibility.
