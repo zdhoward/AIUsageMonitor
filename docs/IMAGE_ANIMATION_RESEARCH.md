@@ -10,10 +10,11 @@ The recently flashed `t3/optional-pages-screensaver` prototype (`ed6355a`) conta
 
 ## Procedural screensaver scene ideas
 
-The supplied TFT_eSPI sketch suggests a second, independent path for optional screensaver content: generate scenes with drawing primitives on the ESP32, without source images or a conversion pipeline. The two candidate scenes are:
+The supplied TFT_eSPI sketches suggest a second, independent path for optional screensaver content: generate scenes with drawing primitives on the ESP32, without source images or a conversion pipeline. Candidate scenes are:
 
 - **Starfield:** stars move outward from a vanishing point with perspective streaks and a dark gradient background.
 - **Tiny living world:** a synthwave sunset, layered mountains and city, blinking windows, a moving hover pod, rain, and a neon perspective road.
+- **Ambient liquid:** a spring-mass surface with droplets, impact ripples, and splash particles, over a quiet starry background. The proposed extension fills the screen gradually and starts a self-drain cycle when the liquid reaches about 80% of the screen height, like a toilet flush.
 
 These are exploratory scene concepts, not selected designs. If pursued, they should integrate as scene renderers in the existing page/screensaver framework, rather than becoming a separate Arduino sketch. Scene selection and page visibility belong in build-time configuration, consistent with the earlier optional-pages request. Procedural rendering does not need the image importer described below; the future engine may share page lifecycle and timing conventions while keeping drawing code separate from frame-based assets.
 
@@ -31,6 +32,16 @@ The sketch's 30 FPS is a target cap, not evidence that the board can sustain tha
 4. Tune scene complexity and frame pacing from those measurements. Only consider RGB565 or another buffering strategy if color quality or measured performance requires it.
 
 Open implementation choices remain: one configurable procedural-scene page versus separate pages, whether the current RGB332 buffer can serve both scenes adequately, and what frame-rate target is comfortable on the actual board. No code or runtime evidence for these scenes has been added yet.
+
+### Ambient liquid behavior and feasibility
+
+The supplied liquid sketch is a lightweight 1D spring-mass surface, not a full 2D fluid simulation. Neighbor-coupled surface nodes spread impacts into ripples; damping settles them; particles form splashes. The example includes periodic falling balls, not rain droplets, and does not implement gradual filling or a drain/flush. Those are additional requested behaviors to plan separately.
+
+For a first version, treat fill level and flush as an explicit scene state: occasional droplets add volume and surface impacts, a rising baseline represents accumulated liquid, reaching a configurable threshold near 80% of screen height triggers a brief drain animation, then the scene resets to its low level and resumes. Preserve small surface ripples during each state. Clarify whether “80% up the screen” means liquid occupies 80% of the display from the bottom, and whether flush should empty almost completely or stop at a residual level; the outline assumes 80% filled and drains near empty.
+
+The code's nominal 40 FPS render target also needs measurement. Its fixed 60 Hz physics loop is sensible in principle, but drawing a 16-bit full-screen buffer and updating/drawing many columns, contour segments, and particles will be costly. Reuse the existing render buffer if compatible, measure free heap and frame durations, and choose the simulation/render rates from device results. Keep particle and wave-node counts bounded. Do not add a full 2D fluid solver for the initial ambient effect.
+
+Candidate first milestone: implement the idle liquid surface and droplet impacts; next add gradual fill and the threshold-triggered self-drain cycle; finally tune color, rates, particle counts, and wake/screen-saver behavior on the board. This is a planning sequence only; no implementation decision or runtime evidence has been made.
 
 ## Authoring inputs and metadata
 
