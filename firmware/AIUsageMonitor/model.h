@@ -23,6 +23,9 @@ struct AccData {
 };
 
 struct Model {
+  char mintSid[17] = "";
+  uint32_t mintN = 0, mintAt = 0, mintTtl = 0;
+  char mintExpression[10] = "content";
   bool valid = false;
   uint32_t seq = 0;
   uint32_t rxMillis = 0;  // millis() when this payload arrived

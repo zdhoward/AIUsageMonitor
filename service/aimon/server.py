@@ -10,6 +10,7 @@ POST /v1/serial/resume
 from __future__ import annotations
 
 import json
+import ipaddress
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,7 @@ from urllib.parse import parse_qs, urlparse
 
 from . import log
 from .config import Settings
+from .companion import Companion, LocalMetrics
 from .serial_link import SerialLink
 from .snapshot import Collector, build_payload, build_status
 
@@ -27,14 +29,42 @@ class App:
         self.collector = Collector(settings)
         self.started = time.time()
         self._seq = 0
+        self._payload_lock = threading.Lock()
+        self.companion = Companion()
+        self._behavior_wake = threading.Event()
         self._stop = threading.Event()
         self.serial: SerialLink | None = None
         if settings.serial_enabled:
             self.serial = SerialLink(settings.serial_port, settings.serial_baud, settings.push_interval_s, self.device_payload)
 
     def device_payload(self) -> dict:
-        self._seq += 1
-        return build_payload(self.collector.snapshot(), time.time(), self.collector.pricing, self.s, self._seq)
+        with self._payload_lock:
+            self._seq += 1
+            payload = build_payload(self.collector.snapshot(), time.time(), self.collector.pricing, self.s, self._seq)
+            mint = self.companion.snapshot()
+            if mint:
+                payload["mint"] = mint
+            # Never truncate JSON or transmit a line the firmware will discard.
+            if len(json.dumps(payload, separators=(",", ":")).encode()) > 4095:
+                payload = {"v": 1, "seq": self._seq, "ok": 0, "err": "payload too large", "mint": mint}
+            return payload
+
+    def behavior_loop(self) -> None:
+        metrics = LocalMetrics() if self.s.mint_metrics_enabled else None
+        next_sample = 0.0
+        while not self._stop.is_set():
+            self._behavior_wake.clear()
+            now = time.monotonic()
+            sample = None
+            if metrics and now >= next_sample:
+                sample = metrics.sample()
+                next_sample = now + 1
+            before = self.companion.snapshot(now)
+            started = self.companion.tick(now, sample)
+            after = self.companion.snapshot(now)
+            if self.serial and (started or before is None or before["e"] != after["e"]):
+                self.serial.request_push()
+            self._behavior_wake.wait(0.25)
 
     def refresh_loop(self) -> None:
         while not self._stop.is_set():
@@ -103,6 +133,17 @@ class App:
 
             def do_POST(self):
                 url = urlparse(self.path)
+                if url.path == "/v1/mint/react":
+                    if not ipaddress.ip_address(self.client_address[0]).is_loopback:
+                        return self._send(403, {"error": "local reactions only"})
+                    query = parse_qs(url.query, keep_blank_values=True)
+                    if (set(query) != {"action"} or len(query["action"]) != 1
+                            or self.headers.get("Content-Length", "0") != "0"
+                            or self.headers.get("Transfer-Encoding")):
+                        return self._send(400, {"error": "expected one action and empty body"})
+                    code = app.companion.request(query["action"][0])
+                    app._behavior_wake.set()
+                    return self._send(code, {"accepted": code in (200, 202)})
                 if app.serial is None:
                     return self._send(409, {"error": "serial disabled"})
                 if url.path == "/v1/serial/pause":
@@ -120,6 +161,7 @@ class App:
                 log.debug("http.request", line=fmt % args)
 
         self.collector.refresh()
+        threading.Thread(target=self.behavior_loop, name="mint", daemon=True).start()
         threading.Thread(target=self.refresh_loop, name="refresh", daemon=True).start()
         if self.serial:
             threading.Thread(target=self.serial.run, name="serial", daemon=True).start()

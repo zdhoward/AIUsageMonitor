@@ -40,6 +40,7 @@ class SerialLink:
         self.interval_s = interval_s
         self.get_payload = get_payload
         self._stop = threading.Event()
+        self._push = threading.Event()
         self._paused_until = 0.0
         self._ser = None
         self.device_hello: str | None = None
@@ -54,6 +55,11 @@ class SerialLink:
 
     def resume(self) -> None:
         self._paused_until = 0.0
+        self.request_push()
+
+    def request_push(self) -> None:
+        """Coalesce updates; the serial owner sends at most ten per second."""
+        self._push.set()
 
     @property
     def paused(self) -> bool:
@@ -115,11 +121,16 @@ class SerialLink:
                     continue
                 next_push = 0.0
             try:
-                if now >= next_push:
+                if now >= next_push or self._push.is_set():
+                    self._push.clear()
                     line = json.dumps(self.get_payload(), separators=(",", ":")) + "\n"
-                    self._ser.write(line.encode("utf-8"))
-                    self.last_push = now
-                    next_push = now + self.interval_s
+                    encoded = line.encode("utf-8")
+                    if len(encoded) <= 4096:
+                        self._ser.write(encoded)
+                        self.last_push = now
+                    else:
+                        log.warn("serial.payload_too_large", bytes=len(encoded))
+                    next_push = now + min(self.interval_s, 5.0)
                 waiting = self._ser.in_waiting
                 if waiting:
                     buf += self._ser.read(waiting)
