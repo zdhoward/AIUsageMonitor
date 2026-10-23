@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: visual-pages plan review
+
+- Reviewed T-008 against local main `60c67f2`, T-001/prototype `ed6355a`, firmware/service code and protocol/configuration/research docs. Main still has two views; installed prototype provenance is unconfirmed because flash records differ.
+- Split delivery into dependent tickets with measurement gates, a navigable Screensaver preview independent of automatic activation, and PC-owned MINT through the existing serial service.
+- Kept all available pages default-on and activation off; deferred extra asset importers/heavier rendering until tiny on-device probes justify them. Planning only: no implementation, tests, flash or push.
+
 ## 2026-10-23: visual pages implementation plan
 
 - Consolidated optional navigation/screensaver requirements, PC-driven MINT, procedural scene ideas, and the future image/animation workflow into T-008 for Sol 6.1 review.
