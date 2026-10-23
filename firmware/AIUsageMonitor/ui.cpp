@@ -3,6 +3,7 @@
 // canvas size after rotation, so the same code serves portrait and landscape.
 #include "ui.h"
 #include "config.h"
+#include "face.h"
 
 static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
@@ -679,28 +680,7 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
 
 #if UI_COMPANION_ENABLED
 static void drawCompanion(const Model&, uint32_t now, const ViewDef&, int) {
-  const int cx = W / 2, cy = H / 2;
-  const int r = min(W, H) / 5;
-  const bool happy = (now % 6000UL) >= 3000UL;
-  text("COMPANION", cx, 18, 2, C_TEXT, TC_DATUM);
-  G().drawCircle(cx, cy, r, C_GREEN);
-  for (int side = -1; side <= 1; side += 2) {
-    int ex = cx + side * r / 3;
-    if (happy) {
-      G().drawLine(ex - 6, cy - 8, ex, cy - 14, C_TEXT);
-      G().drawLine(ex, cy - 14, ex + 6, cy - 8, C_TEXT);
-    } else {
-      G().fillCircle(ex, cy - 10, 4, C_TEXT);
-    }
-  }
-  if (happy) {
-    G().drawLine(cx - 16, cy + 10, cx - 8, cy + 18, C_TEXT);
-    G().drawLine(cx - 8, cy + 18, cx + 8, cy + 18, C_TEXT);
-    G().drawLine(cx + 8, cy + 18, cx + 16, cy + 10, C_TEXT);
-  } else {
-    G().drawFastHLine(cx - 10, cy + 14, 20, C_TEXT);
-  }
-  text(happy ? "Happy" : "Idle", cx, cy + r + 12, 2, C_MUTED, TC_DATUM);
+  faceDraw(G(), W, H, C_GREEN, C_BG);
 }
 #endif
 
@@ -770,6 +750,10 @@ void uiBegin(TFT_eSPI& tft, uint8_t rotation) {
 
 bool uiHasFramebuffer() { return spr != nullptr; }
 
+uint32_t uiFrameIntervalMs() {
+  return kStaticViews[selView].id == UI_PAGE_COMPANION ? 33UL : REDRAW_MS;
+}
+
 bool uiScreenshot(Stream& out) {
   if (!spr) return false;
   out.printf("@SHOT %d %d 8\n", W, H);  // RGB332, row-major, as sent to the panel
@@ -814,6 +798,8 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   animate(m, now);
   uint8_t current = selView < kViewCount ? selView : 0;
   const ViewDef& v = kStaticViews[current];
+  faceUpdate(now, v.id == UI_PAGE_COMPANION ||
+    (v.id == UI_PAGE_SCREENSAVER && UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION));
   const bool screensaverDashboardTarget =
 #if UI_SCREENSAVER_ENABLED
     (UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS);
@@ -847,6 +833,6 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       v.draw(m, now, v, 0);
     }
   }
-  drawDots(current);
+  if (v.id != UI_PAGE_COMPANION) drawDots(current);
   if (spr) spr->pushSprite(0, 0);
 }

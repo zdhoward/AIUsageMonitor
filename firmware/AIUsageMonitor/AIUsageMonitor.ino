@@ -11,6 +11,7 @@
 #include "config.h"
 #include "model.h"
 #include "ui.h"
+#include "face.h"
 #include <Wire.h>
 
 #if AIMON_USE_WIFI
@@ -84,6 +85,12 @@ static void handleCommand(const char* cmd) {
     uiNextView(model);
     lastDraw = 0;
     Serial.print("@VIEW next\n");
+  } else if (!strncmp(cmd, "!FACE ", 6)) {
+    // Seven fixed names, no allocation. Oversized/unknown names select content.
+    bool known = strlen(cmd + 6) <= 9 && faceSelectExpression(cmd + 6);
+    if (!known) faceNeutral();
+    Serial.print(known ? "@FACE ok\n" : "@ERR face; using content\n");
+    lastDraw = 0;
   } else if (!strncmp(cmd, "!ROT ", 5)) {
     uiSetRotation((uint8_t)atoi(cmd + 5));
     Serial.printf("@ROT %d w=%d h=%d\n", atoi(cmd + 5) & 3, tft.width(), tft.height());
@@ -167,7 +174,7 @@ void loop() {
   pollWifi();
 #endif
   uint32_t now = millis();
-  if (lastDraw == 0 || now - lastDraw >= REDRAW_MS) {
+  if (lastDraw == 0 || now - lastDraw >= uiFrameIntervalMs()) {
     lastDraw = now ? now : 1;
     uiRender(model, now, linkInfo());
   }
