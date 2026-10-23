@@ -2,6 +2,28 @@
 
 The tested host is Windows with PowerShell. The Python service uses the standard library plus pyserial; Linux/macOS support for the helper scripts is not claimed. The default transport is USB, with no Wi-Fi credentials or external board wiring required.
 
+## MINT session state
+
+Service startup allocates an ordered session in
+`%LOCALAPPDATA%/AIUsageMonitor/mint-session.sqlite3` (fallback:
+`~/.local/share/AIUsageMonitor/mint-session.sqlite3`). Keep this user-local file
+across upgrades, checkouts and restarts; do not place it on a network share.
+SQLite's immediate transaction and FULL synchronous commit serialize concurrent
+allocations with a 10-second lock timeout. Storage must honor durable writes.
+Allocation errors abort startup before any MINT publishing. Values cannot exceed
+16 hex digits; exhaustion requires coordinated recovery, never wraparound.
+
+Run only one active service per device. Concurrent startups receive unique IDs,
+but a newer service retires the older service's identity. All instances serving
+that device must use the same OS user's state, not separate copies/accounts.
+
+If state is lost, restored from an older backup, or corrupt: stop every service,
+restore the latest known state if available, otherwise move the damaged database
+and any journal aside, reboot the device to clear its identity high-water, then
+start one service to create fresh state. A rollback of state cannot safely bypass
+the firmware's retired-session rejection. Do not delete state as routine repair
+without that coordinated device reboot. Corrupt files are never auto-reset.
+
 ## 1. Install the host tools
 
 Install Git, Python 3.13 and Arduino CLI (standalone, or bundled with Arduino IDE 2). A CH340 driver may be needed if Windows does not expose the board as a serial port. Use a USB data cable, not a charge-only cable.

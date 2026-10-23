@@ -176,8 +176,10 @@ void loop() {
   pollWifi();
 #endif
   uint32_t now = millis();
-  const char* expression = model.mintTtl && now - model.mintAt < model.mintTtl
-      ? model.mintExpression : "content";
+  // Retire an observed expiry permanently, including across a full millis cycle.
+  // Keep the session/revision high-water so expired frames cannot replay.
+  if (model.mintTtl && now - model.mintAt >= model.mintTtl) model.mintTtl = 0;
+  const char* expression = model.mintTtl ? model.mintExpression : "content";
   if (strcmp(selectedFace, expression)) {
     faceSelectExpression(expression);
     strlcpy(selectedFace, expression, sizeof selectedFace);

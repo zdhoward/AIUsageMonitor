@@ -3,8 +3,13 @@ import json
 import random
 import time
 import unittest
+import tempfile
+import sqlite3
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 
-from aimon.companion import Companion
+from aimon.companion import Companion, allocate_session
 from aimon.config import Settings
 from aimon.server import App
 from aimon.snapshot import State, build_payload
@@ -13,6 +18,12 @@ from aimon.models import Account, Window
 
 
 class CompanionTests(unittest.TestCase):
+    def setUp(self):
+        # App() too must never allocate from the real user's durable state.
+        allocator = patch("aimon.companion.allocate_session", return_value="0000000000000001")
+        allocator.start()
+        self.addCleanup(allocator.stop)
+
     def make(self):
         return Companion(now=0, rng=random.Random(9))
 
@@ -99,6 +110,38 @@ class CompanionTests(unittest.TestCase):
         self.assertEqual(second["acc"][0]["age"], 110)
         self.assertEqual(second["acc"][0]["st"], 1)
         self.assertEqual(second["acc"][0]["w"][0]["r"], 890)
+
+
+class SessionTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.path = Path(tmp.name) / "session.sqlite3"
+
+    def test_restart_with_clock_rollback(self):
+        first = allocate_session(self.path, lambda: 1000)
+        second = allocate_session(self.path, lambda: 10)
+        self.assertEqual((first, second), ("00000000000003e8", "00000000000003e9"))
+
+    def test_concurrent_allocations_are_unique_and_persisted(self):
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            ids = list(pool.map(lambda _: allocate_session(self.path, lambda: 1), range(24)))
+        self.assertEqual(sorted(ids), [f"{i:016x}" for i in range(1, 25)])
+        self.assertEqual(allocate_session(self.path, lambda: 0), f"{25:016x}")
+
+    def test_corruption_exhaustion_and_failed_allocation_stop_publication(self):
+        allocate_session(self.path, lambda: 1)
+        for stored in ("broken", "ffffffffffffffff"):
+            with sqlite3.connect(self.path) as db:
+                db.execute("UPDATE session SET sid=?", (stored,))
+            db.close()
+            with self.assertRaises(ValueError):
+                Companion(session_allocator=lambda: allocate_session(self.path, lambda: 1))
+        with self.assertRaises(ValueError):
+            allocate_session(Path(self.path.parent) / "range.sqlite3", lambda: 1 << 64)
+        self.path.write_bytes(b"not a database")
+        with self.assertRaises(sqlite3.DatabaseError):
+            allocate_session(self.path, lambda: 1)
 
 
 if __name__ == "__main__":

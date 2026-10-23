@@ -1,6 +1,8 @@
 {
-  "instructions": "Sprint-end firmware fixture plan. Reset Model per case; feed frames at at_ms, call the loop expiry selector at observe_ms, compare expression. Not yet executed on a host harness or hardware.",
+  "instructions": "Sprint-end firmware fixture plan. Reset Model per case; feed frames at at_ms, call the actual loop expiry selector at observe_ms or each ordered observations entry; compare expression, TTL and retained identity when specified. elapsed_ms denotes elapsed time since the first frame across uint32 wrap. Not yet executed on a host harness or hardware.",
   "cases": [
+    {"name":"expired lease never resurrects after full cycle", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":1000}}}], "observations":[{"at_ms":1100,"expression":"content","mintTtl":0},{"elapsed_ms":4294967346,"at_ms":150,"expression":"content","mintTtl":0}],"retained_sid":"18e0123456789abc","retained_n":1},
+    {"name":"retired session rejected after expiry", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"00000000000003e9","n":1,"e":"happy","ttl":1000}}},{"at_ms":1200,"payload":{"v":1,"mint":{"sid":"00000000000003e8","n":100,"e":"stressed","ttl":15000}}}],"observe_ms":1200,"expression":"content"},
     {"name":"disconnect expiry", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":1000}}}], "observe_ms":1100,"expression":"content"},
     {"name":"duplicate does not renew", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"happy","ttl":1000}}},{"at_ms":200,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"happy","ttl":1000}}}],"observe_ms":200,"expression":"content"},
     {"name":"quota only clears", "frames":[{"at_ms":100,"payload":{"v":1,"mint":{"sid":"18e0123456789abc","n":1,"e":"stressed","ttl":15000}}},{"at_ms":200,"payload":{"v":1,"acc":[]}}],"observe_ms":200,"expression":"content"},
