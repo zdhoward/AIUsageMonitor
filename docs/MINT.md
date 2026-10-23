@@ -120,6 +120,11 @@ deliberately slows animation during sustained overload. Blink and gaze clocks
 are independent, mouth uses elapsed exponential blending, sweat uses a bounded
 1400ms phase. Screenshot commands may block serial while emitting frame bytes.
 
+The blend converts unsigned elapsed milliseconds to float before negation so
+the exponential decay remains finite. Negating the unsigned value first wraps
+and overflows the exponential, corrupting mouth state; reboot/flash is needed
+to reset state already corrupted by that earlier firmware.
+
 ## Verification and hardware follow-up
 
 Production acceptance: `powershell -NoProfile -File scripts/build.ps1` and
