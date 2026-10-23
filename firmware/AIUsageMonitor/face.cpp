@@ -77,7 +77,7 @@ void faceUpdate(uint32_t now, bool visible) {
     gazeY.step(gazeTargetY, dt, 140, 18);
     remaining -= step;
   }
-  float alpha = 1 - expf(-dtMs / 150.0f);
+  float alpha = 1 - expf(-static_cast<float>(dtMs) / 150.0f);
   blend(mouthWidth, target->mouthWidth, alpha);
   blend(smile, target->smile, alpha);
   blend(opening, target->opening, alpha);
