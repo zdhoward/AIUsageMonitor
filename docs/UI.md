@@ -2,12 +2,18 @@
 
 A quiet instrument panel below a monitor. Percent remaining and reset timing dominate; cached readings stay bright even when the link or a source ages.
 
-## Exactly two views
+## Default navigation entries
 
-Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots, so a third static view would be one entry plus its renderer.
+Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots; stable page IDs (`UI_PAGE_*`) do not shift when optional pages are compiled out.
 
+Default order: Console, Details, Companion, Images, Screensaver.
 - **Console (default):** three fixed client rows — `CLAUDE A`, `CLAUDE B`, `CODEX` — mapped by account name, so service reordering does not move rows. The header groups `AI USAGE (3 CLIENTS)` at left and aligns **Session** (`5h`) and **Weekly** (`7d`) headings above their ring columns. Each ring centers exact percent remaining and eases clockwise from 12 o'clock. Its large, bright caption shows time until reset, `due` after a deadline, or `--` when unavailable. The data area beneath provider titles is intentionally empty for future use. Unknown quotas show `--`, distinct from empty 0% or full 100% rings.
 - **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
+- **Companion:** loops between idle and happy expressions using existing drawing primitives. Renders without quota data.
+- **Images:** centered explanatory placeholder text. Renders without quota data.
+- **Screensaver:** normal navigation stop that previews the configured target (`UI_SCREENSAVER_PAGE`, default Companion) even while automatic activation is off. It is identified by replacing the target's header band with `SCREENSAVER`; the preview body/divider stays intact. Tap/`!NEXT` advances normally. The target must be an included, eligible page other than Screensaver; invalid targets fail at build time. Automatic activation remains off by default and is not implemented in this slice (T-008B).
+
+Optional pages default on and are removable with one switch each in `config.h`: `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`, `UI_SCREENSAVER_ENABLED`. Console and Details remain available. Visual pages render without quota data; dashboard waiting behaviour remains for Console/Details.
 
 Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.
 

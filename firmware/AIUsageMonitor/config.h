@@ -78,3 +78,64 @@
 
 // Set to 0 for immediate value changes and a slower, static display.
 #define UI_ANIMATION 1
+
+// ---------------------------------------------------------------------------
+// Optional visual pages. Console and Details are always available. Companion,
+// Images and the Screensaver navigation entry default on and can be removed at
+// build time with one switch each. Keep these macros guarded so a project-wide
+// override wins.
+// ---------------------------------------------------------------------------
+#ifndef UI_COMPANION_ENABLED
+#define UI_COMPANION_ENABLED 1
+#endif
+#ifndef UI_IMAGE_ENABLED
+#define UI_IMAGE_ENABLED 1
+#endif
+#ifndef UI_SCREENSAVER_ENABLED
+#define UI_SCREENSAVER_ENABLED 1
+#endif
+
+// Stable page IDs. They are independent of which optional pages are compiled
+// in, so persisted/serial references do not shift when a page is omitted.
+#define UI_PAGE_CONSOLE 0
+#define UI_PAGE_DETAILS 1
+#define UI_PAGE_COMPANION 2
+#define UI_PAGE_IMAGE 3
+#define UI_PAGE_SCREENSAVER 4
+
+// Screensaver target and automatic activation. The navigation entry above
+// previews this target even when activation is disabled. Automatic activation
+// is intentionally not implemented in this slice (see T-008B); the flag stays
+// off and does nothing yet.
+#ifndef UI_SCREENSAVER_PAGE
+#define UI_SCREENSAVER_PAGE UI_PAGE_COMPANION
+#endif
+#ifndef UI_SCREENSAVER_AUTO_ENABLED
+#define UI_SCREENSAVER_AUTO_ENABLED 0
+#endif
+#ifndef UI_SCREENSAVER_TIMEOUT_MS
+#define UI_SCREENSAVER_TIMEOUT_MS 60000UL
+#endif
+
+// Build-time consistency checks. A Screensaver target is required only when the
+// entry is compiled in or automatic activation is enabled; otherwise omitting
+// the entry and leaving activation off needs no live target.
+#if UI_SCREENSAVER_ENABLED || UI_SCREENSAVER_AUTO_ENABLED
+#if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
+#error "Screensaver cannot target itself"
+#endif
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_IMAGE
+#error "Unknown screensaver target page"
+#endif
+#if UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION && !UI_COMPANION_ENABLED
+#error "Screensaver target must be an enabled page"
+#endif
+#if UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE && !UI_IMAGE_ENABLED
+#error "Screensaver target must be an enabled page"
+#endif
+#endif
+#if UI_SCREENSAVER_AUTO_ENABLED
+#if UI_SCREENSAVER_TIMEOUT_MS < 1UL || UI_SCREENSAVER_TIMEOUT_MS > 2147483647UL
+#error "Screensaver timeout must be 1..2147483647 milliseconds"
+#endif
+#endif
