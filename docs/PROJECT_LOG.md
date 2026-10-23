@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: default visual-page slice installed
+
+- After owner-authorized free-model corrections, source review passed and main production build succeeded. Integrated five default-on entries and build-time validation, preserving a concurrent local footer-spacing fix.
+- Flashed COM6 with hash verification; captured all five pages plus portrait Console and serial navigation wrap. Service resumed ACKs; restored landscape Console. Captures live under `docs/img/T-008A-*`.
+- T-008A is a development slice, not full T-008 completion: automatic saver/MINT/scenes/assets remain pending. Physical tap acceptance is outstanding; portrait footer source age truncation is documented. Tests deferred; no push or release tag.
+
 ## 2026-10-23: first visual-pages implementation attempt
 
 - Scoped T-008A and delegated to free routes. DeepSeek quota was exhausted; LiteLLM free-coder returned a patch with passing production build and scope checks.

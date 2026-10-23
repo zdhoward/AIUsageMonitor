@@ -120,6 +120,9 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `CLIENT_STALE_S`: firmware source-age threshold; keep consistent with service settings if changed.
 - `UI_ANIMATION`: restrained ring animation on/off.
 - `SHOW_REMAINING`: detailed dashboard only; console rings always show remaining quota.
+- `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`, `UI_SCREENSAVER_ENABLED`: default-on optional navigation entries (1/0).
+- `UI_SCREENSAVER_PAGE`: screensaver preview target, default `UI_PAGE_COMPANION`; must be an enabled eligible page.
+- `UI_SCREENSAVER_AUTO_ENABLED`: automatic activation flag; defaults off and is not active in this build (T-008B pending).
 
 Tap and release anywhere to switch between the two views. Holds of 1.5 seconds or longer are ignored. [UI.md](UI.md) describes layout and extension points.
 

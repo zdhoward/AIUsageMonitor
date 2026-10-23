@@ -1,5 +1,15 @@
 # Test report
 
+## T-008A source/build checks (2026-10-23)
+
+- Production build (`scripts/build.ps1`) passes: 414107 bytes flash, 28648 bytes static RAM, with default five entries after R3 corrective layout changes.
+- `git diff --check` passes.
+- Variant builds passed: disable Companion, disable Images, disable Screensaver entry, and all three optional pages disabled.
+- Invalid target builds failed as intended: self-target, unknown target (99), disabled target, and disabled-target-with-activation-enabled.
+- Subsequent authorized device pass: production main build flashed COM6 with esptool hash verification. Five default entries captured and serial `!NEXT` wrapped back to Console; service resumed fresh ACKs. Evidence: [Console](img/T-008A-console.png), [Details](img/T-008A-details.png), [Companion](img/T-008A-companion.png), [Images](img/T-008A-images.png), [Screensaver preview](img/T-008A-screensaver.png), [portrait Console](img/T-008A-portrait-console.png). Coordinator inspected these actual RGB332 frames; landscape footer/dots and preview identity are clear. Portrait source age truncates to `Updated~`. Restored rotation 1 and Console afterward.
+- Physical taps, panel appearance, sustained animation/FPS, no-data boot, alternate saver targets and remaining runtime rotation variants remain pending. Companion/preview captures show Happy and Idle respectively, not a timing benchmark. Screensaver auto activation remains off and unimplemented (T-008B).
+- Service tests were not run.
+
 Current baseline, 2026-10-22: all 22 existing service tests pass; the service is healthy with firmware v1.4.2 / rotation 1. The firmware build, flash and framebuffer capture were completed before the public documentation work. Historical dimming/rotation observations below describe old firmware, not current behavior.
 
 ## v1.4.2 reset readability (2026-10-22)

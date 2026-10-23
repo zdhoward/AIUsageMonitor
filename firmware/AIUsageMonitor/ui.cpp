@@ -18,15 +18,34 @@ static uint32_t animationMillis = 0;
 // and pagination dots read this list, so a new page needs one entry plus its
 // renderer. Generated overview/focus pages are intentionally gone.
 struct ViewDef {
+  uint8_t id;
   void (*draw)(const Model&, uint32_t, const ViewDef&, int y);
 };
 
 static void drawConsole(const Model&, uint32_t, const ViewDef&, int y);
 static void drawDetails(const Model&, uint32_t, const ViewDef&, int y);
+#if UI_COMPANION_ENABLED
+static void drawCompanion(const Model&, uint32_t, const ViewDef&, int y);
+#endif
+#if UI_IMAGE_ENABLED
+static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
+#endif
+#if UI_SCREENSAVER_ENABLED
+static void drawScreensaver(const Model&, uint32_t, const ViewDef&, int y);
+#endif
 
 static const ViewDef kStaticViews[] = {
-  {drawConsole},
-  {drawDetails},
+  {UI_PAGE_CONSOLE, drawConsole},
+  {UI_PAGE_DETAILS, drawDetails},
+#if UI_COMPANION_ENABLED
+  {UI_PAGE_COMPANION, drawCompanion},
+#endif
+#if UI_IMAGE_ENABLED
+  {UI_PAGE_IMAGE, drawImage},
+#endif
+#if UI_SCREENSAVER_ENABLED
+  {UI_PAGE_SCREENSAVER, drawScreensaver},
+#endif
 };
 static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t selView = 0;  // console is the default view
@@ -331,7 +350,9 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
     else fmtDur(d, sizeof d, oldest);
     snprintf(b, sizeof b, "Updated %s", d);
   }
-  text(b, pad, fy, 2, C_MUTED);
+  // Preserve the local footer reservation while bounding both text fields.
+  const int dotSpace = kViewCount * 10 + 8;
+  text(b, pad, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - dotSpace - 108);
 
   const char* st;
   uint16_t sc;
@@ -345,7 +366,7 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
     st = "CONNECTED";
     sc = C_GREEN;
   }
-  text(st, W - pad - 28, fy, 2, sc, TR_DATUM, W - 80);
+  text(st, W - pad - dotSpace, fy, 2, sc, TR_DATUM, 100);
 }
 
 // ---------------------------------------------------------------- detail sections
@@ -654,6 +675,74 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
   }
 }
 
+// ---------------------------------------------------------------- optional pages
+
+#if UI_COMPANION_ENABLED
+static void drawCompanion(const Model&, uint32_t now, const ViewDef&, int) {
+  const int cx = W / 2, cy = H / 2;
+  const int r = min(W, H) / 5;
+  const bool happy = (now % 6000UL) >= 3000UL;
+  text("COMPANION", cx, 18, 2, C_TEXT, TC_DATUM);
+  G().drawCircle(cx, cy, r, C_GREEN);
+  for (int side = -1; side <= 1; side += 2) {
+    int ex = cx + side * r / 3;
+    if (happy) {
+      G().drawLine(ex - 6, cy - 8, ex, cy - 14, C_TEXT);
+      G().drawLine(ex, cy - 14, ex + 6, cy - 8, C_TEXT);
+    } else {
+      G().fillCircle(ex, cy - 10, 4, C_TEXT);
+    }
+  }
+  if (happy) {
+    G().drawLine(cx - 16, cy + 10, cx - 8, cy + 18, C_TEXT);
+    G().drawLine(cx - 8, cy + 18, cx + 8, cy + 18, C_TEXT);
+    G().drawLine(cx + 8, cy + 18, cx + 16, cy + 10, C_TEXT);
+  } else {
+    G().drawFastHLine(cx - 10, cy + 14, 20, C_TEXT);
+  }
+  text(happy ? "Happy" : "Idle", cx, cy + r + 12, 2, C_MUTED, TC_DATUM);
+}
+#endif
+
+#if UI_IMAGE_ENABLED
+static void drawImage(const Model&, uint32_t, const ViewDef&, int) {
+  text("Images / animation", W / 2, H / 2 - 24, 2, C_TEXT, MC_DATUM);
+  text("Placeholder for future content", W / 2, H / 2, 1, C_MUTED, MC_DATUM);
+  text("No images loaded", W / 2, H / 2 + 20, 2, C_MUTED, MC_DATUM);
+}
+#endif
+
+#if UI_SCREENSAVER_ENABLED
+static void drawScreensaver(const Model& m, uint32_t now, const ViewDef& v, int y) {
+  TFT_eSPI& g = G();
+#if UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION
+  drawCompanion(m, now, v, y);
+  // Replace the Companion header band with the Screensaver identity.
+  g.fillRect(0, 0, W, 36, C_BG);
+  text("SCREENSAVER", W / 2, 18, 2, C_MUTED, TC_DATUM);
+#elif UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE
+  drawImage(m, now, v, y);
+  // Images has an empty top header band; identify the preview there.
+  g.fillRect(0, 0, W, 22, C_BG);
+  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
+#elif UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE
+  drawConsole(m, now, v, 0);
+  // Replace the Console header band (y0..21) with the Screensaver identity.
+  g.fillRect(0, 0, W, 22, C_BG);
+  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
+#elif UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS
+  {
+    int yy = drawHeader(m, now, 0, 0, W);
+    drawDetails(m, now, v, yy);
+    text("tap to change view", 10, H - 13, 1, C_MUTED);
+  }
+  // Replace the Details header band (y0..19) with the Screensaver identity.
+  g.fillRect(0, 0, W, 20, C_BG);
+  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
+#endif
+}
+#endif
+
 // ---------------------------------------------------------------- public
 
 void uiSetRotation(uint8_t rotation) {
@@ -724,19 +813,40 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
   uint8_t current = selView < kViewCount ? selView : 0;
-  if (!m.valid) {
+  const ViewDef& v = kStaticViews[current];
+  const bool screensaverDashboardTarget =
+#if UI_SCREENSAVER_ENABLED
+    (UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS);
+#else
+    false;
+#endif
+  const bool dashboard = v.id == UI_PAGE_CONSOLE || v.id == UI_PAGE_DETAILS ||
+    (v.id == UI_PAGE_SCREENSAVER && screensaverDashboardTarget);
+  if (!m.valid && dashboard) {
     drawHeader(m, now, 0, 0, W);
+#if UI_SCREENSAVER_ENABLED
+    if (v.id == UI_PAGE_SCREENSAVER) {
+      TFT_eSPI& g = G();
+#if UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE
+      g.fillRect(0, 0, W, 22, C_BG);
+#elif UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS
+      g.fillRect(0, 0, W, 20, C_BG);
+#endif
+      text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
+    }
+#endif
     drawWaiting(now, linkInfo);
   } else {
-    const ViewDef& v = kStaticViews[current];
-    if (v.draw == drawConsole) {
+    if (v.id == UI_PAGE_CONSOLE) {
       v.draw(m, now, v, 0);
-    } else {
+    } else if (v.id == UI_PAGE_DETAILS) {
       int y = drawHeader(m, now, 0, 0, W);
       v.draw(m, now, v, y);
       text("tap to change view", 10, H - 13, 1, C_MUTED);
+    } else {
+      v.draw(m, now, v, 0);
     }
-    drawDots(current);
   }
+  drawDots(current);
   if (spr) spr->pushSprite(0, 0);
 }
