@@ -2,7 +2,8 @@
 
 ## 2026-10-23: procedural screensaver scene research
 
-- Recorded starfield and synthwave tiny-world concepts as optional procedural renderers, separate from the image conversion pipeline.
+- Recorded starfield, synthwave tiny-world, and ambient liquid concepts as optional procedural renderers, separate from the image conversion pipeline.
+- Distinguished the liquid sketch's spring-surface impacts from the requested gradual fill and threshold-triggered self-drain cycle; outlined a simple staged prototype.
 - Checked full-screen RGB565 buffer sizes and estimated the 40 MHz SPI transfer floor; 30 FPS remains unverified and requires on-device measurement.
 - Added a small candidate implementation and validation plan without changing firmware or selecting unresolved design details.
 
