@@ -94,7 +94,7 @@ The firmware has been built and flashed on the documented board; the service sui
 | [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
 | [UI](docs/UI.md) | Renderer layout, configuration and extension points |
 | [Image and animation research](docs/IMAGE_ANIMATION_RESEARCH.md) | Candidate authoring, conversion and playback workflow for future visual assets |
-| [Visual pages implementation brief](.tickets/T-008.md) | Planned optional pages, screensaver, PC-driven MINT, procedural scenes, and image animation work; awaiting plan review |
+| [Visual pages implementation plan](.tickets/T-008.md) | Reviewed staged plan; five-page T-008A placeholder/configuration slice is implemented, remaining saver/MINT/scenes/assets are follow-up work |
 | [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
 | [Contributing](CONTRIBUTING.md) | Development and validation expectations |
 | [Project log](docs/PROJECT_LOG.md) | Implementation decisions and milestones |

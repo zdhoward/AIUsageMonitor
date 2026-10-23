@@ -1,49 +1,22 @@
-# Handoff — visual pages plan, 2026-10-23
+# Handoff — visual pages implementation, 2026-10-23
 
-## Current session and next action
+## Current state
 
-The owner gathered optional display ideas and asked for a solid implementation plan to be reviewed and enhanced by Sol 6.1 before implementation. The consolidated brief is [T-008](.tickets/T-008.md); it is linked from the README and ticket index. Use the owner's latest Sol review prompt from the conversation, or follow the review request inside T-008. Sol is to update the plan and return bounded implementation tickets; do not treat the planning ticket as authorization to implement.
+T-008 has a reviewed staged plan. The first slice T-008A is on local `main` at `8ad29b6` (evidence correction `4630bcd`). Five entries are default-on and navigable: Console, Details, Companion, Images, Screensaver preview. Automatic inactivity activation remains off and unimplemented. MINT, procedural scenes and image playback remain unimplemented.
 
-- T-008 covers page/build configuration, a default-off screensaver, PC-driven MINT, optional procedural starfield/tiny-world/liquid scenes, and a future image/animation pipeline.
-- The existing serial connection is owned by the PC service and carries newline-delimited JSON. Do not create a competing bridge process for MINT. MINT behavior belongs on the PC; firmware renders received state.
-- Research notes are in [IMAGE_ANIMATION_RESEARCH.md](docs/IMAGE_ANIMATION_RESEARCH.md); they distinguish source sketches from verified runtime behavior and record display/transfer constraints.
-- **Baseline needs reconciliation:** the owner reported four views on the flashed device, but this `main` checkout's current firmware documents Console and Details only. Identify the intended implementation branch/commit and inspect the actual device baseline before drafting implementation tickets.
-- Local `main` is nine commits ahead of `origin/main`. Those commits are not pushed. Worktree was clean at wrap-up. No open pull requests were found. No tests or firmware build were run for this docs-only planning work; `git diff --check` passed before commit.
-- No firmware version bump or tag was made. Keep firmware version distinct from documentation-only commits.
+The development build uses 414,107 bytes flash and 28,648 bytes static RAM. It was flashed to COM6 with esptool hash verification. Captures for all five pages, portrait Console and serial `!NEXT` wrap are under `docs/img/T-008A-*`; service resumed fresh ACKs. Rotation 1 landscape Console was restored. Device still reports v1.4.2, so identify this development build by source commit/artifact rather than version string.
 
-Suggested immediate sequence: Sol 6.1 reviews T-008 read-only, reconciles the code/device discrepancy, splits it into small tickets with dependencies and evidence criteria, then returns unresolved owner questions. After that review, the owner can choose which implementation ticket to start and route it to a suitable Luna/free lane.
+Independent source review passed. Coordinator inspected framebuffer captures directly. The separate visual-review worker explicitly could not view the PNGs; its positive verdict is not evidence. Physical touch/panel appearance, no-data boot, alternate saver targets and remaining rotation variants are unverified. Portrait source-age footer truncates to `Updated~`. No FPS/long-run heap measurement was done. Service tests remain deferred to sprint end. No push, release tag or version bump occurred. Preserve unrelated worktrees and ignored `build/T-008A-preintegration-local.patch` (the overlapping preexisting footer-spacing edit reconciled during integration).
 
-## Prior release baseline
+## Next work
 
-The notes below describe the last public-release baseline before the local planning commits; verify against the intended branch before relying on them.
+1. Complete physical CST820 tap acceptance and record results; consider a separate portrait footer refinement.
+2. Continue reviewed tickets B–L. Next B implements automatic saver activation and wake-to-prior-entry; C measures frame/loop timing, heap/largest block and flash use before claiming scene/asset performance.
+3. Keep MINT behavior and optional CPU/RAM awareness in the existing PC service, sole USB serial owner. Extend existing JSON; never open a second COM-port process. Gate scene and asset growth on measured board results.
+4. At owner-declared sprint end, run affected service tests and authorized build variants, update evidence/docs, then commit meaningful slices. Do not tag until an authorized feature milestone is delivered.
 
-Firmware **v1.4.2** is flashed on the verified ESP32-2432S024C. Implementation commit `315d70c` is tagged `v1.4.2`; later documentation commits do not change the firmware version.
+## Commands and repository state
 
-- Landscape rotation 1, 320×240; two tap-cycled views: console and details.
-- Three stable rows: Claude A, Claude B, Codex; Session left, Weekly right, percent remaining.
-- Bright font 2 reset captions, rings raised 6px. `--` is unknown, `due` is a passed deadline. Measured zero stays distinct.
-- Cached readings remain bright; RAM cache resets at reboot. Source age and link health remain visible.
-- Collector rereads caches/transcripts at deadlines and normally every 10 seconds. It does not force provider queries or infer refills.
+From root: `scripts/service.ps1 status`, `scripts/build.ps1`, `scripts/flash.ps1 -Port COM6`, `python scripts/screenshot.py --feed --out build/dashboard.png`. At sprint end, service tests from `service/`: `python -m unittest discover -s tests -t .`. Screenshot/flash helpers coordinate service pause/resume for serial access.
 
-## Public preparation
-
-The owner selected **MIT**, pushed the completed docs, and directed the repository to be made public. GitHub now reports the repository as public, with a project description and topics. `main` was pushed through `a7f2dd7`; no subsequent source changes are pending in the published tree. The docs and current-source secret scan are complete. Earlier Git history includes the board MAC address and local Windows paths described in [PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md); no history rewrite was performed.
-
-The README leads with the [v1.4.2 framebuffer](docs/img/v1.4.2-rings.png). Setup, complete implemented GPIO mapping, data sources, protocol/API and contribution guidance support reproduction. The safe example config disables optional OpenRouter access; the code default is still enabled. Python USB dependency is pinned in `service/requirements.txt`.
-
-## Validation baseline
-
-- 22 service tests pass on unchanged v1.4.2 code.
-- Firmware build: 413,263 bytes flash, 28,648 bytes static RAM; upload hash verified.
-- Device reports v1.4.2, `rot=1 w=320 h=240 fb=1` and normal acknowledgements. Framebuffer inspected for layout/clearance.
-- Physical viewing comfort, tap reliability, unplug/replug, sleep and real logon remain unverified. Optional Wi-Fi is untested.
-- Deadline scheduling was inspected, not observed through a real reset or covered by a dedicated timer test.
-- Final docs/link/config and secret-scan results: [project log](docs/PROJECT_LOG.md). No fresh board compatibility is claimed.
-
-## Commands and next actions
-
-From the root: `scripts/service.ps1 status`, `scripts/build.ps1`, `scripts/flash.ps1`, and `python scripts/screenshot.py --feed --out build/dashboard.png`. From `service/`: `python -m unittest discover -s tests -t .`. The service binds to localhost port 8797; screenshots/flashing coordinate serial-port release. Logs and builds are Git-ignored.
-
-GitHub URL: https://github.com/zdhoward/AIUsageMonitor. At the prior release wrap-up, remote `main` and local `main` were synchronized at `a7f2dd7`; the current local branch has since advanced and is described above. The repository description is “An ESP32 dashboard for AI subscription quotas, reset countdowns, and local usage telemetry.” Topics: `esp32`, `arduino`, `python`, `dashboard`, `embedded`, `usage-monitor`. Preserve unrelated partial worker checkouts.
-
-Documentation routing: hosted free worker hit quota; local fallback was cancelled after producing no edits in the allotted time. Coordinator completed the documentation; no independent model review is claimed. Shadow routing run and validation details are in the project log.
+Local main is ahead of origin from prior sessions; this wrap did not fetch or push. Inspect `git log --oneline origin/main..main` and PR state before publication. No PR work occurred this session. Public-release context is in `docs/PUBLIC_RELEASE.md`; decisions and verification evidence are in `docs/PROJECT_LOG.md` and `docs/TEST_REPORT.md`.

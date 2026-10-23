@@ -124,7 +124,7 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `UI_SCREENSAVER_PAGE`: screensaver preview target, default `UI_PAGE_COMPANION`; must be an enabled eligible page.
 - `UI_SCREENSAVER_AUTO_ENABLED`: automatic activation flag; defaults off and is not active in this build (T-008B pending).
 
-Tap and release anywhere to switch between the two views. Holds of 1.5 seconds or longer are ignored. [UI.md](UI.md) describes layout and extension points.
+Tap and release anywhere to cycle the five available views. Holds of 1.5 seconds or longer are ignored. Screensaver is a navigable preview; automatic inactivity activation is not implemented yet. [UI.md](UI.md) describes layout and extension points.
 
 ## Screenshots and checks
 

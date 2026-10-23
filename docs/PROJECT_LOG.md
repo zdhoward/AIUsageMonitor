@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-23: visual-pages session handoff
+
+- Reconciled stale handoff, ticket index, README and setup instructions with implemented T-008A. T-008 is partially implemented; B–L remain follow-up work.
+- Recorded five-page COM6 flash/captures, source review, invalid independent visual review, portrait footer limitation and outstanding physical touch check. Tests deferred; no push/tag.
+
 ## 2026-10-23: default visual-page slice installed
 
 - After owner-authorized free-model corrections, source review passed and main production build succeeded. Integrated five default-on entries and build-time validation, preserving a concurrent local footer-spacing fix.
