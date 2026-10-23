@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: image and animation workflow research
+
+- Recorded a source-backed recommendation to author separate named frames plus metadata and convert them offline to a compact ESP32 format; sprite sheets remain an import/packing option when mapped by metadata.
+- Captured the board's framebuffer, flash-partition, and no-PSRAM constraints, and documented the current research boundary: procedural companion and placeholder only, no asset pipeline decision.
+- Verified Aseprite export capabilities and LVGL GIF memory/filesystem requirements against primary documentation. The free routing shadow timed out; the research worker produced no draft, so the coordinator checked the sources directly.
+
 ## 2026-10-22: public documentation preview
 
 - Owner selected MIT and local preparation only. Added license, safe example config and pinned pyserial dependency. GitHub stays private; no push, visibility change or release.
