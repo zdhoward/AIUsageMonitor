@@ -17,4 +17,11 @@ Final user choices from 2026-10-22; these supersede earlier portrait/bar/extra-p
 - MIT license, selected 2026-10-22. Documentation and framebuffer published to the public GitHub portfolio repository on 2026-10-22 at the user's direction.
 - README uses the actual current dashboard framebuffer as the portfolio image. Document implemented pinout, reproducible setup and verified limitations.
 
-No implementation request is pending. Historical board/local-machine identifiers remain in earlier commits and are disclosed in the release record. Source/configuration are authoritative for implementation values; [docs/UI.md](docs/UI.md) explains the renderer.
+## MINT decisions (2026-10-23)
+
+- Use Grobot as the practical starting engine; keep the adapter thin and replaceable. Prioritize simplicity, smooth movement and table-driven emotion growth.
+- Companion displays facial features across the full canvas: eyes, mouth and occasional effects; no permanent body or enclosure.
+- PC service owns mood, reaction priority and optional CPU/RAM awareness; firmware owns smooth rendering and safe state expiry. Preserve the existing sole serial owner.
+- See [MINT](docs/MINT.md) and [T-009](.tickets/T-009.md) for implementation and remaining validation.
+
+Historical board/local-machine identifiers remain in earlier commits and are disclosed in the release record. Source/configuration are authoritative for implementation values; [docs/UI.md](docs/UI.md) explains the renderer.

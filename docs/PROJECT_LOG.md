@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-10-23: Grobot MINT implementation
+
+- Owner selected a simple Grobot-based full-screen face and authorized paid Codex low-effort slices after two free routes returned no patch. Integrated seven blending emotions, independent blink/gaze/mouth/sweat and pinned MIT adaptation.
+- Added PC-owned gradual mood, finite pet/play/nap API, optional default-off Windows CPU/RAM hysteresis, and additive expiring serial state through the existing port owner. Review caught restart ordering after clock rollback and full-uptime-wrap lease resurrection; both corrected and independently reviewed.
+- Worker production builds and Python syntax checks passed; final worker firmware is 418,659 bytes flash and 29,000 bytes static RAM. Tests remain deferred to owner sprint end. Hardware evidence is being collected separately; no release or performance claim follows from build success.
+- Device capture exposed missing mouth. Rectangle rendering alone did not fix it; corrected unsigned delta negation before exponential blending. Final build: 418,663 bytes flash / 29,000 bytes static RAM; COM6 flash hash verified and current service resumed ACKs. Happy/idle framebuffers now show eyes and mouth. Sustained motion and broader acceptance remain pending; no tag/push.
+
 ## 2026-10-23: visual-pages session handoff
 
 - Reconciled stale handoff, ticket index, README and setup instructions with implemented T-008A. T-008 is partially implemented; B–L remain follow-up work.

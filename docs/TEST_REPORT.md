@@ -1,5 +1,13 @@
 # Test report
 
+## T-009 MINT device evidence (2026-10-23)
+
+- Code reviews passed after restart-ordering and lease-retirement fixes. Actual device capture found an additional unsigned elapsed-time blend overflow, corrected in `7fead74`.
+- Final production build: 418,663 bytes flash, 29,000 bytes static RAM (not runtime free heap). COM6 flash hash verified; updated PC service runs and serial ACKs resumed after flashing.
+- Local pet API accepted; actual RGB332 captures show [happy eyes and mouth](img/MINT-happy-device.png) and a [later idle expression](img/MINT-idle-device.png), with no body/chrome on Companion. Coordinator inspected both. Earlier missing-mouth captures were rejected and replaced.
+- These still frames do not establish smoothness/FPS. Tests remain deferred to owner sprint end. All seven appearances, sustained transitions, Windows metrics sampling, physical touch, portrait, allocation-failure fallback and expiry/reconnect fixtures remain pending.
+- Screenshot transfer pauses the service and perturbs timing. Development image still reports 1.4.2; identify it by commit/build provenance. No release tag/version or push until acceptance is complete.
+
 ## T-008A source/build checks (2026-10-23)
 
 - Production build (`scripts/build.ps1`) passes: 414107 bytes flash, 28648 bytes static RAM, with default five entries after R3 corrective layout changes.
