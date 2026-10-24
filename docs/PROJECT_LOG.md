@@ -162,3 +162,9 @@
 - **Screenshots from the frame buffer** (`!SHOT`) are used as on-device render evidence, rather than turning on the webcam without asking.
 - **TFT pins as build flags** (`USER_SETUP_LOADED`), so the shared library's `User_Setup.h` stays untouched.
 - **Autostart** is a per-user logon scheduled task, mirroring how model-router starts LiteLLM.
+
+## 2026-10-24 — Image/GIF playback and synthwave city scene
+
+- **Offline conversion, not on-device decoding:** `scripts/asset_convert.py` turns GIF/PNG/Aseprite into RLE RGB332 C++ data; the ESP32 only blits. Keeps heap flat (238 KB free) and assets small (~21 KB total).
+- **Aseprite is the art format** for scenes (layers + tags); the generated `assets_gen.*` are committed so builds don't need Aseprite.
+- **Hybrid city scene:** static art from Aseprite, life in code (rain, sun, grid, blinks, lightning, traffic). Measured 54 ms/frame (~18 fps) on the board. See [ASSETS](ASSETS.md).
