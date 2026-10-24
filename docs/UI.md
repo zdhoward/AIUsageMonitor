@@ -6,14 +6,18 @@ A quiet instrument panel below a monitor. Percent remaining and reset timing dom
 
 Tap and release anywhere to cycle; long holds over 1.5 seconds are ignored. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots; stable page IDs (`UI_PAGE_*`) do not shift when optional pages are compiled out.
 
-Default order: Console, Details, Companion, Images, Screensaver.
+Default order: Console, Details, Companion, Images.
 - **Console (default):** three fixed client rows — `CLAUDE A`, `CLAUDE B`, `CODEX` — mapped by account name, so service reordering does not move rows. The header groups `AI USAGE (3 CLIENTS)` at left and aligns **Session** (`5h`) and **Weekly** (`7d`) headings above their ring columns. Each ring centers exact percent remaining and eases clockwise from 12 o'clock. Its large, bright caption shows time until reset, `due` after a deadline, or `--` when unavailable. The data area beneath provider titles is intentionally empty for future use. Unknown quotas show `--`, distinct from empty 0% or full 100% rings.
 - **Details:** the original activity, peak, quota, token, and cost dashboard, unchanged.
 - **Companion:** loops between idle and happy expressions using existing drawing primitives. Renders without quota data.
 - **Images:** centered explanatory placeholder text. Renders without quota data.
-- **Screensaver:** normal navigation stop that previews the configured target (`UI_SCREENSAVER_PAGE`, default Companion) even while automatic activation is off. It is identified by replacing the target's header band with `SCREENSAVER`; the preview body/divider stays intact. Tap/`!NEXT` advances normally. The target must be an included, eligible page other than Screensaver; invalid targets fail at build time. Automatic activation remains off by default and is not implemented in this slice (T-008B).
+- **Screensaver:** automatic presentation of `UI_SCREENSAVER_PAGE` (default Companion), without a preview title or navigation dots. Console and Details enter it after 30 seconds without meaningful usage changes. A change restores the selected dashboard and starts another 30-second interval. Tap/`!NEXT` while asleep restores the same dashboard; the following tap navigates. Companion and Images never automatically sleep.
 
-Optional pages default on and are removable with one switch each in `config.h`: `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`, `UI_SCREENSAVER_ENABLED`. Console and Details remain available. Visual pages render without quota data; dashboard waiting behaviour remains for Console/Details.
+Each dashboard has separate `UI_CONSOLE_SAVER_ENABLED` / `UI_DETAILS_SAVER_ENABLED`, `UI_CONSOLE_SAVER_TIMEOUT_MS` / `UI_DETAILS_SAVER_TIMEOUT_MS`, and `UI_CONSOLE_WAKE_ON_USAGE` / `UI_DETAILS_WAKE_ON_USAGE` settings. Both wake flags default to 1; setting one to 0 keeps that view asleep until touch/navigation input. Entering a view starts a fresh interval. Either `UI_SCREENSAVER_ENABLED=0` or `UI_SCREENSAVER_AUTO_ENABLED=0` disables automatic saving globally. Targets must be compiled in; invalid active targets fail compilation.
+
+Usage comparison includes quota percentages, account/window identity, availability/errors, costs, tokens, request counts and activity state/model. It ignores packet sequence, clock, reset countdown, source age/staleness and MINT updates. Repeated identical measurements do not wake the display. Policies are for logical views on this panel, not independent physical displays.
+
+Optional pages default on and are removable with `UI_COMPANION_ENABLED` and `UI_IMAGE_ENABLED` in `config.h`. Console and Details remain available. Visual pages render without quota data; dashboard waiting behaviour remains for Console/Details.
 
 Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.
 

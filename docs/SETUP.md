@@ -156,11 +156,14 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `CLIENT_STALE_S`: firmware source-age threshold; keep consistent with service settings if changed.
 - `UI_ANIMATION`: restrained ring animation on/off.
 - `SHOW_REMAINING`: detailed dashboard only; console rings always show remaining quota.
-- `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`, `UI_SCREENSAVER_ENABLED`: default-on optional navigation entries (1/0).
-- `UI_SCREENSAVER_PAGE`: screensaver preview target, default `UI_PAGE_COMPANION`; must be an enabled eligible page.
-- `UI_SCREENSAVER_AUTO_ENABLED`: automatic activation flag; defaults off and is not active in this build (T-008B pending).
+- `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`: default-on optional navigation entries (1/0).
+- `UI_SCREENSAVER_ENABLED`, `UI_SCREENSAVER_AUTO_ENABLED`: both default on; either can disable automatic saving.
+- `UI_SCREENSAVER_PAGE`: automatic target, default `UI_PAGE_COMPANION`; must be compiled in when saving is active.
+- `UI_SCREENSAVER_TIMEOUT_MS`: default 30000. Override each view with `UI_CONSOLE_SAVER_TIMEOUT_MS` / `UI_DETAILS_SAVER_TIMEOUT_MS`.
+- `UI_CONSOLE_SAVER_ENABLED`, `UI_DETAILS_SAVER_ENABLED`: per-view saving, default 1.
+- `UI_CONSOLE_WAKE_ON_USAGE`, `UI_DETAILS_WAKE_ON_USAGE`: per-view automatic wake, default 1.
 
-Tap and release anywhere to cycle the five available views. Holds of 1.5 seconds or longer are ignored. Screensaver is a navigable preview; automatic inactivity activation is not implemented yet. [UI.md](UI.md) describes layout and extension points.
+Tap and release anywhere to cycle the four available views. Holds of 1.5 seconds or longer are ignored. Console/Details sleep after 30 seconds without usage changes and wake on a change; Face/Images are exempt. A tap while asleep wakes the same view. Screensaver is absent from navigation. See [UI.md](UI.md) for comparison rules and policy details.
 
 ## Screenshots and checks
 

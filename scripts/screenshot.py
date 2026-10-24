@@ -87,7 +87,7 @@ def main() -> None:
         payload = api("GET", "/v1/device")
     paused = False
     try:
-        api("POST", "/v1/serial/pause?seconds=60")
+        api("POST", "/v1/serial/pause?seconds=90")
         paused = True
         time.sleep(0.8)
     except OSError:
@@ -110,7 +110,7 @@ def main() -> None:
         time.sleep(max(0, min(args.wait, 40)))
         s.reset_input_buffer()
         s.write(b"!SHOT\n")
-        deadline = time.time() + 20
+        deadline = time.time() + 30
         while True:
             line = read_line(s, deadline)
             if line.startswith(b"@SHOT "):

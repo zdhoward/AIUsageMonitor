@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-23: per-view idle screensaver
+
+- Owner authorized paid low-effort implementation after both free workers hit usage limits. Enabled 30-second idle saving for Console/Details with separate enable, timeout and usage-wake settings; Face/Images remain exempt.
+- Screensaver is automatic presentation state, removed from navigation and pagination. Tap wakes the original view. Explicit measurement comparison ignores heartbeat, clocks, countdowns, source age and MINT updates; changes restart the idle interval.
+- Production build passed at 419,663 bytes flash / 29,760 bytes static RAM; COM6 flash hash verified. Automated tests deferred to owner sprint end; acceptance cases retained in SCREENSAVER.md. Free independent review unavailable; coordinator source inspection completed. Device framebuffer evidence recorded in T-010.
+
 ## 2026-10-23: Grobot MINT implementation
 
 - Owner selected a simple Grobot-based full-screen face and authorized paid Codex low-effort slices after two free routes returned no patch. Integrated seven blending emotions, independent blink/gaze/mouth/sweat and pinned MIT adaptation.

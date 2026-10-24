@@ -95,7 +95,7 @@ The firmware has been built and flashed on the documented board; the service sui
 | [UI](docs/UI.md) | Renderer layout, configuration and extension points |
 | [MINT companion](docs/MINT.md) | Grobot face, emotions, PC behavior, local reactions and verification limits |
 | [Image and animation research](docs/IMAGE_ANIMATION_RESEARCH.md) | Candidate authoring, conversion and playback workflow for future visual assets |
-| [Visual pages implementation plan](.tickets/T-008.md) | Reviewed staged plan; five-page T-008A placeholder/configuration slice is implemented, remaining saver/MINT/scenes/assets are follow-up work |
+| [Visual pages implementation plan](.tickets/T-008.md) | Navigation and MINT implemented; automatic idle/wake behavior is documented in [Screensaver](docs/SCREENSAVER.md). Scenes/assets and broader measurements remain follow-up work |
 | [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
 | [Contributing](CONTRIBUTING.md) | Development and validation expectations |
 | [Project log](docs/PROJECT_LOG.md) | Implementation decisions and milestones |
