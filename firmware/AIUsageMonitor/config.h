@@ -1,4 +1,9 @@
 #pragma once
+// Scene Studio / build.ps1 -Profile writes profile_gen.h; its defines win
+// over every guarded default below.
+#if __has_include("profile_gen.h")
+#include "profile_gen.h"
+#endif
 // ============================================================================
 // AI Usage Monitor: firmware settings
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
@@ -112,6 +117,11 @@
 #define UI_PAGE_IMAGE 3
 #define UI_PAGE_SCREENSAVER 4
 #define UI_PAGE_CITY 5
+
+// Tap order of the pages. Pages switched off above are skipped.
+#ifndef UI_VIEW_ORDER
+#define UI_VIEW_ORDER UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY
+#endif
 
 // Screensaver target and automatic activation. This is presentation state,
 // never a navigation entry. Either global switch disables automatic saving.

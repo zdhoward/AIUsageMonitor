@@ -1,0 +1,27 @@
+{
+  "name": "Default",
+  "rotation": 1,
+  "show_remaining": true,
+  "pages": [
+    "console",
+    "details",
+    "companion",
+    "image",
+    "city"
+  ],
+  "screensaver": {
+    "enabled": true,
+    "page": "city",
+    "timeout_s": 30,
+    "console": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    },
+    "details": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    }
+  }
+}

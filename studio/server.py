@@ -1,0 +1,289 @@
+"""Scene Studio: a local web app for profiles, the scene library and the device.
+
+Run: python -m studio   (opens an app window at http://127.0.0.1:8798)
+Standard library only, plus pyserial for the device panel.
+"""
+from __future__ import annotations
+
+import base64
+import json
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.parse
+import urllib.request
+import uuid
+from datetime import datetime
+from http import HTTPStatus
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+import profile_gen  # noqa: E402
+
+WEB = Path(__file__).with_name("web")
+LIBRARY = ROOT / "assets" / "library"
+PROFILES = profile_gen.PROFILES
+AIMON = "http://127.0.0.1:8797"
+PORT = 8798
+SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
+
+jobs: dict[str, dict] = {}
+serial_lock = threading.Lock()
+last_shot: dict = {}
+
+
+# ----------------------------------------------------------------- device
+def _pause_service(seconds: int) -> None:
+    try:
+        req = urllib.request.Request(f"{AIMON}/v1/serial/pause?seconds={seconds}", method="POST")
+        urllib.request.urlopen(req, timeout=3)
+        time.sleep(0.8)
+    except OSError:
+        pass  # service not running: the port is already free
+
+
+def _resume_service() -> None:
+    try:
+        urllib.request.urlopen(urllib.request.Request(f"{AIMON}/v1/serial/resume", method="POST"), timeout=3)
+    except OSError:
+        pass
+
+
+def _open_port():
+    import serial
+    from serial.tools import list_ports
+    port = next((p.device for p in list_ports.comports() if (p.vid, p.pid) == (0x1A86, 0x7523)), None)
+    if not port:
+        raise RuntimeError("Display not found. Is it plugged in?")
+    s = serial.Serial()
+    s.port, s.baudrate, s.timeout = port, 115200, 0.5
+    s.dtr = s.rts = False
+    s.open()
+    return s
+
+
+def device(commands: list[str], shot: bool) -> dict:
+    """Send commands, collect '@' replies, optionally capture the framebuffer."""
+    with serial_lock:
+        _pause_service(60)
+        try:
+            s = _open_port()
+            replies = []
+            try:
+                for c in commands:
+                    s.reset_input_buffer()
+                    s.write((c + "\n").encode())
+                    end = time.time() + 1.0
+                    while time.time() < end:
+                        line = s.readline().decode(errors="ignore").strip()
+                        if line.startswith("@"):
+                            replies.append(line)
+                            break
+                result = {"replies": replies}
+                if shot:
+                    s.reset_input_buffer()
+                    s.write(b"!SHOT\n")
+                    end = time.time() + 30
+                    while time.time() < end:
+                        line = s.readline()
+                        if line.startswith(b"@SHOT "):
+                            break
+                        if line.startswith(b"@ERR"):
+                            raise RuntimeError(line.decode().strip())
+                    else:
+                        raise RuntimeError("no frame from the display")
+                    _, w, h, _ = line.decode().split()
+                    w, h = int(w), int(h)
+                    data = b""
+                    while len(data) < w * h and time.time() < end:
+                        data += s.read(w * h - len(data))
+                    if len(data) < w * h:
+                        raise RuntimeError("frame transfer was cut short")
+                    png = rgb332_png(w, h, data)
+                    last_shot.update(png=png, at=datetime.now().isoformat(timespec="seconds"))
+                    result["shot"] = "data:image/png;base64," + base64.b64encode(png).decode()
+                return result
+            finally:
+                s.close()
+        finally:
+            _resume_service()
+
+
+def rgb332_png(w: int, h: int, px: bytes) -> bytes:
+    import struct
+    import zlib
+    raw = bytearray()
+    for y in range(h):
+        raw.append(0)
+        for c in px[y * w:(y + 1) * w]:
+            raw += bytes((((c >> 5) & 7) * 255 // 7, ((c >> 2) & 7) * 255 // 7, (c & 3) * 85))
+
+    def chunk(tag, data):
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(bytes(raw), 6)) + chunk(b"IEND", b""))
+
+
+# ------------------------------------------------------------------- jobs
+def run_job(kind: str, profile: str) -> str:
+    jid = uuid.uuid4().hex[:8]
+    job = jobs[jid] = {"id": jid, "kind": kind, "state": "running", "log": "", "step": ""}
+
+    def step(name: str, args: list[str]) -> bool:
+        job["step"] = name
+        proc = subprocess.Popen(args, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, errors="replace", creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        for line in proc.stdout:
+            job["log"] += line
+        return proc.wait() == 0
+
+    def work():
+        ps = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
+        ok = step("Converting art", [sys.executable, "scripts/asset_convert.py"])
+        ok = ok and step("Building firmware", ps + ["scripts/build.ps1", "-Profile", profile])
+        if ok and kind == "flash":
+            with serial_lock:
+                ok = step("Flashing display", ps + ["scripts/flash.ps1"])
+        job["state"] = "done" if ok else "failed"
+        m = re.search(r"Sketch uses (\d+) bytes \((\d+)%\)", job["log"])
+        if m:
+            job["size"] = {"bytes": int(m.group(1)), "percent": int(m.group(2))}
+    threading.Thread(target=work, daemon=True).start()
+    return jid
+
+
+# ---------------------------------------------------------------- library
+def git_commit() -> str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def library() -> list[dict]:
+    items = []
+    for d in sorted(LIBRARY.glob("*/entry.json")):
+        e = json.loads(d.read_text(encoding="utf-8"))
+        e["id"] = d.parent.name
+        e["preview_url"] = f"/library/{d.parent.name}/{e.get('preview', 'preview.png')}"
+        items.append(e)
+    return sorted(items, key=lambda e: e.get("created", ""), reverse=True)
+
+
+def save_to_library(body: dict) -> dict:
+    name = body.get("name", "").strip()
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40]
+    if not name or not SLUG.match(slug):
+        raise ValueError("Give it a name first")
+    if not last_shot:
+        raise ValueError("Capture the screen first")
+    d = LIBRARY / slug
+    if d.exists():
+        slug = f"{slug}-{datetime.now():%m%d%H%M}"
+        d = LIBRARY / slug
+    d.mkdir(parents=True)
+    (d / "preview.png").write_bytes(last_shot["png"])
+    entry = {"name": name, "kind": body.get("kind", "capture"), "notes": body.get("notes", ""),
+             "created": datetime.now().isoformat(timespec="seconds"), "commit": git_commit(),
+             "profile": body.get("profile", ""), "preview": "preview.png"}
+    (d / "entry.json").write_text(json.dumps(entry, indent=2) + "\n", encoding="utf-8")
+    return entry
+
+
+# ------------------------------------------------------------------- http
+class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *a, **kw):
+        super().__init__(*a, directory=str(WEB), **kw)
+
+    def log_message(self, *_):
+        pass
+
+    def send_json(self, obj, status=200):
+        data = json.dumps(obj).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def body(self) -> dict:
+        n = int(self.headers.get("Content-Length", 0))
+        return json.loads(self.rfile.read(n) or b"{}")
+
+    def do_GET(self):
+        path = self.path.split("?")[0]
+        if path == "/api/state":
+            profiles = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(PROFILES.glob("*.json"))}
+            return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit()})
+        if path.startswith("/api/jobs/"):
+            job = jobs.get(path.rsplit("/", 1)[1])
+            return self.send_json(job or {"error": "unknown job"}, 200 if job else 404)
+        for prefix, base in (("/library/", LIBRARY), ("/docimg/", ROOT / "docs" / "img")):
+            if not path.startswith(prefix):
+                continue
+            f = (base / urllib.parse.unquote(path[len(prefix):])).resolve()
+            if base.resolve() in f.parents and f.is_file():
+                data = f.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png" if f.suffix == ".png" else "application/octet-stream")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                return self.wfile.write(data)
+            return self.send_error(HTTPStatus.NOT_FOUND)
+        return super().do_GET()
+
+    def do_POST(self):
+        path = self.path.split("?")[0]
+        try:
+            b = self.body()
+            if path.startswith("/api/profiles/"):
+                pid = path.rsplit("/", 1)[1]
+                if not SLUG.match(pid):
+                    raise ValueError("Profile names use lowercase letters, numbers and dashes")
+                errs = profile_gen.validate(b)
+                if errs:
+                    raise ValueError("; ".join(errs))
+                (PROFILES / f"{pid}.json").write_text(json.dumps(b, indent=2) + "\n", encoding="utf-8")
+                return self.send_json({"ok": True})
+            if path in ("/api/build", "/api/flash"):
+                return self.send_json({"job": run_job(path[5:], b["profile"])})
+            if path == "/api/device":
+                cmds = [c for c in b.get("commands", []) if re.fullmatch(r"![A-Z]+( [a-z0-9]+)?", c)]
+                return self.send_json(device(cmds, bool(b.get("shot"))))
+            if path == "/api/library":
+                return self.send_json(save_to_library(b))
+            if path.startswith("/api/library/") and path.endswith("/delete"):
+                lid = path.split("/")[3]
+                if SLUG.match(lid) and (LIBRARY / lid).is_dir():
+                    shutil.rmtree(LIBRARY / lid)
+                return self.send_json({"ok": True})
+            self.send_error(HTTPStatus.NOT_FOUND)
+        except (ValueError, RuntimeError, KeyError, OSError) as e:
+            self.send_json({"error": str(e)}, 400)
+
+
+def main() -> None:
+    LIBRARY.mkdir(parents=True, exist_ok=True)
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    url = f"http://127.0.0.1:{PORT}"
+    print(f"Scene Studio on {url}  (Ctrl+C to quit)")
+    if "--no-window" not in sys.argv:
+        edge = shutil.which("msedge") or r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+        try:
+            subprocess.Popen([edge, f"--app={url}", "--window-size=1280,860"])
+        except OSError:
+            import webbrowser
+            webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    main()

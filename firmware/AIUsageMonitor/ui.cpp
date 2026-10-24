@@ -38,7 +38,7 @@ static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
 static void drawCity(const Model&, uint32_t, const ViewDef&, int y);
 #endif
 
-static const ViewDef kStaticViews[] = {
+static const ViewDef kAllViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
   {UI_PAGE_DETAILS, drawDetails},
 #if UI_COMPANION_ENABLED
@@ -51,8 +51,23 @@ static const ViewDef kStaticViews[] = {
   {UI_PAGE_CITY, drawCity},
 #endif
 };
-static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
-static uint8_t selView = 0;  // console is the default view
+// Tap order comes from UI_VIEW_ORDER; pages not compiled in are skipped.
+static const uint8_t kAllCount = sizeof(kAllViews) / sizeof(kAllViews[0]);
+static const uint8_t kOrder[] = {UI_VIEW_ORDER};
+static ViewDef kStaticViews[kAllCount];
+static uint8_t kViewCount = 0;
+static uint8_t selView = 0;  // first page in UI_VIEW_ORDER
+
+static void buildViewOrder() {
+  kViewCount = 0;
+  for (uint8_t id : kOrder)
+    for (const ViewDef& v : kAllViews) {
+      bool dup = false;
+      for (uint8_t k = 0; k < kViewCount; ++k) dup |= kStaticViews[k].id == id;
+      if (v.id == id && !dup && kViewCount < kAllCount) kStaticViews[kViewCount++] = v;
+    }
+  if (!kViewCount) kStaticViews[kViewCount++] = kAllViews[0];
+}
 static bool saverActive = false;
 static bool idleStarted = false;
 static uint32_t lastActivity[2] = {};
@@ -94,10 +109,11 @@ static void updateSaver(const Model& m, uint32_t now) {
   if (!haveUsageBaseline || !sameUsage(m, usageBaseline)) {
     usageBaseline = m;
     haveUsageBaseline = true;
+    const uint8_t shown = kStaticViews[selView].id;
     for (uint8_t i = 0; i < 2; ++i) {
       const bool wake = i == 0 ? UI_CONSOLE_WAKE_ON_USAGE : UI_DETAILS_WAKE_ON_USAGE;
-      if (i != selView || !saverActive || wake) lastActivity[i] = now;
-      if (i == selView && wake) saverActive = false;
+      if (i != shown || !saverActive || wake) lastActivity[i] = now;
+      if (i == shown && wake) saverActive = false;
     }
   }
   const uint8_t id = kStaticViews[selView].id;
@@ -793,6 +809,7 @@ void uiSetRotation(uint8_t rotation) {
 
 void uiBegin(TFT_eSPI& tft, uint8_t rotation) {
   tftp = &tft;
+  buildViewOrder();
   tft.init();
   uiSetRotation(rotation);
 }
@@ -816,7 +833,7 @@ bool uiScreenshot(Stream& out) {
 void uiNextView(const Model&) {
   if (saverActive) saverActive = false;
   else selView = (uint8_t)((selView + 1) % kViewCount);
-  if (selView < 2) lastActivity[selView] = millis();
+  if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
 }
 
 static void drawDots(uint8_t current) {
