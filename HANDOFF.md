@@ -1,5 +1,13 @@
 # Handoff — MINT implementation complete, visual pages continue (2026-10-23)
 
+Current continuation: T-010 implements automatic 30-second idle saving and
+usage-change wake for Console/Details, with separate per-view settings.
+Face/Images are exempt; Screensaver is removed from navigation. Built at
+419,663 bytes flash / 29,760 bytes static RAM and flashed to COM6 with hash
+verification; service ACKs resumed. See [screensaver acceptance](docs/SCREENSAVER.md)
+and [T-010](.tickets/T-010.md). Automated tests remain deferred. The earlier
+T-008A five-entry navigation and saver-unimplemented statements below are history.
+
 ## Current state
 
 The Grobot-powered MINT face and PC-owned behavior are integrated on local `main`. Main commits for this work: `d46c8c3` (face), `d8c81f6` (service behavior), `1ea6046` (restart/expiry fixes), `bc50a81` (mouth canvas path), `7fead74` (unsigned blend fix), `0d6dd47` (wrap-up evidence/docs). The face has seven table-driven expressions, independent blink/gaze/mouth/sweat animation, smooth target blending and the upstream MIT notice. Service behavior provides gradual mood, finite local pet/play/nap reactions and optional default-off Windows CPU/RAM stress. The existing service remains the sole serial owner.

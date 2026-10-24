@@ -31,9 +31,6 @@ static void drawCompanion(const Model&, uint32_t, const ViewDef&, int y);
 #if UI_IMAGE_ENABLED
 static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
 #endif
-#if UI_SCREENSAVER_ENABLED
-static void drawScreensaver(const Model&, uint32_t, const ViewDef&, int y);
-#endif
 
 static const ViewDef kStaticViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
@@ -44,12 +41,66 @@ static const ViewDef kStaticViews[] = {
 #if UI_IMAGE_ENABLED
   {UI_PAGE_IMAGE, drawImage},
 #endif
-#if UI_SCREENSAVER_ENABLED
-  {UI_PAGE_SCREENSAVER, drawScreensaver},
-#endif
 };
 static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t selView = 0;  // console is the default view
+static bool saverActive = false;
+static bool idleStarted = false;
+static uint32_t lastActivity[2] = {};
+static Model usageBaseline;
+static bool haveUsageBaseline = false;
+
+// Explicit measurements only: heartbeats, ages, countdowns and MINT updates
+// must not hold the dashboard awake. Never compare struct padding.
+static bool sameUsage(const Model& a, const Model& b) {
+  if (a.valid != b.valid || a.ok != b.ok || strcmp(a.err, b.err) ||
+      a.nacc != b.nacc || a.c1 != b.c1 || a.c7 != b.c7 ||
+      a.i1 != b.i1 || a.cr1 != b.cr1 || a.o1 != b.o1 || a.unp != b.unp ||
+      a.hasH != b.hasH || a.nbyp != b.nbyp || a.freeN != b.freeN ||
+      a.freeT != b.freeT || strcmp(a.freeM, b.freeM) || a.nimN != b.nimN ||
+      a.orOk != b.orOk || strcmp(a.orX, b.orX) || a.orFu != b.orFu ||
+      a.orFl != b.orFl || a.orD != b.orD || a.orB != b.orB ||
+      strcmp(a.actS, b.actS) || strcmp(a.actP, b.actP) ||
+      strcmp(a.actM, b.actM) || a.actN != b.actN) return false;
+  for (uint8_t i = 0; i < 24; ++i)
+    if (a.h[i] != b.h[i]) return false;
+  for (uint8_t i = 0; i < a.nbyp; ++i)
+    if (strcmp(a.byp[i].p, b.byp[i].p) || a.byp[i].c1 != b.byp[i].c1) return false;
+  for (uint8_t i = 0; i < a.nacc; ++i) {
+    const AccData& x = a.acc[i];
+    const AccData& y = b.acc[i];
+    if (strcmp(x.p, y.p) || strcmp(x.pl, y.pl) || strcmp(x.x, y.x) ||
+        x.rc != y.rc || x.nw != y.nw) return false;
+    for (uint8_t j = 0; j < x.nw; ++j)
+      if (strcmp(x.w[j].l, y.w[j].l) || x.w[j].u != y.w[j].u) return false;
+  }
+  return true;
+}
+
+static void updateSaver(const Model& m, uint32_t now) {
+  if (!idleStarted) {
+    lastActivity[0] = lastActivity[1] = now;
+    idleStarted = true;
+  }
+  if (!haveUsageBaseline || !sameUsage(m, usageBaseline)) {
+    usageBaseline = m;
+    haveUsageBaseline = true;
+    for (uint8_t i = 0; i < 2; ++i) {
+      const bool wake = i == 0 ? UI_CONSOLE_WAKE_ON_USAGE : UI_DETAILS_WAKE_ON_USAGE;
+      if (i != selView || !saverActive || wake) lastActivity[i] = now;
+      if (i == selView && wake) saverActive = false;
+    }
+  }
+  const uint8_t id = kStaticViews[selView].id;
+  const bool eligible = id == UI_PAGE_CONSOLE ? UI_CONSOLE_SAVER_ENABLED :
+    id == UI_PAGE_DETAILS ? UI_DETAILS_SAVER_ENABLED : false;
+  if (!UI_SCREENSAVER_ENABLED || !UI_SCREENSAVER_AUTO_ENABLED || !eligible) {
+    saverActive = false;
+    return;
+  }
+  const uint32_t timeout = id == UI_PAGE_CONSOLE ? UI_CONSOLE_SAVER_TIMEOUT_MS : UI_DETAILS_SAVER_TIMEOUT_MS;
+  if ((uint32_t)(now - lastActivity[id]) >= timeout) saverActive = true;
+}
 
 // Palette (RGB565, quantized from the requested hex values).
 // #101923 bg, #202C3B panel, #F3F6FA text, #AEBCCC secondary,
@@ -692,37 +743,6 @@ static void drawImage(const Model&, uint32_t, const ViewDef&, int) {
 }
 #endif
 
-#if UI_SCREENSAVER_ENABLED
-static void drawScreensaver(const Model& m, uint32_t now, const ViewDef& v, int y) {
-  TFT_eSPI& g = G();
-#if UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION
-  drawCompanion(m, now, v, y);
-  // Replace the Companion header band with the Screensaver identity.
-  g.fillRect(0, 0, W, 36, C_BG);
-  text("SCREENSAVER", W / 2, 18, 2, C_MUTED, TC_DATUM);
-#elif UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE
-  drawImage(m, now, v, y);
-  // Images has an empty top header band; identify the preview there.
-  g.fillRect(0, 0, W, 22, C_BG);
-  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
-#elif UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE
-  drawConsole(m, now, v, 0);
-  // Replace the Console header band (y0..21) with the Screensaver identity.
-  g.fillRect(0, 0, W, 22, C_BG);
-  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
-#elif UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS
-  {
-    int yy = drawHeader(m, now, 0, 0, W);
-    drawDetails(m, now, v, yy);
-    text("tap to change view", 10, H - 13, 1, C_MUTED);
-  }
-  // Replace the Details header band (y0..19) with the Screensaver identity.
-  g.fillRect(0, 0, W, 20, C_BG);
-  text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
-#endif
-}
-#endif
-
 // ---------------------------------------------------------------- public
 
 void uiSetRotation(uint8_t rotation) {
@@ -751,7 +771,8 @@ void uiBegin(TFT_eSPI& tft, uint8_t rotation) {
 bool uiHasFramebuffer() { return spr != nullptr; }
 
 uint32_t uiFrameIntervalMs() {
-  return kStaticViews[selView].id == UI_PAGE_COMPANION ? 33UL : REDRAW_MS;
+  const uint8_t id = saverActive ? UI_SCREENSAVER_PAGE : kStaticViews[selView].id;
+  return id == UI_PAGE_COMPANION ? 33UL : REDRAW_MS;
 }
 
 bool uiScreenshot(Stream& out) {
@@ -763,7 +784,9 @@ bool uiScreenshot(Stream& out) {
 }
 
 void uiNextView(const Model&) {
-  selView = (uint8_t)((selView + 1) % kViewCount);
+  if (saverActive) saverActive = false;
+  else selView = (uint8_t)((selView + 1) % kViewCount);
+  if (selView < 2) lastActivity[selView] = millis();
 }
 
 static void drawDots(uint8_t current) {
@@ -790,6 +813,7 @@ static void animate(const Model& m, uint32_t now) {
 }
 
 void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
+  updateSaver(m, now);
   TFT_eSPI& g = G();
   // The base TFT API can retain its portrait extent on a sprite. Clear the
   // actual rotated canvas so landscape's right edge has no startup remnants.
@@ -797,30 +821,15 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
   uint8_t current = selView < kViewCount ? selView : 0;
+  if (saverActive) {
+    for (uint8_t i = 0; i < kViewCount; ++i)
+      if (kStaticViews[i].id == UI_SCREENSAVER_PAGE) current = i;
+  }
   const ViewDef& v = kStaticViews[current];
-  faceUpdate(now, v.id == UI_PAGE_COMPANION ||
-    (v.id == UI_PAGE_SCREENSAVER && UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION));
-  const bool screensaverDashboardTarget =
-#if UI_SCREENSAVER_ENABLED
-    (UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS);
-#else
-    false;
-#endif
-  const bool dashboard = v.id == UI_PAGE_CONSOLE || v.id == UI_PAGE_DETAILS ||
-    (v.id == UI_PAGE_SCREENSAVER && screensaverDashboardTarget);
+  faceUpdate(now, v.id == UI_PAGE_COMPANION);
+  const bool dashboard = v.id == UI_PAGE_CONSOLE || v.id == UI_PAGE_DETAILS;
   if (!m.valid && dashboard) {
     drawHeader(m, now, 0, 0, W);
-#if UI_SCREENSAVER_ENABLED
-    if (v.id == UI_PAGE_SCREENSAVER) {
-      TFT_eSPI& g = G();
-#if UI_SCREENSAVER_PAGE == UI_PAGE_CONSOLE
-      g.fillRect(0, 0, W, 22, C_BG);
-#elif UI_SCREENSAVER_PAGE == UI_PAGE_DETAILS
-      g.fillRect(0, 0, W, 20, C_BG);
-#endif
-      text("SCREENSAVER", W / 2, 10, 2, C_MUTED, TC_DATUM);
-    }
-#endif
     drawWaiting(now, linkInfo);
   } else {
     if (v.id == UI_PAGE_CONSOLE) {
@@ -833,6 +842,6 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       v.draw(m, now, v, 0);
     }
   }
-  if (v.id != UI_PAGE_COMPANION) drawDots(current);
+  if (!saverActive && v.id != UI_PAGE_COMPANION) drawDots(current);
   if (spr) spr->pushSprite(0, 0);
 }

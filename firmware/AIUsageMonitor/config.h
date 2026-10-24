@@ -81,7 +81,7 @@
 
 // ---------------------------------------------------------------------------
 // Optional visual pages. Console and Details are always available. Companion,
-// Images and the Screensaver navigation entry default on and can be removed at
+// Images and automatic Screensaver support default on and can be removed at
 // build time with one switch each. Keep these macros guarded so a project-wide
 // override wins.
 // ---------------------------------------------------------------------------
@@ -103,24 +103,40 @@
 #define UI_PAGE_IMAGE 3
 #define UI_PAGE_SCREENSAVER 4
 
-// Screensaver target and automatic activation. The navigation entry above
-// previews this target even when activation is disabled. Automatic activation
-// is intentionally not implemented in this slice (see T-008B); the flag stays
-// off and does nothing yet.
+// Screensaver target and automatic activation. This is presentation state,
+// never a navigation entry. Either global switch disables automatic saving.
 #ifndef UI_SCREENSAVER_PAGE
 #define UI_SCREENSAVER_PAGE UI_PAGE_COMPANION
 #endif
 #ifndef UI_SCREENSAVER_AUTO_ENABLED
-#define UI_SCREENSAVER_AUTO_ENABLED 0
+#define UI_SCREENSAVER_AUTO_ENABLED 1
 #endif
 #ifndef UI_SCREENSAVER_TIMEOUT_MS
-#define UI_SCREENSAVER_TIMEOUT_MS 60000UL
+#define UI_SCREENSAVER_TIMEOUT_MS 30000UL
 #endif
 
-// Build-time consistency checks. A Screensaver target is required only when the
-// entry is compiled in or automatic activation is enabled; otherwise omitting
-// the entry and leaving activation off needs no live target.
-#if UI_SCREENSAVER_ENABLED || UI_SCREENSAVER_AUTO_ENABLED
+// Per-view idle policy; Companion and Images are always exempt.
+#ifndef UI_CONSOLE_SAVER_ENABLED
+#define UI_CONSOLE_SAVER_ENABLED 1
+#endif
+#ifndef UI_DETAILS_SAVER_ENABLED
+#define UI_DETAILS_SAVER_ENABLED 1
+#endif
+#ifndef UI_CONSOLE_SAVER_TIMEOUT_MS
+#define UI_CONSOLE_SAVER_TIMEOUT_MS UI_SCREENSAVER_TIMEOUT_MS
+#endif
+#ifndef UI_DETAILS_SAVER_TIMEOUT_MS
+#define UI_DETAILS_SAVER_TIMEOUT_MS UI_SCREENSAVER_TIMEOUT_MS
+#endif
+#ifndef UI_CONSOLE_WAKE_ON_USAGE
+#define UI_CONSOLE_WAKE_ON_USAGE 1
+#endif
+#ifndef UI_DETAILS_WAKE_ON_USAGE
+#define UI_DETAILS_WAKE_ON_USAGE 1
+#endif
+
+// A target must exist only when automatic saving is enabled.
+#if UI_SCREENSAVER_ENABLED && UI_SCREENSAVER_AUTO_ENABLED
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
@@ -137,5 +153,8 @@
 #if UI_SCREENSAVER_AUTO_ENABLED
 #if UI_SCREENSAVER_TIMEOUT_MS < 1UL || UI_SCREENSAVER_TIMEOUT_MS > 2147483647UL
 #error "Screensaver timeout must be 1..2147483647 milliseconds"
+#endif
+#if UI_CONSOLE_SAVER_TIMEOUT_MS < 1UL || UI_CONSOLE_SAVER_TIMEOUT_MS > 2147483647UL || UI_DETAILS_SAVER_TIMEOUT_MS < 1UL || UI_DETAILS_SAVER_TIMEOUT_MS > 2147483647UL
+#error "Per-view timeout must be 1..2147483647 milliseconds"
 #endif
 #endif
