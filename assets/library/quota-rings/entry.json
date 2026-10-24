@@ -1,0 +1,9 @@
+{
+  "name": "Quota rings v1.4.2",
+  "kind": "dashboard",
+  "notes": "Console view with session/weekly rings.",
+  "created": "2026-10-22T12:00:00",
+  "commit": "315d70c",
+  "profile": "default",
+  "preview": "preview.png"
+}

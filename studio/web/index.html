@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scene Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<aside class="side">
+  <div class="brand">
+    <div class="logo"></div>
+    <div><b>Scene Studio</b><small>AI Usage Monitor</small></div>
+  </div>
+  <nav>
+    <button class="nav on" data-tab="layout"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>Layout</button>
+    <button class="nav" data-tab="saver"><svg viewBox="0 0 24 24"><path d="M20 15.5A8 8 0 1 1 8.5 4a6.5 6.5 0 0 0 11.5 11.5z"/></svg>Screensaver</button>
+    <button class="nav" data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Library</button>
+    <button class="nav" data-tab="device"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Display</button>
+  </nav>
+  <div class="side-foot">
+    <label class="mini">Profile</label>
+    <div class="profile-row">
+      <select id="profile"></select>
+      <button class="icon-btn" id="newProfile" title="Duplicate as a new profile">+</button>
+    </div>
+    <div class="commit" id="commit"></div>
+  </div>
+</aside>
+
+<main>
+  <header class="top">
+    <div>
+      <h1 id="title">Layout</h1>
+      <p id="subtitle">Choose which pages appear on the display and in what order.</p>
+    </div>
+    <div class="actions">
+      <span class="dirty" id="dirty">Unsaved changes</span>
+      <button class="btn ghost" id="save">Save profile</button>
+      <button class="btn primary" id="send"><span>Send to display</span></button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <section class="tab on" id="tab-layout">
+    <div class="card">
+      <div class="card-head"><h2>Pages</h2><span class="hint">Drag to reorder · tap on the display cycles in this order</span></div>
+      <ul class="pages" id="pages"></ul>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><h2>Orientation</h2></div>
+        <div class="rot" id="rotation"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Quota numbers</h2></div>
+        <div class="seg" id="remaining">
+          <button data-v="1">Remaining</button><button data-v="0">Used</button>
+        </div>
+        <p class="hint pad">Colours always mean the same thing: red is nearly exhausted.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screensaver -->
+  <section class="tab" id="tab-saver">
+    <div class="card hero-toggle">
+      <div><h2>Screensaver</h2><p class="hint">After a quiet spell on Console or Details, the display switches to a living scene. Any tap or new usage wakes it.</p></div>
+      <label class="switch big"><input type="checkbox" id="saverOn"><i></i></label>
+    </div>
+    <div id="saverBody">
+      <div class="card">
+        <div class="card-head"><h2>Show</h2><span class="hint">Only pages enabled in Layout can be chosen</span></div>
+        <div class="scenes" id="saverPage"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Start after</h2><b class="val" id="timeoutVal"></b></div>
+        <input type="range" id="timeout" min="0" max="11" step="1">
+        <div class="ticks"><span>10s</span><span>1m</span><span>5m</span><span>30m</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Per page</h2></div>
+        <div class="views" id="views"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Library -->
+  <section class="tab" id="tab-library">
+    <div class="lib" id="library"></div>
+  </section>
+
+  <!-- Device -->
+  <section class="tab" id="tab-device">
+    <div class="device">
+      <div class="bezel"><div class="screen" id="screen"><div class="empty-screen">Capture the display to see it here</div></div></div>
+      <div class="device-side">
+        <div class="card">
+          <div class="btn-col">
+            <button class="btn primary" id="capture">Capture screen</button>
+            <button class="btn ghost" id="nextPage">Next page →</button>
+            <label class="check"><input type="checkbox" id="live"> Keep refreshing</label>
+          </div>
+        </div>
+        <div class="card stats">
+          <div><small>Frame time</small><b id="statFrame">—</b></div>
+          <div><small>Frame rate</small><b id="statFps">—</b></div>
+          <div><small>Free memory</small><b id="statHeap">—</b></div>
+        </div>
+        <div class="card">
+          <h2>Save this moment</h2>
+          <p class="hint">Keeps the capture in your library with the profile and code version that made it.</p>
+          <input id="libName" placeholder="Name, e.g. Rainy city v2">
+          <textarea id="libNotes" rows="2" placeholder="Notes (optional)"></textarea>
+          <button class="btn ghost wide" id="saveLib">Save to library</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="steps" id="steps"></div>
+    <div class="drawer-actions">
+      <button class="link" id="toggleLog">Show log</button>
+      <button class="icon-btn" id="closeDrawer">×</button>
+    </div>
+  </div>
+  <pre id="log" hidden></pre>
+</div>
+<div class="toasts" id="toasts"></div>
+<script src="studio.js"></script>
+</body>
+</html>

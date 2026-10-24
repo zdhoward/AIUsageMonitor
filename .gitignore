@@ -8,3 +8,4 @@ service/aimon.config.json
 
 # Third-party art packs: licenses vary, keep them local (repo is public)
 assets/sprites/
+firmware/AIUsageMonitor/profile_gen.h

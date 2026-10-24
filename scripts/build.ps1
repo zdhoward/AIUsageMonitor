@@ -7,11 +7,16 @@
 #>
 param(
   [ValidateSet(-1, 0, 1, 2, 3)][int]$Rotation = -1,
+  [string]$Profile = '',
   [string]$OutDir = "$PSScriptRoot\..\build"
 )
 $ErrorActionPreference = 'Stop'
 $cli = Join-Path $env:LOCALAPPDATA 'Programs\Arduino IDE\resources\app\lib\backend\resources\arduino-cli.exe'
 if (-not (Test-Path $cli)) { $cli = (Get-Command arduino-cli -ErrorAction Stop).Source }
+if ($Profile) {
+  & python "$PSScriptRoot\profile_gen.py" $Profile
+  if ($LASTEXITCODE -ne 0) { throw "profile '$Profile' is invalid" }
+}
 $sketch = Resolve-Path "$PSScriptRoot\..\firmware\AIUsageMonitor"
 
 # TFT_eSPI setup for this board, identical to the User_Setup.h used by earlier
