@@ -5,6 +5,7 @@
 - Owner authorized paid low-effort implementation after both free workers hit usage limits. Enabled 30-second idle saving for Console/Details with separate enable, timeout and usage-wake settings; Face/Images remain exempt.
 - Screensaver is automatic presentation state, removed from navigation and pagination. Tap wakes the original view. Explicit measurement comparison ignores heartbeat, clocks, countdowns, source age and MINT updates; changes restart the idle interval.
 - Production build passed at 419,663 bytes flash / 29,760 bytes static RAM; COM6 flash hash verified. Automated tests deferred to owner sprint end; acceptance cases retained in SCREENSAVER.md. Free independent review unavailable; coordinator source inspection completed. Device framebuffer evidence recorded in T-010.
+- Wrap-up reconciled current behavior and open acceptance in GOALS.md, T-008, HANDOFF.md and TEST_REPORT.md. Local `main` remains 31 commits ahead of origin; no open PRs or new tag. Untracked `assets/` preserved.
 
 ## 2026-10-23: Grobot MINT implementation
 
