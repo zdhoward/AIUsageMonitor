@@ -1,6 +1,8 @@
 # Handoff — MINT implementation complete, visual pages continue (2026-10-23)
 
-Current continuation: T-010 implements automatic 30-second idle saving and
+Latest installation (2026-10-24): T-011 automatic brightness is installed on COM6 (420,143 bytes flash / 29,808 bytes static RAM). Main service resumed ACKs and reports the owner's city night duty 40/255, 1000ms interpolation, nine cached dates and no brightness errors. See [brightness configuration](docs/BRIGHTNESS.md) and `.tickets/T-011.md`; evidence is under ignored `build/t011-*`. Firmware still reports development baseline 1.4.2; no new release tag. Automated tests, physical calibration and broader acceptance remain pending. Older build sizes below predate T-011.
+
+Previous continuation: T-010 implements automatic 30-second idle saving and
 usage-change wake for Console/Details, with separate per-view settings.
 Face/Images are exempt; Screensaver is removed from navigation. Built at
 419,663 bytes flash / 29,760 bytes static RAM and flashed to COM6 with hash

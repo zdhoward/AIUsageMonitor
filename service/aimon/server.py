@@ -17,6 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from . import log
+from .brightness import BrightnessController, build_brightness_payload, build_brightness_status
 from .config import Settings
 from .companion import Companion, LocalMetrics
 from .serial_link import SerialLink
@@ -34,6 +35,7 @@ class App:
         self._behavior_wake = threading.Event()
         self._stop = threading.Event()
         self.serial: SerialLink | None = None
+        self.brightness = BrightnessController(settings)
         if settings.serial_enabled:
             self.serial = SerialLink(settings.serial_port, settings.serial_baud, settings.push_interval_s, self.device_payload)
 
@@ -44,9 +46,17 @@ class App:
             mint = self.companion.snapshot()
             if mint:
                 payload["mint"] = mint
+            # Optional location-based backlight level (0..255). Missing/invalid
+            # keeps the current device level; older firmware ignores "bl".
+            brightness = build_brightness_payload(self.brightness)
+            if brightness:
+                payload.update(brightness)
             # Never truncate JSON or transmit a line the firmware will discard.
             if len(json.dumps(payload, separators=(",", ":")).encode()) > 4095:
                 payload = {"v": 1, "seq": self._seq, "ok": 0, "err": "payload too large", "mint": mint}
+                brightness = build_brightness_payload(self.brightness)
+                if brightness:
+                    payload.update(brightness)
             return payload
 
     def behavior_loop(self) -> None:
@@ -96,6 +106,7 @@ class App:
             "uptime_s": int(time.time() - self.started),
             "refreshed_at": st.refreshed_at,
             "source_errors": st.errors,
+            "brightness": build_brightness_status(self.brightness),
             "serial": None
             if sl is None
             else {
@@ -125,7 +136,9 @@ class App:
                 if path == "/v1/device":
                     self._send(200, app.device_payload())
                 elif path == "/v1/status":
-                    self._send(200, build_status(app.collector.snapshot(), time.time()))
+                    status = build_status(app.collector.snapshot(), time.time())
+                    status["brightness"] = build_brightness_status(app.brightness)
+                    self._send(200, status)
                 elif path == "/healthz":
                     self._send(200, app.health())
                 else:
@@ -160,17 +173,20 @@ class App:
             def log_message(self, fmt, *args):
                 log.debug("http.request", line=fmt % args)
 
-        self.collector.refresh()
-        threading.Thread(target=self.behavior_loop, name="mint", daemon=True).start()
-        threading.Thread(target=self.refresh_loop, name="refresh", daemon=True).start()
-        if self.serial:
-            threading.Thread(target=self.serial.run, name="serial", daemon=True).start()
         httpd = ThreadingHTTPServer((self.s.bind_host, self.s.bind_port), Handler)
-        log.event("service.started", bind=f"{self.s.bind_host}:{self.s.bind_port}", serial=self.s.serial_port if self.serial else "off")
+        self.httpd = httpd
         try:
+            self.collector.refresh()
+            self.brightness.start()
+            threading.Thread(target=self.behavior_loop, name="mint", daemon=True).start()
+            threading.Thread(target=self.refresh_loop, name="refresh", daemon=True).start()
+            if self.serial:
+                threading.Thread(target=self.serial.run, name="serial", daemon=True).start()
+            log.event("service.started", bind=f"{self.s.bind_host}:{httpd.server_port}", serial=self.s.serial_port if self.serial else "off")
             httpd.serve_forever(poll_interval=0.5)
         finally:
             self._stop.set()
+            self.brightness.stop()
             if self.serial:
                 self.serial.stop()
             httpd.server_close()

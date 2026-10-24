@@ -16,6 +16,7 @@ Built to sit beneath a monitor and answer a quick question: how much allowance i
 - Cached measurements remain visible when data is stale or disconnected; unknown is distinct from zero.
 - USB serial carries compact JSON from the PC. The display holds no account credentials.
 - The collector combines T3 status caches, Claude/Codex transcripts and OpenCode history. Optional OpenRouter key-status polling adds reported allowance and spend data.
+- Optional automatic backlight: the service dims the display at night and brightens it during daylight using local sunrise/sunset times (default location is approximate the owner's city city-centre coordinates). See [automatic brightness](docs/BRIGHTNESS.md).
 
 This is a working, board-specific project, tested on Windows with an ESP32-2432S024C. It is not a universal usage API: subscription readings depend on the data your local tools have already recorded.
 
@@ -90,6 +91,7 @@ The firmware has been built and flashed on the documented board; the service sui
 | --- | --- |
 | [Setup](docs/SETUP.md) | Fresh-machine installation, configuration, running and troubleshooting |
 | [Hardware](docs/HARDWARE.md) | Board identity, GPIO pinout, buses, touch and orientation |
+| [Brightness](docs/BRIGHTNESS.md) | Location-based automatic backlight, configuration and troubleshooting |
 | [Data sources](docs/DATA_SOURCES.md) | What is collected, refresh timing and integration limitations |
 | [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
 | [UI](docs/UI.md) | Renderer layout, configuration and extension points |
@@ -110,3 +112,5 @@ The HTTP API is unauthenticated and intended for localhost. Optional LAN/Wi-Fi o
 ## License
 
 [MIT](LICENSE). Third-party dependencies retain their own licenses. This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads.
+
+Powered by [SunriseSunset.io](https://sunrisesunset.io) for automatic backlight sun times.

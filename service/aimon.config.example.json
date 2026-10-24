@@ -10,5 +10,18 @@
   "t3_home": "~/.t3",
   "opencode_refresh_s": 30,
   "openrouter_enabled": false,
-  "openrouter_refresh_s": 600
+  "openrouter_refresh_s": 600,
+  "auto_brightness_enabled": true,
+  "auto_brightness_lat": 51.4779,
+  "auto_brightness_lng": -0.0015,
+  "auto_brightness_tz": "Europe/London",
+  "auto_brightness_day_duty": 255,
+  "auto_brightness_night_duty": 40,
+  "auto_brightness_startup_duty": 80,
+  "auto_brightness_transition_duration": 60,
+  "auto_brightness_smoothing_duration": 1000,
+  "auto_brightness_refresh_s": 86400,
+  "auto_brightness_retry_s": 900,
+  "auto_brightness_http_timeout_s": 5,
+  "auto_brightness_worker_tick_s": 60
 }

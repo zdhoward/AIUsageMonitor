@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-24: daylight brightness installed
+
+- Owner authorized paid Codex low effort after bounded free attempts failed. Corrected API vocabulary/UTC handling, startup failure, cache/ramp logic, runtime configuration and firmware interpolation; added Windows timezone dependency and setup guide.
+- Production build passed at 420,143 bytes flash / 29,808 bytes static RAM. Runtime import, live API and temporary HTTP startup/shutdown passed; final source inspection completed. Original independent free review identified rejected-patch blockers; final review was coordinator inspection.
+- Flashed COM6 with hash verification and restarted main service. Live health reports the owner's city night duty 40, 1000ms smoothing, nine cached dates, no brightness errors and resumed serial ACKs. Evidence in `build/t011-*`; physical calibration and broader acceptance pending. Automated tests deferred; no release/tag or push.
+
 ## 2026-10-24: daylight brightness implementation blocked
 
 - Specified PC-owned SunriseSunset.io scheduling for the owner's city with configurable levels, centred fades, caching and ESP PWM updates in T-011.

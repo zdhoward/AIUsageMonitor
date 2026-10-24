@@ -14,6 +14,6 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-008A | Five default-on entries implemented, source-reviewed, built and flashed on COM6. Physical tap acceptance pending; automatic activation is T-008B. |
 | T-009 | Grobot face and PC-owned behavior implemented, reviewed, built and flashed on COM6. Sustained animation and broader hardware acceptance remain; see HANDOFF.md. |
 | T-010 | Per-view 30-second idle saver and usage-change wake implemented, built and flashed on COM6. Removed saver navigation stop; automated and broader hardware acceptance deferred. |
-| T-011 | Daylight backlight control for the owner's city specified. Free implementation patch failed runtime/source verification; preserved in worker checkout, not integrated or flashed. See ticket for blockers and authorization boundary. |
+| T-011 | Configurable daylight backlight control for the owner's city implemented after authorized paid correction, built and flashed on COM6. Live cached night target 40/255 and serial ACKs verified. Physical calibration and broader acceptance remain pending. |
 
 Published release baseline: `v1.4.2` / `315d70c`. The current local development firmware includes later untagged MINT commits and still reports 1.4.2; see [HANDOFF.md](../HANDOFF.md) before identifying the installed build. Public docs and MIT license remain pushed; no changes from this session were pushed.

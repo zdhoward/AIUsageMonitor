@@ -54,6 +54,36 @@ static void pollTouch() {
 
 static const char* linkInfo();
 
+// Nonblocking linear interpolation, independent of page/activity state.
+static uint8_t blCurrent = BACKLIGHT_LEVEL;
+
+static void applyBacklight() {
+  if (!model.hasBl) return;
+  static uint8_t target = BACKLIGHT_LEVEL, from = BACKLIGHT_LEVEL;
+  static uint32_t started = 0, duration = BACKLIGHT_SMOOTHING_MS;
+  static bool active = false;
+  uint32_t now = millis();
+  // First advance the old ramp, so a retarget starts at the current level.
+  uint32_t elapsed = now - started;
+  uint8_t value = target;
+  if (active) {
+    if (!duration || elapsed >= duration) active = false;
+    else value = (uint8_t)((int32_t)from + ((int32_t)target - from) * (int32_t)elapsed / (int32_t)duration);
+  }
+  if (target != model.bl || duration != model.blMs) {
+    from = value;
+    target = model.bl;
+    duration = model.blMs;
+    started = now;
+    active = duration != 0 && from != target;
+    if (!duration) value = target;
+  }
+  if (value != blCurrent) {
+    blCurrent = value;
+    ledcWrite(PIN_BACKLIGHT, blCurrent);
+  }
+}
+
 static void acceptPayload(const char* json, size_t len) {
   if (parsePayload(json, len, model)) {
     selectedFace[0] = 0;  // payload authority also replaces a diagnostic !FACE
@@ -175,6 +205,7 @@ void loop() {
 #if AIMON_USE_WIFI
   pollWifi();
 #endif
+  applyBacklight();
   uint32_t now = millis();
   // Retire an observed expiry permanently, including across a full millis cycle.
   // Keep the session/revision high-water so expired frames cannot replay.

@@ -8,6 +8,7 @@ import sys
 import time
 
 from . import log
+from .brightness import BrightnessController, build_brightness_payload
 from .config import Settings
 from .snapshot import Collector, build_payload
 
@@ -30,7 +31,12 @@ def main(argv=None) -> int:
     if args.once:
         c = Collector(s)
         st = c.refresh()
-        print(json.dumps(build_payload(st, time.time(), c.pricing, s), indent=1))
+        payload = build_payload(st, time.time(), c.pricing, s)
+        # Brightness in --once mode is cache-only: no network fetch, no
+        # background threads. Yields a cached or startup-fallback duty.
+        brightness = BrightnessController(s)
+        payload.update(build_brightness_payload(brightness))
+        print(json.dumps(payload, indent=1))
         return 0
 
     from .server import App

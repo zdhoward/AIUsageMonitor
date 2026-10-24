@@ -300,6 +300,20 @@ bool parsePayload(const char* json, size_t len, Model& out) {
     if (!age.isNull() && (age | -1) >= 0) m.orAge = age | -1;
   }
 
+  // Location-based automatic backlight level (0..255). Missing or invalid
+  // keeps the last received level; explicit zero (backlight off) is valid.
+  m.bl = out.bl;
+  m.hasBl = out.hasBl;
+  m.blMs = out.blMs;
+  JsonVariantConst blv = doc["bl"];
+  if (!blv.isNull() && blv.is<int>() && blv.as<int>() >= 0 && blv.as<int>() <= 255) {
+    m.bl = (uint8_t)blv.as<int>();
+    m.hasBl = true;
+    JsonVariantConst duration = doc["bl_ms"];
+    if (duration.is<int>() && duration.as<int>() >= 0 && duration.as<int>() <= 60000)
+      m.blMs = (uint32_t)duration.as<int>();
+  }
+
   out = m;
   return true;
 }
