@@ -1,5 +1,12 @@
 # Test report
 
+## T-010 idle screensaver and wake (2026-10-23)
+
+- Production build passed: 419,663 bytes flash, 29,760 bytes static RAM. Flashed to COM6 with esptool hash verification; service resumed ACKs. Device reports rotation 1, 320x240 and framebuffer enabled.
+- Inspected actual framebuffer captures: [idle MINT after 31 seconds](img/T-010-idle.png), then [Console after changed live usage](img/T-010-wake.png), without touch or `!NEXT`. This verifies the default idle/wake path only.
+- Automated tests deferred under owner sprint-end policy. Pending physical tap, per-view settings, timeout and millis rollover, alternate target/configuration builds, no-data and direct-panel fallback, portrait and sustained animation/resource acceptance. Checklist: [SCREENSAVER.md](SCREENSAVER.md).
+- Screenshot helper capture deadline increased to 30 seconds and pause lease to 90 seconds after an initial partial RGB332 transfer timed out; retry completed with full 320x240 frames.
+
 ## T-009 MINT device evidence (2026-10-23)
 
 - Code reviews passed after restart-ordering and lease-retirement fixes. Actual device capture found an additional unsigned elapsed-time blend overflow, corrected in `7fead74`.

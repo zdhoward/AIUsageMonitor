@@ -1,5 +1,11 @@
 # Accepted display decisions
 
+## Current display state (2026-10-23)
+
+- The Console and Details dashboards remain the quota views. Companion and Images are optional additional views; Screensaver is automatic presentation and is not a navigation stop.
+- Console and Details default to separate 30-second idle timers and wake on measured usage changes. Each has build-time enable, timeout and wake settings. Companion/Images never sleep. See [UI](docs/UI.md) and [Screensaver acceptance](docs/SCREENSAVER.md).
+- T-010 default idle/wake behavior is built and flashed with framebuffer evidence. Sprint-end tests and broader touch/configuration/renderer acceptance remain pending. No new release tag is implied.
+
 Final user choices from 2026-10-22; these supersede earlier portrait/bar/extra-page concepts.
 
 - Default landscape (rotation 1), attached beneath a monitor and read at a glance.
