@@ -70,7 +70,9 @@ Set `DISPLAY_ROTATION` in [config.h](../firmware/AIUsageMonitor/config.h), then 
 
 For a temporary preview, `python scripts/screenshot.py --rot 3 --feed --out build/rotation3.png` changes rotation until reboot. Rotation numbers describe this driver/panel combination; confirm upright text on your own mount.
 
-`BACKLIGHT_LEVEL` is an 8-bit PWM duty from 0 to 255, default 255. It is not a calibrated brightness measurement.
+`BACKLIGHT_LEVEL` is the boot 8-bit PWM duty from 0 to 255, default 255. GPIO27 uses 5 kHz, 8-bit LEDC. `BACKLIGHT_SMOOTHING_MS` is the boot linear interpolation duration (0..60000 ms, default 1000); the service overrides it with `bl_ms`. Zero means instant changes. USB and Wi-Fi payloads share this path, all pages/screensavers share the backlight, and disconnect retains the last target. Brightness alone does not wake idle views.
+
+PWM duty is **not** a perceived brightness percent. Calibrate day/night duties to your preference using `auto_brightness_day_duty` and `auto_brightness_night_duty` in the service configuration. See [BRIGHTNESS](BRIGHTNESS.md) for automatic location-based backlight and troubleshooting.
 
 ## Adapting another board
 

@@ -1,5 +1,11 @@
 # Test report
 
+## T-011 daylight backlight (2026-10-24)
+
+- Production firmware build: 420,143 bytes flash / 29,808 bytes static RAM; Python syntax/runtime import and live API passed. Temporary HTTP-only service demonstrated configured brightness fields and clean shutdown; evidence `build/t011-http-smoke.log`.
+- COM6 firmware upload hash verified. Restarted service reports cached the owner's city night target 40/255, 1000ms smoothing, no brightness errors and resumed ACKs (`build/t011-device-live.json`). ACKs demonstrate accepted payload transport; they do not measure physical light output.
+- Automated tests deferred under owner sprint-end policy. Physical day/night comfort, observed solar fades, Wi-Fi, outage/rollover and screensaver checks remain listed in [brightness acceptance](BRIGHTNESS.md#troubleshooting-and-manual-acceptance).
+
 ## T-010 idle screensaver and wake (2026-10-23)
 
 - Production build passed: 419,663 bytes flash, 29,760 bytes static RAM. Flashed to COM6 with esptool hash verification; service resumed ACKs. Device reports rotation 1, 320x240 and framebuffer enabled.

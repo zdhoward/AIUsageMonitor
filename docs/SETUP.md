@@ -85,6 +85,13 @@ Edit that local JSON file before starting the service. It is Git-ignored. The ex
 | `openrouter_refresh_s` | Optional key-status polling cadence, 600 seconds |
 | `opencode_refresh_s` | OpenCode history polling cadence, 30 seconds |
 | `opencode_db` | Optional path override; default `~/.local/share/opencode/opencode.db` |
+| `auto_brightness_enabled` | Automatic location-based backlight, default `true`; see [BRIGHTNESS](BRIGHTNESS.md) |
+| `auto_brightness_lat`, `auto_brightness_lng`, `auto_brightness_tz` | Sunrise/sunset location; defaults are approximate the owner's city city-centre coordinates (`51.4779`, `-0.0015`, `Europe/London`) — not a street address |
+| `auto_brightness_day_duty`, `auto_brightness_night_duty`, `auto_brightness_startup_duty` | PWM duty 0–255 for day, night and the startup/no-data fallback (255 / 40 / 80) |
+| `auto_brightness_transition_duration` | Sunrise/sunset-centred ramp window in minutes, 60 |
+| `auto_brightness_smoothing_duration` | Firmware target interpolation duration in milliseconds, 1000 (0..60000; 0 instant) |
+| `auto_brightness_refresh_s`, `auto_brightness_retry_s` | Solar fetch refresh/retry seconds, 86400 / 900 |
+| `auto_brightness_http_timeout_s`, `auto_brightness_worker_tick_s` | Solar HTTP timeout/worker cadence seconds, 5 / 60 |
 
 Other settings and exact defaults live in [config.py](../service/aimon/config.py). `AIMON_<UPPERCASE_SETTING>` environment variables override the JSON file, for example `$env:AIMON_SERIAL_PORT = 'COM6'`. Environments of background/logon processes may differ from the terminal you use for setup.
 
@@ -152,6 +159,7 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 
 - `DISPLAY_ROTATION`: 1 by default; 0/2 portrait, 1/3 landscape.
 - `BACKLIGHT_LEVEL`: 0–255 PWM duty, default 255.
+- `BACKLIGHT_SMOOTHING_MS`: boot linear interpolation duration, default 1000ms; service `bl_ms` overrides it.
 - `UI_CRITICAL_LEFT`, `UI_WARNING_LEFT`: remaining-quota color thresholds, 20 and 50.
 - `CLIENT_STALE_S`: firmware source-age threshold; keep consistent with service settings if changed.
 - `UI_ANIMATION`: restrained ring animation on/off.
@@ -162,6 +170,12 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `UI_SCREENSAVER_TIMEOUT_MS`: default 30000. Override each view with `UI_CONSOLE_SAVER_TIMEOUT_MS` / `UI_DETAILS_SAVER_TIMEOUT_MS`.
 - `UI_CONSOLE_SAVER_ENABLED`, `UI_DETAILS_SAVER_ENABLED`: per-view saving, default 1.
 - `UI_CONSOLE_WAKE_ON_USAGE`, `UI_DETAILS_WAKE_ON_USAGE`: per-view automatic wake, default 1.
+
+Restart-to-reload: change any setting in `aimon.config.json` and restart the service; the brightness controller reinitializes with the new location/timezone.
+
+See [BRIGHTNESS](BRIGHTNESS.md) for automatic backlight configuration, sunrise/sunset behavior, and troubleshooting.
+
+Windows needs the IANA `tzdata` package from `service/requirements.txt` for `zoneinfo`. Invalid enabled brightness configuration fails startup clearly. `--once` uses valid cached schedules or duty 80 without solar HTTP or a brightness worker. Disabling automatic brightness omits `bl`/`bl_ms` and needs no solar network/cache access.
 
 Tap and release anywhere to cycle the four available views. Holds of 1.5 seconds or longer are ignored. Console/Details sleep after 30 seconds without usage changes and wake on a change; Face/Images are exempt. A tap while asleep wakes the same view. Screensaver is absent from navigation. See [UI.md](UI.md) for comparison rules and policy details.
 

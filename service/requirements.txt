@@ -1,2 +1,4 @@
 # Tested USB serial and framebuffer capture dependency.
 pyserial==3.5
+# ZoneInfo uses the system database on Unix; Windows needs this IANA database.
+tzdata==2026.4; sys_platform == "win32"

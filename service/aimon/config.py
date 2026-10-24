@@ -41,6 +41,21 @@ class Settings:
     openrouter_enabled: bool = True
     extra_free_providers: list[str] = field(default_factory=list)
 
+    # Location-based automatic backlight brightness (optional)
+    auto_brightness_enabled: bool = True
+    auto_brightness_lat: float = 51.4779
+    auto_brightness_lng: float = -0.0015
+    auto_brightness_tz: str = "Europe/London"
+    auto_brightness_day_duty: int = 255
+    auto_brightness_night_duty: int = 40
+    auto_brightness_startup_duty: int = 80
+    auto_brightness_transition_duration: int = 60
+    auto_brightness_smoothing_duration: int = 1000
+    auto_brightness_refresh_s: float = 86400.0
+    auto_brightness_retry_s: float = 900.0
+    auto_brightness_http_timeout_s: float = 5.0
+    auto_brightness_worker_tick_s: float = 60.0
+
     @classmethod
     def load(cls, path: Path | None = None) -> "Settings":
         s = cls()
@@ -49,12 +64,30 @@ class Settings:
             data = json.loads(path.read_text(encoding="utf-8"))
             for f in fields(cls):
                 if f.name in data:
-                    setattr(s, f.name, _coerce(getattr(s, f.name), data[f.name]))
+                    if f.name.startswith("auto_brightness_"):
+                        setattr(s, f.name, _brightness_coerce(f.default, data[f.name], f.name))
+                    else:
+                        setattr(s, f.name, _coerce(getattr(s, f.name), data[f.name]))
         for f in fields(cls):
             env = os.environ.get("AIMON_" + f.name.upper())
             if env is not None:
-                setattr(s, f.name, _coerce(getattr(s, f.name), env))
+                if f.name.startswith("auto_brightness_"):
+                    try:
+                        value = env if isinstance(f.default, str) else json.loads(env)
+                        setattr(s, f.name, _brightness_coerce(f.default, value, f.name))
+                    except ValueError as e:
+                        raise ValueError(f"AIMON_{f.name.upper()}: {e}") from e
+                else:
+                    setattr(s, f.name, _coerce(getattr(s, f.name), env))
         return s
+
+
+def _brightness_coerce(current, value, name):
+    expected = type(current)
+    valid = type(value) is expected or (expected is float and type(value) is int)
+    if not valid:
+        raise ValueError(f"{name} expected {expected.__name__}, got {type(value).__name__}")
+    return value
 
 
 def _coerce(current, value):

@@ -54,6 +54,12 @@
 #ifndef BACKLIGHT_LEVEL
 #define BACKLIGHT_LEVEL 255
 #endif
+#ifndef BACKLIGHT_SMOOTHING_MS
+#define BACKLIGHT_SMOOTHING_MS 1000
+#endif
+#if BACKLIGHT_SMOOTHING_MS < 0 || BACKLIGHT_SMOOTHING_MS > 60000
+#error "BACKLIGHT_SMOOTHING_MS must be 0..60000"
+#endif
 
 // Show "NO DATA" in the header; cached readings keep their normal brightness.
 #define DATA_TIMEOUT_MS 30000UL

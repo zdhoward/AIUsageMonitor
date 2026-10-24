@@ -4,6 +4,8 @@
 // unavailable, never as zero.
 #include <Arduino.h>
 
+#include "config.h"
+
 struct WinData {
   char l[5];      // window label: 5h, 7d
   int16_t u;      // used percent, -1 unknown
@@ -69,6 +71,14 @@ struct Model {
   char orX[17] = "";
   int16_t orFu = -1, orFl = -1;
   int32_t orD = -1, orB = -1, orAge = -1;
+
+  // Location-based automatic backlight level (0..255). Missing or invalid
+  // keeps the last received level; explicit zero (backlight off) is valid.
+  // Firmware applies it for USB and Wi-Fi payloads and retains last value on
+  // disconnect, with BACKLIGHT_LEVEL at boot.
+  uint8_t bl = 0;        // last accepted duty 0..255
+  bool hasBl = false;    // any valid bl received since boot
+  uint32_t blMs = BACKLIGHT_SMOOTHING_MS; // duration for the next target, 0 = instant
 };
 
 bool parsePayload(const char* json, size_t len, Model& out);

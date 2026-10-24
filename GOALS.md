@@ -1,5 +1,10 @@
 # Accepted display decisions
 
+## Automatic brightness (2026-10-24)
+
+- Owner requested configurable daylight brightness and selected the owner's city. PC service fetches/caches SunriseSunset.io schedules; ESP applies PWM targets across every view without waking idle views.
+- Installed defaults: day 255, night 40, startup fallback 80, 60-minute centred sunrise/sunset transitions and 1000ms device interpolation. Settings and failure behavior: [brightness guide](docs/BRIGHTNESS.md). Physical comfort and broader acceptance remain pending.
+
 ## Current display state (2026-10-23)
 
 - The Console and Details dashboards remain the quota views. Companion and Images are optional additional views; Screensaver is automatic presentation and is not a navigation stop.

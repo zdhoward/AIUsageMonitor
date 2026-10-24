@@ -83,6 +83,8 @@ deadline. This route works with serial disabled and does not refresh sources.
 | `nim` | Observed NIM free-history record count `n`; not a provider quota |
 | `or` | Optional OpenRouter reported free used/limit `fu`/`fl`, daily spend `d` cents, budget `b` cents, age, or unavailable/error `x` |
 | `mint` | Optional face expression lease, session/revision identity and remaining TTL; contract above |
+| `bl` | Optional integer backlight PWM duty (0..255). Missing/invalid preserves the target; explicit zero is valid. Older firmware ignores it. Included even in the oversized-payload fallback. |
+| `bl_ms` | Optional integer smoothing duration (0..60000 ms), accepted with valid `bl`. Missing/invalid retains the previous duration (boot default `BACKLIGHT_SMOOTHING_MS`, 1000). Linear interpolation from current duty to a changed target; 0 is instant. Repeated identical targets do not restart the ramp. |
 
 The service emits at most three windows per account. Firmware stores at most four accounts and three windows each; the console intentionally shows three fixed slots and the 5h/7d labels. String fields have bounded buffers and may be truncated. See source for exact limits before extending the protocol.
 
