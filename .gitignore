@@ -5,3 +5,6 @@ build/
 firmware/AIUsageMonitor/secrets.h
 service/aimon.config.json
 *.bin
+
+# Third-party art packs: licenses vary, keep them local (repo is public)
+assets/sprites/

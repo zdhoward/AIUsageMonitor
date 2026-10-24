@@ -15,5 +15,9 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-009 | Grobot face and PC-owned behavior implemented, reviewed, built and flashed on COM6. Sustained animation and broader hardware acceptance remain; see HANDOFF.md. |
 | T-010 | Per-view 30-second idle saver and usage-change wake implemented, built and flashed on COM6. Removed saver navigation stop; automated and broader hardware acceptance deferred. |
 | T-011 | Configurable daylight backlight control for the owner's city implemented after authorized paid correction, built and flashed on COM6. Live cached night target 40/255 and serial ACKs verified. Physical calibration and broader acceptance remain pending. |
+| T-012 | Planned: scene library and generic scene engine (parallax/tile layers, reusable effects). See [plan](../docs/SCENE_LIBRARY_PLAN.md). |
+| T-013 | Planned: build profiles with flash budget and screensaver scene playlist. |
+| T-014 | Planned: Scene Studio MVP (PySide6, exact preview via host DLL, build/flash/shot/PERF). |
+| T-015 | Planned: Studio import panel and profile editor. |
 
 Published release baseline: `v1.4.2` / `315d70c`. The current local development firmware includes later untagged MINT commits and still reports 1.4.2; see [HANDOFF.md](../HANDOFF.md) before identifying the installed build. Public docs and MIT license remain pushed; no changes from this session were pushed.
