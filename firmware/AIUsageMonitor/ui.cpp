@@ -4,6 +4,9 @@
 #include "ui.h"
 #include "config.h"
 #include "face.h"
+#include "anim.h"
+#include "assets_gen.h"
+#include "city.h"
 
 static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
@@ -31,6 +34,9 @@ static void drawCompanion(const Model&, uint32_t, const ViewDef&, int y);
 #if UI_IMAGE_ENABLED
 static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
 #endif
+#if UI_CITY_ENABLED
+static void drawCity(const Model&, uint32_t, const ViewDef&, int y);
+#endif
 
 static const ViewDef kStaticViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
@@ -40,6 +46,9 @@ static const ViewDef kStaticViews[] = {
 #endif
 #if UI_IMAGE_ENABLED
   {UI_PAGE_IMAGE, drawImage},
+#endif
+#if UI_CITY_ENABLED
+  {UI_PAGE_CITY, drawCity},
 #endif
 };
 static const uint8_t kViewCount = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
@@ -735,11 +744,31 @@ static void drawCompanion(const Model&, uint32_t now, const ViewDef&, int) {
 }
 #endif
 
+// Frame-based pages need the RGB332 framebuffer; without it they explain why.
+static bool canvas(Canvas8& c) {
+  if (!spr) {
+    text("Needs the frame buffer", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+    return false;
+  }
+  c = {(uint8_t*)spr->getPointer(), W, H};
+  return true;
+}
+
 #if UI_IMAGE_ENABLED
-static void drawImage(const Model&, uint32_t, const ViewDef&, int) {
-  text("Images / animation", W / 2, H / 2 - 24, 2, C_TEXT, MC_DATUM);
-  text("Placeholder for future content", W / 2, H / 2, 1, C_MUTED, MC_DATUM);
-  text("No images loaded", W / 2, H / 2 + 20, 2, C_MUTED, MC_DATUM);
+static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
+  Canvas8 c;
+  if (!canvas(c)) return;
+  const AnimAsset& a = ASSET_skele;
+  const uint8_t scale = min(W / a.w, (H - 16) / a.h) ? min(W / a.w, (H - 16) / a.h) : 1;
+  animBlit(c, a, animFrameAt(a, now), (W - a.w * scale) / 2 - a.x * scale,
+           (H - 16 - a.h * scale) / 2 - a.y * scale, scale);
+}
+#endif
+
+#if UI_CITY_ENABLED
+static void drawCity(const Model&, uint32_t now, const ViewDef&, int) {
+  Canvas8 c;
+  if (canvas(c)) cityDraw(c, now);
 }
 #endif
 
@@ -772,7 +801,8 @@ bool uiHasFramebuffer() { return spr != nullptr; }
 
 uint32_t uiFrameIntervalMs() {
   const uint8_t id = saverActive ? UI_SCREENSAVER_PAGE : kStaticViews[selView].id;
-  return id == UI_PAGE_COMPANION ? 33UL : REDRAW_MS;
+  if (id == UI_PAGE_CITY) return 40UL;
+  return id == UI_PAGE_COMPANION || id == UI_PAGE_IMAGE ? 33UL : REDRAW_MS;
 }
 
 bool uiScreenshot(Stream& out) {
@@ -812,7 +842,11 @@ static void animate(const Model& m, uint32_t now) {
   }
 }
 
+static uint32_t renderUs = 0;
+uint32_t uiLastRenderUs() { return renderUs; }
+
 void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
+  const uint32_t t0 = micros();
   updateSaver(m, now);
   TFT_eSPI& g = G();
   // The base TFT API can retain its portrait extent on a sprite. Clear the
@@ -842,6 +876,7 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       v.draw(m, now, v, 0);
     }
   }
-  if (!saverActive && v.id != UI_PAGE_COMPANION) drawDots(current);
+  if (!saverActive && v.id != UI_PAGE_COMPANION && v.id != UI_PAGE_CITY) drawDots(current);
   if (spr) spr->pushSprite(0, 0);
+  renderUs = micros() - t0;
 }

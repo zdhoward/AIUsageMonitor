@@ -106,13 +106,16 @@ static void printHello() {
 }
 
 // Commands: "!HELLO" repeats the boot info, "!SHOT" dumps the frame buffer,
-// "!ROT n" applies rotation n until reboot (test only).
+// "!ROT n" applies rotation n until reboot (test only), "!PERF" reports the
+// last render time and free heap.
 static void handleCommand(const char* cmd) {
   if (!strcmp(cmd, "!HELLO")) {
     printHello();
   } else if (!strcmp(cmd, "!SHOT")) {
     uiRender(model, millis(), linkInfo());
     if (!uiScreenshot(Serial)) Serial.print("@ERR no framebuffer\n");
+  } else if (!strcmp(cmd, "!PERF")) {
+    Serial.printf("@PERF render_us=%lu heap=%lu\n", (unsigned long)uiLastRenderUs(), (unsigned long)ESP.getFreeHeap());
   } else if (!strcmp(cmd, "!NEXT")) {
     uiNextView(model);
     lastDraw = 0;

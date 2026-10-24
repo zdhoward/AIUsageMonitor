@@ -97,6 +97,9 @@
 #ifndef UI_IMAGE_ENABLED
 #define UI_IMAGE_ENABLED 1
 #endif
+#ifndef UI_CITY_ENABLED
+#define UI_CITY_ENABLED 1
+#endif
 #ifndef UI_SCREENSAVER_ENABLED
 #define UI_SCREENSAVER_ENABLED 1
 #endif
@@ -108,6 +111,7 @@
 #define UI_PAGE_COMPANION 2
 #define UI_PAGE_IMAGE 3
 #define UI_PAGE_SCREENSAVER 4
+#define UI_PAGE_CITY 5
 
 // Screensaver target and automatic activation. This is presentation state,
 // never a navigation entry. Either global switch disables automatic saving.
@@ -121,7 +125,7 @@
 #define UI_SCREENSAVER_TIMEOUT_MS 30000UL
 #endif
 
-// Per-view idle policy; Companion and Images are always exempt.
+// Per-view idle policy; Companion, Images and City are always exempt.
 #ifndef UI_CONSOLE_SAVER_ENABLED
 #define UI_CONSOLE_SAVER_ENABLED 1
 #endif
@@ -146,13 +150,16 @@
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
-#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_IMAGE
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_CITY
 #error "Unknown screensaver target page"
 #endif
 #if UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION && !UI_COMPANION_ENABLED
 #error "Screensaver target must be an enabled page"
 #endif
 #if UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE && !UI_IMAGE_ENABLED
+#error "Screensaver target must be an enabled page"
+#endif
+#if UI_SCREENSAVER_PAGE == UI_PAGE_CITY && !UI_CITY_ENABLED
 #error "Screensaver target must be an enabled page"
 #endif
 #endif

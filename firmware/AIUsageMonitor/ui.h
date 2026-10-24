@@ -13,6 +13,9 @@ bool uiHasFramebuffer();
 uint32_t uiFrameIntervalMs();
 void uiNextView(const Model& m);
 
+// Duration of the last uiRender, including the panel transfer.
+uint32_t uiLastRenderUs();
+
 // Dumps the current frame (RGB332) to `out` for host-side screenshots.
 bool uiScreenshot(Stream& out);
 
