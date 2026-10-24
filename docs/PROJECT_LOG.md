@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-24: daylight brightness implementation blocked
+
+- Specified PC-owned SunriseSunset.io scheduling for the owner's city with configurable levels, centred fades, caching and ESP PWM updates in T-011.
+- First free route exhausted quota; fallback returned a patch and claimed build/syntax success. Runtime import fails on a missing function; source inspection found incompatible API status values and incomplete configuration/transition behavior. Preserved worker patch without integrating or flashing it.
+- Two implementation attempts consumed; correction waits for fresh owner authorization under model-router. Independent review fallback pending. Automated tests deferred to owner testing phase; routing cost UNKNOWN.
+
 ## 2026-10-23: per-view idle screensaver
 
 - Owner authorized paid low-effort implementation after both free workers hit usage limits. Enabled 30-second idle saving for Console/Details with separate enable, timeout and usage-wake settings; Face/Images remain exempt.
