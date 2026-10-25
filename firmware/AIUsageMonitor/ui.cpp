@@ -53,6 +53,7 @@ static ViewDef kStaticViews[kAllCount + 48];  // built-in pages plus single-scen
 static const uint8_t kViewCap = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t kViewCount = 0;
 static uint8_t selView = 0;  // first page in UI_VIEW_ORDER
+#define UI_MAX_DOTS 6  // more pages than this show an "n / m" counter instead
 
 // Playlists rotate Roku-style. UI_PAGE_SCENES plays every compiled scene;
 // pages from UI_PLAYLIST_PAGE_BASE play the profile's own playlists
@@ -461,23 +462,12 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
     else fmtDur(d, sizeof d, oldest);
     snprintf(b, sizeof b, "Updated %s", d);
   }
-  // Preserve the local footer reservation while bounding both text fields.
-  const int dotSpace = kViewCount * 10 + 8;
-  text(b, pad, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - dotSpace - 108);
-
-  const char* st;
-  uint16_t sc;
-  if (!m.ok) {
-    st = "SOURCE ERROR";
-    sc = C_RED;
-  } else if (anyStale) {
-    st = "STALE";
-    sc = C_AMBER;
-  } else {
-    st = "CONNECTED";
-    sc = C_GREEN;
-  }
-  text(st, W - pad - dotSpace, fy, 2, sc, TR_DATUM, 100);
+  // Link health is a dot before the age: green ok, amber stale, red source
+  // error. Reserve the page indicator's width (dots or the "n / m" counter).
+  const uint16_t sc = !m.ok ? C_RED : anyStale ? C_AMBER : C_GREEN;
+  g.fillCircle(pad + 4, fy + 7, 4, col(sc));
+  const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
+  text(b, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);
 }
 
 // ---------------------------------------------------------------- detail sections
@@ -1022,7 +1012,6 @@ void uiGoHome() {
 // Page position, bottom right. A few pages get dots; past UI_MAX_DOTS the dots
 // would run across the screen, so show a "3 / 14" counter over a thin track
 // whose bright segment marks the current page.
-#define UI_MAX_DOTS 6
 static void drawDots(uint8_t current) {
   TFT_eSPI& g = G();
   if (kViewCount <= UI_MAX_DOTS) {
