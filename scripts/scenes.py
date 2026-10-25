@@ -5,6 +5,10 @@ A scene is a library entry (assets/library/<id>/entry.json) with a "scene" objec
   background  {"top": "#hex", "bottom": "#hex"}       sky gradient
   theme       name from THEMES (palette remap applied on the device)
   variants    extra themes; each is its own playlist entry sharing the layer data
+  cycle       {"themes": [...], "hold": s, "fade": s}: the scene itself cycles
+              through these themes, cross-fading for `fade` seconds after holding
+              each for `hold` seconds. Themes may be built in or palettes from
+              assets/themes/*.json (e.g. imported from Lospec).
   layers[]    back to front:
     src       file or list of files (png/gif/aseprite) relative to the entry folder
     layer     optional Aseprite layer name
@@ -110,13 +114,51 @@ THEMES = {
 }
 
 
+THEMES_DIR = ROOT / "assets" / "themes"
+
+
+def palettes() -> dict:
+    """Palette themes saved in assets/themes/<id>.json: {name, author, url, colors}."""
+    out = {}
+    for f in sorted(THEMES_DIR.glob("*.json")) if THEMES_DIR.is_dir() else []:
+        out[f.stem] = json.loads(f.read_text(encoding="utf-8"))
+    return out
+
+
+def theme_names() -> list[str]:
+    return list(THEMES) + [p for p in palettes() if p not in THEMES]
+
+
+def palette_lut(colors: list[str]) -> list[int]:
+    """Gradient-map by brightness onto the palette, using only palette colours."""
+    pal = sorted((hex_rgb(c if c.startswith("#") else "#" + c) for c in colors), key=lambda c: _lum(*c))
+    n = len(pal)
+    return [ac.rgb332(*pal[min(n - 1, int(_lum(*rgb_of(c)) * n))]) for c in range(256)]
+
+
 def rgb_of(c: int) -> tuple:
     return ((c >> 5) & 7) * 255 // 7, ((c >> 2) & 7) * 255 // 7, (c & 3) * 85
 
 
 def lut(theme: str) -> list | None:
+    if theme not in THEMES:
+        pal = palettes().get(theme)
+        return palette_lut(pal["colors"]) if pal else None
     f = THEMES.get(theme)
     return None if f is None else [ac.rgb332(*f(*rgb_of(c))) for c in range(256)]
+
+
+def theme_info() -> list[dict]:
+    """For the Studio: every theme with a few swatch colours."""
+    out = []
+    for t in THEMES:
+        table = lut(t) or list(range(256))
+        sw = [table[ac.rgb332(*c)] for c in ((30, 10, 60), (220, 40, 160), (40, 200, 230), (255, 190, 80), (240, 240, 250))]
+        out.append({"id": t, "name": t, "kind": "builtin", "colors": ["#%02x%02x%02x" % rgb_of(c) for c in sw]})
+    for pid, p in palettes().items():
+        out.append({"id": pid, "name": p.get("name", pid), "kind": "palette", "author": p.get("author", ""),
+                    "url": p.get("url", ""), "colors": ["#" + c.lstrip("#") for c in p["colors"]]})
+    return out
 
 
 def hex_rgb(h: str) -> tuple:
@@ -309,17 +351,31 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
             cpp.append(f"static const SceneEffect {n}_fx[] = {{{', '.join(fx)}}};\n")
         top, bot = hex_rgb(sc["background"]["top"]), hex_rgb(sc["background"]["bottom"])
         name = e.get("name", sid).replace('"', "'")
+
+        def lut_ref(theme: str) -> str:
+            table = lut(theme) or list(range(256))  # cycles need a real table for "original"
+            key = theme if lut(theme) else "identity"
+            if key not in luts:
+                luts[key] = "lut_" + "".join(ch if ch.isalnum() else "_" for ch in key)
+                cpp.append(f"static const uint8_t {luts[key]}[256] = {{{ac.c_bytes(bytes(table))}}};\n")
+            return luts[key]
+
+        cyc = sc.get("cycle") or {}
+        cyc_themes = [t for t in cyc.get("themes", []) if t in theme_names()]
+        cycle = "nullptr, 0, 0, 0"
+        if len(cyc_themes) > 1:
+            refs = [lut_ref(t) for t in cyc_themes]
+            cpp.append(f"static const uint8_t* const {n}_cycle[] = {{{', '.join(refs)}}};\n")
+            cycle = (f"{n}_cycle, {len(refs)}, {int(max(1, cyc.get('hold', 20)))}, "
+                     f"{int(max(0, cyc.get('fade', 4)) * 10)}")
         themes = scene_themes(sc)
         for k, theme in enumerate(themes):
-            table = lut(theme)
-            if table and theme not in luts:
-                luts[theme] = f"lut_{theme}"
-                cpp.append(f"static const uint8_t lut_{theme}[256] = {{{ac.c_bytes(bytes(table))}}};\n")
+            ref = lut_ref(theme) if lut(theme) else "nullptr"
             vid = sid if k == 0 else f"{sid}-{theme}"
             vname = name if k == 0 else f"{name} ({theme})"
             defs.append(f'  {{"{vid}", "{vname}", {{{top[0]}, {top[1]}, {top[2]}}}, {{{bot[0]}, {bot[1]}, {bot[2]}}}, '
                         f"{f'{n}_layers' if rows else 'nullptr'}, {len(layers)}, {f'{n}_fx' if fx else 'nullptr'}, {len(fx)}, "
-                        f"{luts.get(theme, 'nullptr')}, {gen}}}")
+                        f"{ref}, {gen}, {cycle if k == 0 else 'nullptr, 0, 0, 0'}}}")
         cpp.append("\n")
     if defs:
         cpp.append("const SceneDef SCENES[] = {\n" + ",\n".join(defs) + "\n};\n")

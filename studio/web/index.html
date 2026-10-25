@@ -179,7 +179,8 @@
         <div id="editor" hidden>
           <h3>Theme</h3>
           <div class="themes" id="eThemes"></div>
-          <p class="hint">Tick extra themes to add them to the playlist too. They reuse the same art, so they cost almost nothing.</p>
+          <div class="theme-mode" id="eThemeMode"></div>
+          <p class="hint" id="eThemeHint"></p>
           <div id="eGen"></div>
           <div id="eLayersWrap"><h3>Layers <span class="hint">back to front</span></h3>
           <div id="eLayers"></div></div>
@@ -211,6 +212,24 @@
     <input id="impName" placeholder="Scene name, e.g. Snowy Peaks">
     <input id="impLicense" placeholder="License / credit (e.g. CC0 by ...)">
     <button class="btn primary wide" id="impGo">Create scene</button>
+  </div>
+</div>
+
+<div class="modal" id="lospec" hidden>
+  <div class="sheet">
+    <button class="icon-btn close" data-close>×</button>
+    <h2 class="big">Lospec palettes</h2>
+    <p class="hint">Search <a href="https://lospec.com/palette-list" target="_blank">lospec.com</a> by tag, or paste a palette link.
+      Added palettes become themes: colours are mapped by brightness onto the palette.</p>
+    <div class="ls-bar">
+      <input id="lsTag" placeholder="Tag, e.g. cyberpunk, synthwave, gameboy" value="cyberpunk">
+      <button class="btn primary" id="lsGo">Search</button>
+      <span class="grow"></span>
+      <input id="lsLink" placeholder="https://lospec.com/palette-list/neon-pulse-8">
+      <button class="btn ghost" id="lsLinkGo">Add link</button>
+    </div>
+    <div class="ls-grid" id="lsGrid"></div>
+    <div class="ls-pager"><button class="btn ghost" id="lsPrev">← Prev</button><span id="lsPage"></span><button class="btn ghost" id="lsNext">Next →</button></div>
   </div>
 </div>
 

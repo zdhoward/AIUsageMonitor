@@ -14,6 +14,29 @@ const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const FX_FRONT = { rain: 1, snow: 1 };
 let THEMES = null;
 
+const IDENTITY = [...Array(256)].map((_, i) => i);
+async function loadThemes(force = false) {
+  if (THEMES && !force) return;
+  THEMES = await (await fetch("/api/themes")).json();
+  window.THEME_INFO = await (await fetch("/api/theme-info")).json();
+}
+function cycleLut(s, now) {
+  const c = s.cycle;
+  const list = c && (c.themes || []).filter((t) => t in THEMES);
+  if (!list || list.length < 2) return null;
+  const hold = Math.max(1, +c.hold || 20) * 1000, fade = Math.max(0, +c.fade || 0) * 1000, period = hold + fade;
+  const t = now % (period * list.length), k = Math.floor(t / period), u = t % period;
+  const a = THEMES[list[k]] || IDENTITY;
+  if (u < hold || !fade) return a;
+  const b = THEMES[list[(k + 1) % list.length]] || IDENTITY, f = Math.floor((u - hold) * 256 / fade);
+  return a.map((x, i) => {
+    const y = b[i];
+    const r = (x >> 5) * (256 - f) + (y >> 5) * f, g = ((x >> 2) & 7) * (256 - f) + ((y >> 2) & 7) * f;
+    const bl = (x & 3) * (256 - f) + (y & 3) * f;
+    return (((r + 128) >> 8) << 5) | (((g + 128) >> 8) << 2) | ((bl + 128) >> 8);
+  });
+}
+
 class ScenePlayer {
   constructor(canvas) {
     this.c = canvas;
@@ -24,7 +47,7 @@ class ScenePlayer {
     this.running = false;
   }
   async load(entryId, scene) {
-    if (!THEMES) THEMES = await (await fetch("/api/themes")).json();
+    await loadThemes();
     const base = `/library/${entryId}/.build/`;
     const meta = await (await fetch(base + "layers.json?" + Date.now())).json();
     this.layers = await Promise.all(meta.map((m) => new Promise((ok) => {
@@ -97,7 +120,7 @@ class ScenePlayer {
         for (let x = -off; x < W; x += period) g.drawImage(L.img, f * L.w, 0, L.w, L.h, x, L.y, L.w, L.h);
       });
     }
-    const lut = THEMES[s.theme || "original"];
+    const lut = cycleLut(s, now) || THEMES[s.theme || "original"];
     if (lut) {
       const d = g.getImageData(0, 0, W, H), p = d.data;
       for (let i = 0; i < p.length; i += 4) {
@@ -315,12 +338,12 @@ async function drainThumbs() {
   }
 }
 
+loadThemes().catch(() => {});
+
 // ------------------------------------------------------------------ viewer
 const player = new ScenePlayer($("#stageCanvas"));
 let viewing = null, draft = null;
 const PAGE_NAMES = { console: "Console", details: "Details", companion: "Companion", image: "Images", city: "Synthwave City", scenes: "Scene playlist" };
-const THEME_SWATCH = { original: "#ff3ea5", vapor: "#b04dff", toxic: "#39ff6a", dusk: "#ff7a3d", ice: "#7fd6ff",
-  matrix: "#22c55e", amber: "#ffb84d", noir: "#9a9aa6", night: "#334a9a", sunset: "#ff8a5c" };
 
 function openViewer(e, settings = false) {
   viewing = e;
@@ -363,23 +386,7 @@ document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeMod
 function renderEditor() {
   const s = draft;
   s.variants = s.variants || [];
-  const themes = $("#eThemes");
-  themes.innerHTML = "";
-  Object.keys(THEME_SWATCH).forEach((t) => {
-    const main = (s.theme || "original") === t;
-    const b = el(`<div class="theme ${main ? "on" : ""}"><span class="sw" style="background:${THEME_SWATCH[t]}"></span>${t}
-      <input type="checkbox" title="Also add to playlist" ${s.variants.includes(t) ? "checked" : ""} ${main ? "disabled" : ""}></div>`);
-    b.onclick = (ev) => {
-      if (ev.target.tagName === "INPUT") {
-        s.variants = ev.target.checked ? [...s.variants, t] : s.variants.filter((x) => x !== t);
-      } else {
-        s.theme = t;
-        s.variants = s.variants.filter((x) => x !== t);
-      }
-      renderEditor();
-    };
-    themes.append(b);
-  });
+  renderThemes();
   const layers = $("#eLayers");
   $("#eLayersWrap").hidden = !s.layers.length;
   layers.innerHTML = "";
@@ -461,6 +468,108 @@ $("#vDelete").onclick = async () => {
   closeModals();
   await load();
 };
+
+// Themes: pick the main one; ticked extras either become playlist copies or a
+// smooth in-scene cycle (cross-fading palette maps), with hold and fade times.
+function renderThemes() {
+  const s = draft, cycling = !!s.cycle;
+  const extras = cycling ? (s.cycle.themes || []).slice(1) : s.variants;
+  const box = $("#eThemes");
+  box.innerHTML = "";
+  (window.THEME_INFO || []).forEach((t) => {
+    const main = (s.theme || "original") === t.id;
+    const strip = t.colors.map((c) => `<i style="background:${c}"></i>`).join("");
+    const b = el(`<div class="theme ${main ? "on" : ""}" title="${t.kind === "palette" ? `${t.name} by ${t.author} (Lospec)` : t.name}">
+      <span class="sw-strip">${strip}</span><span class="tname"></span>
+      <input type="checkbox" ${extras.includes(t.id) ? "checked" : ""} ${main ? "disabled" : ""}></div>`);
+    b.querySelector(".tname").textContent = t.name;
+    b.onclick = (ev) => {
+      if (ev.target.tagName === "INPUT") {
+        const next = ev.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id);
+        if (cycling) s.cycle.themes = [s.theme || "original", ...next]; else s.variants = next;
+      } else {
+        s.theme = t.id;
+        if (cycling) s.cycle.themes = [t.id, ...extras.filter((x) => x !== t.id)];
+        else s.variants = s.variants.filter((x) => x !== t.id);
+      }
+      renderThemes();
+    };
+    box.append(b);
+  });
+  const mode = $("#eThemeMode");
+  mode.innerHTML = `<div class="seg"><button data-m="copies" class="${cycling ? "" : "on"}">Ticked themes → playlist copies</button>
+    <button data-m="cycle" class="${cycling ? "on" : ""}">Ticked themes → smooth cycle</button></div>
+    <span class="cyc" ${cycling ? "" : "hidden"}>Hold <input type="number" min="1" class="c-hold"> s · Fade <input type="number" min="0" step="0.5" class="c-fade"> s</span>
+    <button class="btn ghost" id="lospecBtn">Browse Lospec palettes</button>`;
+  mode.querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => {
+    if (b.dataset.m === "cycle" && !s.cycle) {
+      s.cycle = { themes: [s.theme || "original", ...s.variants], hold: 20, fade: 4 };
+      s.variants = [];
+    } else if (b.dataset.m === "copies" && s.cycle) {
+      s.variants = s.cycle.themes.slice(1);
+      delete s.cycle;
+    }
+    renderThemes();
+  }));
+  if (cycling) {
+    const hold = mode.querySelector(".c-hold"), fade = mode.querySelector(".c-fade");
+    hold.value = s.cycle.hold ?? 20;
+    fade.value = s.cycle.fade ?? 4;
+    hold.oninput = () => (s.cycle.hold = Math.max(1, +hold.value || 1));
+    fade.oninput = () => (s.cycle.fade = Math.max(0, +fade.value || 0));
+  }
+  $("#eThemeHint").textContent = cycling
+    ? `Cycles ${s.cycle.themes.length} themes inside this scene, holding each ${s.cycle.hold}s and cross-fading for ${s.cycle.fade}s.`
+    : "Ticked themes become separate playlist entries. They reuse the same art, so they cost almost nothing.";
+  $("#lospecBtn").onclick = openLospec;
+}
+
+// Lospec browser: search palettes by tag, or paste a palette link.
+async function openLospec() {
+  $("#lospec").hidden = false;
+  if (!$("#lsGrid").children.length) searchLospec();
+}
+async function searchLospec(page = 0) {
+  const grid = $("#lsGrid");
+  grid.innerHTML = `<div class="hint">Searching Lospec…</div>`;
+  try {
+    const tag = $("#lsTag").value || "cyberpunk";
+    const list = await api(`/api/lospec?tag=${encodeURIComponent(tag)}&page=${page}`);
+    grid.innerHTML = "";
+    if (!list.length) grid.innerHTML = `<div class="hint">No palettes tagged "${tag}".</div>`;
+    const have = new Set((window.THEME_INFO || []).map((t) => t.id));
+    list.forEach((p) => {
+      const card = el(`<div class="ls-card"><div class="ls-strip">${p.colors.map((c) => `<i style="background:#${c}"></i>`).join("")}</div>
+        <div class="ls-meta"><b></b><small></small></div><button class="btn ${have.has(p.slug) ? "ghost" : "primary"}">${have.has(p.slug) ? "Added" : "Add"}</button></div>`);
+      card.querySelector("b").textContent = p.title;
+      card.querySelector("small").textContent = `${p.colors.length} colours · ${p.author} · ♥ ${p.likes}`;
+      const btn = card.querySelector("button");
+      btn.disabled = have.has(p.slug);
+      btn.onclick = () => addPalette(p.slug, btn);
+      grid.append(card);
+    });
+    $("#lsPage").textContent = `Page ${page + 1}`;
+    $("#lsPrev").disabled = page === 0;
+    $("#lsPrev").onclick = () => searchLospec(page - 1);
+    $("#lsNext").onclick = () => searchLospec(page + 1);
+  } catch (e) { grid.innerHTML = `<div class="hint">Lospec is unreachable: ${e.message}</div>`; }
+}
+async function addPalette(slug, btn) {
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "Adding…"; }
+    const t = await api("/api/themes/lospec", { slug });
+    await loadThemes(true);
+    if (btn) btn.textContent = "Added";
+    toast(`Added ${t.name} by ${t.author}. Pick it as a theme.`);
+    if (draft) renderThemes();
+  } catch (e) {
+    toast(e.message, "err");
+    if (btn) { btn.disabled = false; btn.textContent = "Add"; }
+  }
+}
+$("#lsGo").onclick = () => searchLospec(0);
+$("#lsTag").onkeydown = (e) => { if (e.key === "Enter") searchLospec(0); };
+$("#lsLinkGo").onclick = () => addPalette($("#lsLink").value);
 
 // Generator settings (patterns, plasma, warp).
 function renderGen() {

@@ -198,6 +198,45 @@ def save_to_library(body: dict) -> dict:
 
 
 IMPORTABLE = {".png", ".gif", ".aseprite", ".ase", ".jpg", ".jpeg"}
+LOSPEC = "https://lospec.com/palette-list"
+THEMES_DIR = ROOT / "assets" / "themes"
+HEX = re.compile(r"^[0-9a-fA-F]{6}$")
+
+
+def lospec_get(url: str) -> dict:
+    req = urllib.request.Request(url, headers={"User-Agent": "AIUsageMonitor-SceneStudio/1.0"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.load(r)
+
+
+def lospec_search(tag: str, page: int) -> list[dict]:
+    tag = re.sub(r"[^a-z0-9-]", "", tag.lower())
+    url = f"{LOSPEC}/load?colorNumberFilterType=any&page={max(0, page)}&tag={tag}&sortingType=default"
+    data = lospec_get(url)
+    return [{"slug": p["slug"], "title": p.get("title", p["slug"]), "colors": p.get("colors", [])[:32],
+             "author": (p.get("user") or {}).get("name", ""), "likes": p.get("likes", 0)}
+            for p in data.get("palettes", []) if p.get("slug")]
+
+
+def import_palette(body: dict) -> dict:
+    """Save a Lospec palette (slug or URL) as a theme in assets/themes/."""
+    slug = body.get("slug", "").strip().rstrip("/").split("/")[-1].removesuffix(".json").lower()
+    if not SLUG.match(slug):
+        raise ValueError("Paste a Lospec palette name or link")
+    try:
+        d = lospec_get(f"{LOSPEC}/{slug}.json")
+    except OSError as e:
+        raise ValueError(f"Lospec did not return '{slug}': {e}") from e
+    colors = [c for c in d.get("colors", []) if HEX.match(c)]
+    if len(colors) < 2:
+        raise ValueError(f"'{slug}' has no usable colours")
+    if slug in scenes.THEMES:
+        raise ValueError(f"'{slug}' clashes with a built-in theme")
+    THEMES_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {"name": d.get("name", slug), "author": d.get("author", ""), "url": f"{LOSPEC}/{slug}",
+             "source": "lospec", "colors": colors}
+    (THEMES_DIR / f"{slug}.json").write_text(json.dumps(entry, indent=2) + "\n", encoding="utf-8")
+    return {"id": slug, **entry}
 
 
 def import_files(body: dict) -> dict:
@@ -266,7 +305,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit(),
                                    "scenes": scenes.scene_list()})
         if path == "/api/themes":
-            return self.send_json({t: scenes.lut(t) for t in scenes.THEMES})
+            return self.send_json({t: scenes.lut(t) for t in scenes.theme_names()})
+        if path == "/api/theme-info":
+            return self.send_json(scenes.theme_info())
+        if path == "/api/lospec":
+            q = urllib.parse.parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+            return self.send_json(lospec_search(q.get("tag", [""])[0], int(q.get("page", ["0"])[0] or 0)))
         if path.startswith("/api/jobs/"):
             job = jobs.get(path.rsplit("/", 1)[1])
             return self.send_json(job or {"error": "unknown job"}, 200 if job else 404)
@@ -310,6 +354,12 @@ class Handler(SimpleHTTPRequestHandler):
                 if not png.startswith(b"\x89PNG"):
                     raise ValueError("preview must be a PNG")
                 (LIBRARY / m.group(1) / "preview.png").write_bytes(png)
+                return self.send_json({"ok": True})
+            if path == "/api/themes/lospec":
+                return self.send_json(import_palette(b))
+            m = re.fullmatch(r"/api/themes/([a-z0-9-]+)/delete", path)
+            if m and (THEMES_DIR / f"{m.group(1)}.json").is_file():
+                (THEMES_DIR / f"{m.group(1)}.json").unlink()
                 return self.send_json({"ok": True})
             if path == "/api/import":
                 return self.send_json(import_files(b))

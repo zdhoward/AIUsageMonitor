@@ -39,6 +39,10 @@ struct SceneDef {
   uint8_t fxCount;
   const uint8_t* lut;  // theme palette remap, nullptr for original colours
   const SceneGen* gen;  // optional procedural backdrop
+  const uint8_t* const* cycle;  // optional theme cycle: palette maps to cross-fade through
+  uint8_t cycleCount;
+  uint16_t holdS;   // seconds each theme holds
+  uint16_t fadeDs;  // cross-fade length, tenths of a second
 };
 
 void sceneDraw(const Canvas8& c, const SceneDef& s, uint32_t nowMs);
