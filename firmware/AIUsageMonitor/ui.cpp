@@ -132,6 +132,20 @@ static uint32_t lastActivity[2] = {};
 static Model usageBaseline;
 static bool haveUsageBaseline = false;
 
+static bool hasDueAvailableUsage(const Model& m, uint32_t now) {
+  if (!m.valid) return false;
+  const int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+  for (uint8_t i = 0; i < m.nacc; ++i) {
+    const AccData& account = m.acc[i];
+    for (uint8_t j = 0; j < account.nw; ++j) {
+      const WinData& window = account.w[j];
+      if (window.r >= 0 && window.r <= elapsed && window.u >= 0 && window.u < 100)
+        return true;
+    }
+  }
+  return false;
+}
+
 // Explicit measurements only: heartbeats, ages, countdowns and MINT updates
 // must not hold the dashboard awake. Never compare struct padding.
 static bool sameUsage(const Model& a, const Model& b) {
@@ -178,6 +192,10 @@ static void updateSaver(const Model& m, uint32_t now) {
   const bool eligible = id == UI_PAGE_CONSOLE ? UI_CONSOLE_SAVER_ENABLED :
     id == UI_PAGE_DETAILS ? UI_DETAILS_SAVER_ENABLED : false;
   if (!UI_SCREENSAVER_ENABLED || !UI_SCREENSAVER_AUTO_ENABLED || !eligible) {
+    saverActive = false;
+    return;
+  }
+  if (hasDueAvailableUsage(m, now)) {
     saverActive = false;
     return;
   }

@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-25: v1.11.1 due quota keeps dashboards awake
+
+- A known quota below 100% used with a passed reset deadline now prevents automatic saving and wakes an active saver, keeping available usage visible. Unknown values and exhausted quotas do not block saving.
+- Default-profile production build passed: 583,159 bytes flash and 87,984 bytes static RAM. Flashed COM6 with hash verification. Automated tests remain deferred to the owner's sprint-end phase.
+
 ## 2026-10-24: daylight brightness installed
 
 - Owner authorized paid Codex low effort after bounded free attempts failed. Corrected API vocabulary/UTC handling, startup failure, cache/ramp logic, runtime configuration and firmware interpolation; added Windows timezone dependency and setup guide.
