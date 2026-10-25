@@ -24,7 +24,7 @@ Use `service/aimon.config.json` or the matching uppercase `AIMON_*` environment 
 | `auto_brightness_http_timeout_s` | `5` | HTTP socket timeout seconds, 0.1..300 |
 | `auto_brightness_worker_tick_s` | `60` | Worker cadence seconds, 0.1..300 |
 
-Defaults use approximate the owner's city city-centre coordinates, not a street address. Change them for another location. PWM duty is not perceived brightness percent: 255 is full duty and 0 is off. Invalid enabled configuration fails startup rather than silently selecting another location. Windows needs the IANA `tzdata` package included in `service/requirements.txt`; Unix normally supplies a system timezone database.
+Defaults are a placeholder location (Greenwich, London); set your own in `service/aimon.config.json`. PWM duty is not perceived brightness percent: 255 is full duty and 0 is off. Invalid enabled configuration fails startup rather than silently selecting another location. Windows needs the IANA `tzdata` package included in `service/requirements.txt`; Unix normally supplies a system timezone database.
 
 ## Scheduling and outages
 
