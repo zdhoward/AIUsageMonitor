@@ -7,6 +7,7 @@
 #include "anim.h"
 #include "assets_gen.h"
 #include "city.h"
+#include "scenes_gen.h"
 
 static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
@@ -28,28 +29,18 @@ struct ViewDef {
 
 static void drawConsole(const Model&, uint32_t, const ViewDef&, int y);
 static void drawDetails(const Model&, uint32_t, const ViewDef&, int y);
-#if UI_COMPANION_ENABLED
 static void drawCompanion(const Model&, uint32_t, const ViewDef&, int y);
-#endif
-#if UI_IMAGE_ENABLED
 static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
-#endif
-#if UI_CITY_ENABLED
 static void drawCity(const Model&, uint32_t, const ViewDef&, int y);
-#endif
+static void drawScenes(const Model&, uint32_t, const ViewDef&, int y);
 
 static const ViewDef kAllViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
   {UI_PAGE_DETAILS, drawDetails},
-#if UI_COMPANION_ENABLED
   {UI_PAGE_COMPANION, drawCompanion},
-#endif
-#if UI_IMAGE_ENABLED
   {UI_PAGE_IMAGE, drawImage},
-#endif
-#if UI_CITY_ENABLED
   {UI_PAGE_CITY, drawCity},
-#endif
+  {UI_PAGE_SCENES, drawScenes},
 };
 // Tap order comes from UI_VIEW_ORDER; pages not compiled in are skipped.
 static const uint8_t kAllCount = sizeof(kAllViews) / sizeof(kAllViews[0]);
@@ -58,9 +49,23 @@ static ViewDef kStaticViews[kAllCount];
 static uint8_t kViewCount = 0;
 static uint8_t selView = 0;  // first page in UI_VIEW_ORDER
 
+// Every page is compiled in so the Studio can show any of them with !SHOW;
+// the *_ENABLED switches only decide what a tap cycles through.
+static bool inRotation(uint8_t id) {
+  return id == UI_PAGE_COMPANION ? UI_COMPANION_ENABLED : id == UI_PAGE_IMAGE ? UI_IMAGE_ENABLED :
+         id == UI_PAGE_CITY ? UI_CITY_ENABLED : id == UI_PAGE_SCENES ? (UI_SCENES_ENABLED && SCENE_COUNT) : true;
+}
+
+static const ViewDef* viewById(uint8_t id) {
+  for (const ViewDef& v : kAllViews)
+    if (v.id == id) return &v;
+  return &kAllViews[0];
+}
+
 static void buildViewOrder() {
   kViewCount = 0;
   for (uint8_t id : kOrder)
+    if (inRotation(id))
     for (const ViewDef& v : kAllViews) {
       bool dup = false;
       for (uint8_t k = 0; k < kViewCount; ++k) dup |= kStaticViews[k].id == id;
@@ -69,6 +74,7 @@ static void buildViewOrder() {
   if (!kViewCount) kStaticViews[kViewCount++] = kAllViews[0];
 }
 static bool saverActive = false;
+static int16_t forcedId = -1;  // page shown by !SHOW until the next tap
 static bool idleStarted = false;
 static uint32_t lastActivity[2] = {};
 static Model usageBaseline;
@@ -754,11 +760,9 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
 
 // ---------------------------------------------------------------- optional pages
 
-#if UI_COMPANION_ENABLED
 static void drawCompanion(const Model&, uint32_t now, const ViewDef&, int) {
   faceDraw(G(), W, H, C_GREEN, C_BG);
 }
-#endif
 
 // Frame-based pages need the RGB332 framebuffer; without it they explain why.
 static bool canvas(Canvas8& c) {
@@ -770,7 +774,6 @@ static bool canvas(Canvas8& c) {
   return true;
 }
 
-#if UI_IMAGE_ENABLED
 static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
   Canvas8 c;
   if (!canvas(c)) return;
@@ -779,14 +782,31 @@ static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
   animBlit(c, a, animFrameAt(a, now), (W - a.w * scale) / 2 - a.x * scale,
            (H - 16 - a.h * scale) / 2 - a.y * scale, scale);
 }
-#endif
 
-#if UI_CITY_ENABLED
 static void drawCity(const Model&, uint32_t now, const ViewDef&, int) {
   Canvas8 c;
   if (canvas(c)) cityDraw(c, now);
 }
-#endif
+
+// Scene playlist: rotates through every compiled scene, Roku-style.
+static uint8_t sceneIdx = 0;
+static uint32_t sceneSince = 0;
+static bool scenePinned = false;  // chosen with !SHOW: hold until the next tap
+
+static void drawScenes(const Model&, uint32_t now, const ViewDef&, int) {
+  Canvas8 c;
+  if (!canvas(c)) return;
+  if (!SCENE_COUNT) {
+    text("No scenes compiled in", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+    return;
+  }
+  if (!sceneSince) sceneSince = now;
+  if (!scenePinned && now - sceneSince >= UI_SCENE_SECONDS * 1000UL) {
+    sceneIdx = (uint8_t)((sceneIdx + 1) % SCENE_COUNT);
+    sceneSince = now;
+  }
+  sceneDraw(c, SCENES[sceneIdx % SCENE_COUNT], now);
+}
 
 // ---------------------------------------------------------------- public
 
@@ -817,8 +837,8 @@ void uiBegin(TFT_eSPI& tft, uint8_t rotation) {
 bool uiHasFramebuffer() { return spr != nullptr; }
 
 uint32_t uiFrameIntervalMs() {
-  const uint8_t id = saverActive ? UI_SCREENSAVER_PAGE : kStaticViews[selView].id;
-  if (id == UI_PAGE_CITY) return 40UL;
+  const uint8_t id = forcedId >= 0 ? forcedId : saverActive ? UI_SCREENSAVER_PAGE : kStaticViews[selView].id;
+  if (id == UI_PAGE_CITY || id == UI_PAGE_SCENES) return 40UL;
   return id == UI_PAGE_COMPANION || id == UI_PAGE_IMAGE ? 33UL : REDRAW_MS;
 }
 
@@ -830,8 +850,31 @@ bool uiScreenshot(Stream& out) {
   return true;
 }
 
+bool uiShow(const char* name) {
+  static const struct { const char* name; uint8_t id; } kPages[] = {
+    {"console", UI_PAGE_CONSOLE}, {"details", UI_PAGE_DETAILS}, {"companion", UI_PAGE_COMPANION},
+    {"image", UI_PAGE_IMAGE}, {"city", UI_PAGE_CITY}, {"scenes", UI_PAGE_SCENES}};
+  for (const auto& p : kPages)
+    if (!strcmp(name, p.name)) {
+      forcedId = p.id;
+      saverActive = false;
+      return true;
+    }
+  for (uint8_t i = 0; i < SCENE_COUNT; ++i)
+    if (!strcmp(name, SCENES[i].id)) {
+      forcedId = UI_PAGE_SCENES;
+      sceneIdx = i;
+      scenePinned = true;
+      saverActive = false;
+      return true;
+    }
+  return false;
+}
+
 void uiNextView(const Model&) {
-  if (saverActive) saverActive = false;
+  scenePinned = false;
+  if (forcedId >= 0) forcedId = -1;
+  else if (saverActive) saverActive = false;
   else selView = (uint8_t)((selView + 1) % kViewCount);
   if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
 }
@@ -871,12 +914,10 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
   g.fillRect(0, 0, W, H, C_BG);
   dim = false;  // cached readings remain fully readable, regardless of link age
   animate(m, now);
-  uint8_t current = selView < kViewCount ? selView : 0;
-  if (saverActive) {
-    for (uint8_t i = 0; i < kViewCount; ++i)
-      if (kStaticViews[i].id == UI_SCREENSAVER_PAGE) current = i;
-  }
-  const ViewDef& v = kStaticViews[current];
+  const uint8_t current = selView < kViewCount ? selView : 0;
+  const bool away = forcedId >= 0 || saverActive;  // showing a page outside the tap order
+  const ViewDef& v = forcedId >= 0 ? *viewById(forcedId) : saverActive ? *viewById(UI_SCREENSAVER_PAGE)
+                                                                         : kStaticViews[current];
   faceUpdate(now, v.id == UI_PAGE_COMPANION);
   const bool dashboard = v.id == UI_PAGE_CONSOLE || v.id == UI_PAGE_DETAILS;
   if (!m.valid && dashboard) {
@@ -893,7 +934,7 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       v.draw(m, now, v, 0);
     }
   }
-  if (!saverActive && v.id != UI_PAGE_COMPANION && v.id != UI_PAGE_CITY) drawDots(current);
+  if (!away && v.id != UI_PAGE_COMPANION && v.id != UI_PAGE_CITY && v.id != UI_PAGE_SCENES) drawDots(current);
   if (spr) spr->pushSprite(0, 0);
   renderUs = micros() - t0;
 }

@@ -19,6 +19,7 @@ PAGES = {  # profile name -> (page macro, enable macro or None when always prese
     "companion": ("UI_PAGE_COMPANION", "UI_COMPANION_ENABLED"),
     "image": ("UI_PAGE_IMAGE", "UI_IMAGE_ENABLED"),
     "city": ("UI_PAGE_CITY", "UI_CITY_ENABLED"),
+    "scenes": ("UI_PAGE_SCENES", "UI_SCENES_ENABLED"),
 }
 MAX_MS = 2147483647
 
@@ -42,8 +43,8 @@ def validate(p: dict) -> list[str]:
         errs.append("rotation must be 0-3")
     s = p.get("screensaver", {})
     if s.get("enabled"):
-        if s.get("page") not in pages or s.get("page") in ("console", "details"):
-            errs.append("screensaver must show an enabled Companion, Images or City page")
+        if s.get("page") not in PAGES or s.get("page") in ("console", "details"):
+            errs.append("screensaver must show Companion, Images, City or Scenes")
         for key in ("timeout_s",):
             if not 1 <= s.get(key, 0) * 1000 <= MAX_MS:
                 errs.append("screensaver timeout out of range")
@@ -63,6 +64,7 @@ def header(p: dict) -> str:
     for name, (_, enable) in PAGES.items():
         if enable:
             lines.append(f"#define {enable} {int(name in p['pages'])}")
+    lines.append(f"#define UI_SCENE_SECONDS {int(p.get('scene_seconds', 90))}")
     lines.append("#define UI_VIEW_ORDER " + ", ".join(PAGES[pg][0] for pg in p["pages"]))
     lines += [f"#define UI_SCREENSAVER_ENABLED {int(on)}",
               f"#define UI_SCREENSAVER_AUTO_ENABLED {int(on)}"]

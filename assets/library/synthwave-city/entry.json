@@ -1,9 +1,10 @@
 {
   "name": "Synthwave City",
-  "kind": "scene",
+  "kind": "page",
   "notes": "Rainy neon skyline, striped sun, hover cars, lightning. First living scene.",
   "created": "2026-10-24T14:00:00",
   "commit": "ec85856",
   "profile": "default",
-  "preview": "preview.png"
+  "preview": "preview.png",
+  "page": "city"
 }

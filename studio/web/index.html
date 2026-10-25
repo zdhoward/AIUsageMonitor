@@ -87,6 +87,13 @@
 
   <!-- Library -->
   <section class="tab" id="tab-library">
+    <div class="lib-bar">
+      <div class="seg" id="libFilter">
+        <button data-f="all" class="on">All</button><button data-f="scene">Scenes</button>
+        <button data-f="page">Pages</button><button data-f="capture">Captures</button>
+      </div>
+      <button class="btn primary" id="importBtn">Import art</button>
+    </div>
     <div class="lib" id="library"></div>
   </section>
 
@@ -129,7 +136,63 @@
   </div>
   <pre id="log" hidden></pre>
 </div>
+<div class="modal" id="viewer" hidden>
+  <div class="sheet">
+    <button class="icon-btn close" data-close>×</button>
+    <div class="viewer">
+      <div class="stage">
+        <canvas id="stageCanvas" width="320" height="240"></canvas>
+        <img id="stageImg" alt="">
+        <div class="stage-foot"><span id="stageInfo"></span></div>
+      </div>
+      <div class="inspector">
+        <span class="chip kind" id="vKind"></span>
+        <h2 id="vName" class="big"></h2>
+        <p class="hint" id="vNotes"></p>
+        <div class="chips" id="vChips"></div>
+        <div class="row-btns">
+          <button class="btn primary" id="vShow">Show on display</button>
+          <button class="btn ghost danger" id="vDelete">Delete</button>
+        </div>
+        <div id="editor" hidden>
+          <h3>Theme</h3>
+          <div class="themes" id="eThemes"></div>
+          <p class="hint">Tick extra themes to add them to the playlist too. They reuse the same art, so they cost almost nothing.</p>
+          <h3>Layers <span class="hint">back to front · speed in px/s</span></h3>
+          <div id="eLayers"></div>
+          <h3>Effects</h3>
+          <div id="eFx"></div>
+          <h3>Sky</h3>
+          <div class="sky"><label>Top <input type="color" id="eTop"></label><label>Bottom <input type="color" id="eBottom"></label></div>
+          <div class="row-btns">
+            <button class="btn ghost" id="eReset">Revert</button>
+            <button class="btn primary" id="eSave">Save scene</button>
+          </div>
+          <p class="hint" id="eNote">The preview updates live. Save, then Send to display to put it on the device.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="importer" hidden>
+  <div class="sheet small">
+    <button class="icon-btn close" data-close>×</button>
+    <h2 class="big">Import art</h2>
+    <p class="hint">PNG, GIF, JPG or Aseprite. Drop several layers to build a parallax scene; they scroll faster toward the front. An Aseprite file with layers works on its own.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="files" multiple accept=".png,.gif,.jpg,.jpeg,.aseprite,.ase" hidden>
+      <b>Drop files here</b><span class="hint">or click to choose</span>
+    </label>
+    <ol class="flist" id="flist"></ol>
+    <input id="impName" placeholder="Scene name, e.g. Snowy Peaks">
+    <input id="impLicense" placeholder="License / credit (e.g. CC0 by ...)">
+    <button class="btn primary wide" id="impGo">Create scene</button>
+  </div>
+</div>
+
 <div class="toasts" id="toasts"></div>
 <script src="studio.js"></script>
+<script src="scene.js"></script>
 </body>
 </html>

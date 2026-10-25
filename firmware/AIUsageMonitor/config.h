@@ -105,6 +105,13 @@
 #ifndef UI_CITY_ENABLED
 #define UI_CITY_ENABLED 1
 #endif
+#ifndef UI_SCENES_ENABLED
+#define UI_SCENES_ENABLED 1
+#endif
+// Seconds each scene plays before the playlist moves on.
+#ifndef UI_SCENE_SECONDS
+#define UI_SCENE_SECONDS 90
+#endif
 #ifndef UI_SCREENSAVER_ENABLED
 #define UI_SCREENSAVER_ENABLED 1
 #endif
@@ -117,10 +124,11 @@
 #define UI_PAGE_IMAGE 3
 #define UI_PAGE_SCREENSAVER 4
 #define UI_PAGE_CITY 5
+#define UI_PAGE_SCENES 6
 
 // Tap order of the pages. Pages switched off above are skipped.
 #ifndef UI_VIEW_ORDER
-#define UI_VIEW_ORDER UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY
+#define UI_VIEW_ORDER UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY, UI_PAGE_SCENES
 #endif
 
 // Screensaver target and automatic activation. This is presentation state,
@@ -160,17 +168,8 @@
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
-#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_CITY
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_SCENES
 #error "Unknown screensaver target page"
-#endif
-#if UI_SCREENSAVER_PAGE == UI_PAGE_COMPANION && !UI_COMPANION_ENABLED
-#error "Screensaver target must be an enabled page"
-#endif
-#if UI_SCREENSAVER_PAGE == UI_PAGE_IMAGE && !UI_IMAGE_ENABLED
-#error "Screensaver target must be an enabled page"
-#endif
-#if UI_SCREENSAVER_PAGE == UI_PAGE_CITY && !UI_CITY_ENABLED
-#error "Screensaver target must be an enabled page"
 #endif
 #endif
 #if UI_SCREENSAVER_AUTO_ENABLED

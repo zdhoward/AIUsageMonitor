@@ -13,6 +13,10 @@ bool uiHasFramebuffer();
 uint32_t uiFrameIntervalMs();
 void uiNextView(const Model& m);
 
+// Shows a page (console, details, companion, image, city, scenes) or a scene id
+// until the next tap, even when it is not in the tap rotation.
+bool uiShow(const char* name);
+
 // Duration of the last uiRender, including the panel transfer.
 uint32_t uiLastRenderUs();
 

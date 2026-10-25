@@ -58,3 +58,22 @@ Double-click `Scene Studio.cmd` in the repo root (or run `python -m studio`). It
 Profiles live in `profiles/<name>.json`. **Send to display** saves the profile, converts art, builds with `build.ps1 -Profile <name>` (which writes the git-ignored `profile_gen.h`) and flashes. The `+` button next to the profile list duplicates the current profile. The server only listens on localhost and only needs the Python standard library plus pyserial.
 
 The screensaver timer restarts whenever measured usage changes, so it will not start while agents are actively using quota.
+
+## Parallax scenes (scene engine)
+
+Any library entry with `"kind": "scene"` becomes part of the **Scene playlist** page, which loops through scenes Roku-style, `scene_seconds` each (profile setting, default 90). The schema is documented at the top of `scripts/scenes.py`. In short:
+
+- `layers` (back to front): `src` (png/gif/aseprite, or a list of frames), `speed` px/s, `y`, `scale`, `gap`, `ms`. Layers wrap forever; a speed of 0 means still and centred.
+- `effects`: `stars`, `rain`, `snow`, `lightning`, each with density 1-3 and a colour.
+- `theme` plus `variants`: palette remaps applied on the device (vapor, toxic, dusk, ice, matrix, amber, noir, night, sunset). Variants reuse the same art, so each one costs 256 bytes.
+- Soft alpha (glows) is blended over the sky gradient during conversion.
+
+Current scenes: Miami Drive, Neon Skyline and Rainy Street, all CC0 by Ansimuz, plus their theme variants. Together they take about 113 KB; the firmware is 562 KB, 42% of the partition. Measured 56-66 ms per frame on the board.
+
+Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even one not in the tap rotation; `!SCENES` lists compiled scene ids. Every page is now compiled in, and the profile's page list only sets the tap rotation.
+
+### In the Studio
+
+- **Library → click any card** to open the viewer. Pages and scenes have **Show on display**. Scenes play a live preview in device colours and can be edited: themes and playlist variants, layer speeds, effects, sky. **Save scene**, then **Send to display**.
+- **Import art**: drop PNG/GIF/JPG/Aseprite files, ordered back to front. Several files, or one Aseprite file with layers, become a parallax scene with depth-based speeds from 4 to 60 px/s and a sky sampled from the back layer. A single image becomes a still scene.
+- Imported art is copied to `assets/library/<id>/src/` and committed with the library. **The repo is public**: import only art whose license allows redistribution, and record it in the License field.

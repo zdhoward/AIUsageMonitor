@@ -1,0 +1,41 @@
+{
+  "name": "Rainy Street",
+  "kind": "scene",
+  "notes": "Downpour over a neon street. Ansimuz's cyberpunk street layers.",
+  "created": "2026-10-24T18:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "CC0 - Luis Zuno (Ansimuz), Cyberpunk Street",
+  "scene": {
+    "background": {
+      "top": "#020f1c",
+      "bottom": "#052c46"
+    },
+    "theme": "original",
+    "variants": [
+      "vapor"
+    ],
+    "layers": [
+      {
+        "src": "src/far-buildings.png",
+        "speed": 5
+      },
+      {
+        "src": "src/back-buildings.png",
+        "speed": 14
+      },
+      {
+        "src": "src/foreground.png",
+        "speed": 40
+      }
+    ],
+    "effects": [
+      {
+        "type": "rain",
+        "density": 3,
+        "color": "#7fa0c0"
+      }
+    ]
+  }
+}
