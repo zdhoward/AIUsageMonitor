@@ -1011,9 +1011,24 @@ void uiNextView(const Model&) {
   if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
 }
 
+// Page position, bottom right. A few pages get dots; past UI_MAX_DOTS the dots
+// would run across the screen, so show a "3 / 14" counter over a thin track
+// whose bright segment marks the current page.
+#define UI_MAX_DOTS 6
 static void drawDots(uint8_t current) {
-  for (uint8_t i = 0; i < kViewCount; ++i)
-    G().fillCircle(W - 10 - (kViewCount - 1 - i) * 10, H - 9, 2, i == current ? C_TEXT : C_FAINT);
+  TFT_eSPI& g = G();
+  if (kViewCount <= UI_MAX_DOTS) {
+    for (uint8_t i = 0; i < kViewCount; ++i)
+      g.fillCircle(W - 10 - (kViewCount - 1 - i) * 10, H - 9, 2, i == current ? C_TEXT : C_FAINT);
+    return;
+  }
+  char b[12];
+  snprintf(b, sizeof b, "%u / %u", current + 1, kViewCount);
+  const int tw = 48, tx = W - 8 - tw, ty = H - 4;
+  text(b, W - 8, H - 15, 1, C_MUTED, TR_DATUM);
+  g.drawFastHLine(tx, ty, tw, col(C_FAINT));
+  const int sw = max(3, tw / kViewCount), sx = tx + (tw - sw) * current / (kViewCount - 1);
+  g.fillRect(sx, ty - 1, sw, 2, col(C_TEXT));
 }
 
 // All visual tuning lives here; transport/model retain exact measured values.
