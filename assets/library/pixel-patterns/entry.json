@@ -1,0 +1,73 @@
+{
+  "created": "2026-10-24T20:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "kind": "scene",
+  "name": "Pixel Patterns",
+  "notes": "30 retro 1-bit tiles drifting diagonally, wiping to a new pattern and colour pair every few seconds.",
+  "license": "CC0 - PixelPatterns asset pack",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "patterns",
+      "tiles": [
+        "src/16x16_arrows.png",
+        "src/16x16_brickLarge.png",
+        "src/16x16_brickSmall.png",
+        "src/16x16_checkerboardLarge.png",
+        "src/16x16_checkerboardSmall.png",
+        "src/16x16_cross.png",
+        "src/16x16_diagonalLarge.png",
+        "src/16x16_diagonalMedium.png",
+        "src/16x16_diagonalSmall.png",
+        "src/16x16_diamonds.png",
+        "src/16x16_greekLarge.png",
+        "src/16x16_greekSmall.png",
+        "src/16x16_hexagons.png",
+        "src/16x16_labyrinth.png",
+        "src/16x16_metaBall.png",
+        "src/16x16_skewedDiagonal.png",
+        "src/16x16_sparkle.png",
+        "src/16x16_squaresLarge.png",
+        "src/16x16_squaresSmall.png",
+        "src/16x16_vertical.png",
+        "src/16x16_water.png",
+        "src/16x16_waveAlt.png",
+        "src/16x16_waveDiagonal_1.png",
+        "src/16x16_waveDiagonal_2.png",
+        "src/16x16_waveDiagonal_3.png",
+        "src/16x16_waveHigh.png",
+        "src/16x16_waveLarge.png",
+        "src/16x16_waveSmall.png",
+        "src/16x16_zigZagLarge.png",
+        "src/16x16_zigZagSmall.png"
+      ],
+      "scale": 3,
+      "vx": 14,
+      "vy": 8,
+      "seconds": 6,
+      "colors": [
+        "#1a0b3a",
+        "#ff3ea5",
+        "#0b1a3a",
+        "#29e0ff",
+        "#2a0a1a",
+        "#ffb84d",
+        "#05200f",
+        "#39ff6a",
+        "#200a30",
+        "#b04dff",
+        "#101018",
+        "#e0e0f0"
+      ]
+    }
+  }
+}

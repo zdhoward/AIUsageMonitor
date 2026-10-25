@@ -32,6 +32,8 @@ class ScenePlayer {
       img.onload = () => ok({ ...m, img });
       img.src = base + m.url + "?" + Date.now();
     })));
+    this.gen = await (await fetch(base + "gen.json?" + Date.now())).json().catch(() => null);
+    this.stars = null;
     this.scene = scene;
     this.start();
   }
@@ -53,7 +55,8 @@ class ScenePlayer {
     const bolt = s.effects.find((e) => e.type === "lightning");
     const flash = bolt && this.lightning(bolt, now);
     const top = hexRgb(s.background.top), bot = hexRgb(s.background.bottom);
-    for (let y = 0; y < H; y++) {
+    if (s.generator) this.genDraw(now);
+    else for (let y = 0; y < H; y++) {
       let c = top.map((v, k) => v + (bot[k] - v) * y / (H - 1) | 0);
       if (flash) c = c.map((v) => (v + 255) / 2 | 0);
       const q = from332(to332(...c));
@@ -72,7 +75,9 @@ class ScenePlayer {
         const cfg = s.layers[i] || {};
         const speed = +cfg.speed || 0, period = L.w + (+cfg.gap || 0);
         let f = 0;
-        if (L.frames > 1) {
+        const fixed = +cfg.frame_ms || (Array.isArray(cfg.src) && +cfg.ms);
+        if (L.frames > 1 && fixed) f = Math.floor(now / fixed) % L.frames;
+        else if (L.frames > 1) {
           const total = L.durations.reduce((a, b) => a + b, 0);
           let t = now % total;
           while (t >= L.durations[f]) t -= L.durations[f++];
@@ -92,6 +97,75 @@ class ScenePlayer {
       }
       g.putImageData(d, 0, 0);
     }
+  }
+  // Ports of the firmware generators (scene.cpp), drawn straight into pixels.
+  genDraw(now) {
+    const G = this.scene.generator, W = 320, H = 240;
+    const img = this.g.createImageData(W, H), p = img.data;
+    const cols = (G.colors || ["#000000", "#ffffff"]).map((h) => to332(...hexRgb(h)));
+    const rgb = cols.map(from332);
+    const set = (x, y, c) => {
+      if (x < 0 || y < 0 || x >= W || y >= H) return;
+      const i = (y * W + x) * 4, v = from332(c);
+      p[i] = v[0]; p[i + 1] = v[1]; p[i + 2] = v[2]; p[i + 3] = 255;
+    };
+    if (G.type === "patterns" && this.gen && this.gen.tiles.length) {
+      const tiles = this.gen.tiles, tc = tiles.length / 32;
+      const hold = (+G.seconds || 7) * 1000, step = Math.floor(now / hold), into = now % hold;
+      const pairs = Math.max(1, cols.length >> 1);
+      const cur = step % tc, prev = (step + tc - 1) % tc;
+      const pc = (step % pairs) * 2, pp = ((step + pairs - 1) % pairs) * 2;
+      const edge = into < 900 && step ? (W + H) * into / 900 | 0 : 1 << 30;
+      const sc = +G.scale || 3, ox = Math.trunc(now * (+G.vx || 0) / 1000), oy = Math.trunc(now * (+G.vy || 0) / 1000);
+      const bit = (t, x, y) => (tiles[t * 32 + (y & 15) * 2 + ((x & 15) >> 3)] >> (7 - (x & 7))) & 1;
+      for (let y = 0; y < H; y++) {
+        const ty = Math.trunc((y + oy) / sc) & 15;
+        for (let x = 0; x < W; x++) {
+          const tx = Math.trunc((x + ox) / sc) & 15;
+          const c = x + y < edge ? rgb[pc + bit(cur, tx, ty)] : rgb[pp + bit(prev, tx, ty)];
+          const i = (y * W + x) * 4;
+          p[i] = c[0]; p[i + 1] = c[1]; p[i + 2] = c[2]; p[i + 3] = 255;
+        }
+      }
+    } else if (G.type === "plasma" || G.type === "warp") {
+      const sin8 = [...Array(256)].map((_, i) => 128 + 127 * Math.sin(i * 6.2831853 / 256) | 0);
+      const n = Math.max(2, cols.length);
+      const ramp = [...Array(256)].map((_, i) => {
+        const seg = Math.floor(i * n / 256), a = cols[seg % cols.length], b = cols[((seg + 1) % n) % cols.length];
+        const u = (i * n) % 256;
+        const ch = (sh, bits) => { const m = (1 << bits) - 1, va = (a >> sh) & m, vb = (b >> sh) & m; return (va + Math.trunc(((vb - va) * u + 128) / 256)) & m; };
+        return (ch(5, 3) << 5) | (ch(2, 3) << 2) | ch(0, 2);
+      });
+      if (G.type === "plasma") {
+        const bs = +G.scale || 2, t1 = (now / 23 | 0) & 255, t2 = (now / 37 | 0) & 255, t3 = (now / 61 | 0) & 255;
+        for (let y = 0; y < H; y += bs)
+          for (let x = 0; x < W; x += bs) {
+            const v = (sin8[(x + t1) & 255] >> 2) + (sin8[(y * 2 - t2) & 255] >> 2) + (sin8[(x + y + t3) & 255] >> 2) +
+                      (sin8[((sin8[((x >> 1) + t2) & 255] >> 1) + y - t1) & 255] >> 2);
+            const c = ramp[(v + (now / 40 | 0)) & 255];
+            for (let yy = y; yy < y + bs; yy++) for (let xx = x; xx < x + bs; xx++) set(xx, yy, c);
+          }
+      } else {
+        for (let i = 0; i < W * H; i++) { p[i * 4] = rgb[0][0]; p[i * 4 + 1] = rgb[0][1]; p[i * 4 + 2] = rgb[0][2]; p[i * 4 + 3] = 255; }
+        if (!this.stars) this.stars = [...Array(150)].map((_, i) => {
+          const h = hash(u32(i * 977 + 5));
+          return { x: h % 2000 - 1000, y: (h >>> 11) % 1500 - 750, z: 1 + (h >>> 22) % 1000 };
+        });
+        const dt = Math.min(200, now - (this.last || now)) || 40;
+        this.last = now;
+        const speed = Math.trunc((+G.speed || 300) * dt / 1000);
+        this.stars.forEach((st, i) => {
+          const pz = st.z;
+          st.z = st.z > speed + 1 ? st.z - speed : 0;
+          if (!st.z) { const h = hash(u32(i + now)); Object.assign(st, { x: h % 2000 - 1000, y: (h >>> 11) % 1500 - 750, z: 1000 }); return; }
+          const x = 160 + Math.trunc(st.x * 128 / st.z), y = 120 + Math.trunc(st.y * 128 / st.z);
+          const px = 160 + Math.trunc(st.x * 128 / pz), py = 120 + Math.trunc(st.y * 128 / pz);
+          const c = ramp[255 - (st.z >> 2)], steps = Math.max(Math.abs(x - px), Math.abs(y - py)) || 1;
+          for (let k = 0; k <= steps; k++) set(px + Math.trunc((x - px) * k / steps), py + Math.trunc((y - py) * k / steps), c);
+        });
+      }
+    }
+    this.g.putImageData(img, 0, 0);
   }
   put(x, y, rgb) { this.g.fillStyle = rgb; this.g.fillRect(x | 0, y | 0, 1, 1); }
   stars(e, now) {
@@ -133,7 +207,7 @@ const PAGE_NAMES = { console: "Console", details: "Details", companion: "Compani
 const THEME_SWATCH = { original: "#ff3ea5", vapor: "#b04dff", toxic: "#39ff6a", dusk: "#ff7a3d", ice: "#7fd6ff",
   matrix: "#22c55e", amber: "#ffb84d", noir: "#9a9aa6", night: "#334a9a", sunset: "#ff8a5c" };
 
-function openViewer(e) {
+function openViewer(e, settings = false) {
   viewing = e;
   $("#viewer").hidden = false;
   $("#vKind").textContent = e.kind === "page" ? `page · ${PAGE_NAMES[e.page] || e.page}` : e.kind;
@@ -148,6 +222,10 @@ function openViewer(e) {
   $("#stageCanvas").hidden = !isScene;
   $("#stageImg").hidden = isScene;
   $("#editor").hidden = !isScene;
+  const ringPage = e.kind === "page" && (e.page === "console" || e.page === "details");
+  $("#pageSettings").hidden = !ringPage;
+  if (ringPage) renderRings();
+  if (settings) setTimeout(() => $(ringPage ? "#pageSettings" : "#editor").scrollIntoView({ behavior: "smooth" }), 80);
   player.stop();
   if (isScene) {
     draft = structuredClone(e.scene);
@@ -188,17 +266,36 @@ function renderEditor() {
     themes.append(b);
   });
   const layers = $("#eLayers");
+  $("#eLayersWrap").hidden = !s.layers.length;
   layers.innerHTML = "";
   s.layers.forEach((L, i) => {
-    const src = Array.isArray(L.src) ? `${L.src.length} frames` : L.src.split("/").pop();
-    const row = el(`<div class="layer"><canvas width="30" height="22"></canvas>
-      <div><b>${L.layer || src.replace(/\.\w+$/, "")}</b><small>${L.speed ? "scrolls" : "still, centred"}${L.gap ? ` · gap ${L.gap}px` : ""}</small></div>
-      <input type="number" step="1" value="${L.speed || 0}" title="Speed in px/s"></div>`);
-    row.querySelector("input").oninput = (ev) => { L.speed = +ev.target.value; };
     const strip = player.layers[i];
+    const multi = Array.isArray(L.src) || (strip && strip.frames > 1);
+    const src = Array.isArray(L.src) ? `${L.src.length} frames` : L.src.split("/").pop();
+    const still = !+L.speed;
+    const msKey = Array.isArray(L.src) ? "ms" : "frame_ms";
+    const row = el(`<div class="layer"><canvas width="30" height="22"></canvas>
+      <div><b>${L.layer || src.replace(/\.\w+$/, "")}</b><small>${still ? "still, centred" : "scrolls, wraps forever"}</small></div>
+      <div class="knobs">
+        <label>Speed<input type="number" data-k="speed" value="${L.speed || 0}"></label>
+        ${multi ? `<label>Frame ms<input type="number" data-k="${msKey}" value="${L[msKey] || ""}" placeholder="auto"></label>` : ""}
+        ${still ? `<label>Fit<select data-k="fit">${["original", "pixel", "contain", "cover", "stretch"].map((f) =>
+          `<option ${(L.fit || "original") === f ? "selected" : ""}>${f}</option>`).join("")}</select></label>`
+               : `<label>Gap<input type="number" data-k="gap" value="${L.gap || 0}"></label>`}
+      </div></div>`);
+    row.querySelectorAll("[data-k]").forEach((inp) => (inp.onchange = inp.oninput = () => {
+      const k = inp.dataset.k;
+      if (k === "fit") {
+        if (inp.value === "original") delete L.fit; else L.fit = inp.value;
+        $("#eNote").textContent = "Fit changes the art itself: Save scene to see it.";
+      } else if (inp.value === "") delete L[k];
+      else L[k] = +inp.value;
+      if (k === "speed" && !!+inp.value === still) renderEditor();
+    }));
     if (strip) row.querySelector("canvas").getContext("2d").drawImage(strip.img, 0, 0, strip.w, strip.h, 0, 0, 30, 22);
     layers.append(row);
   });
+  renderGen();
   const fx = $("#eFx");
   fx.innerHTML = "";
   ["stars", "rain", "snow", "lightning"].forEach((type) => {
@@ -249,6 +346,78 @@ $("#vDelete").onclick = async () => {
   closeModals();
   await load();
 };
+
+// Generator settings (patterns, plasma, warp).
+function renderGen() {
+  const box = $("#eGen"), G = draft.generator;
+  box.innerHTML = "";
+  if (!G) return;
+  const fields = { patterns: [["scale", "Zoom"], ["vx", "Drift X px/s"], ["vy", "Drift Y px/s"], ["seconds", "Seconds each"]],
+                   plasma: [["scale", "Block size"]], warp: [["speed", "Speed"]] }[G.type] || [];
+  const tiles = player.gen ? player.gen.tiles.length / 32 : 0;
+  box.append(el(`<h3>${G.type[0].toUpperCase() + G.type.slice(1)} <span class="hint">${G.type === "patterns"
+    ? `${tiles} tiles · colours are background/foreground pairs` : "colours are gradient stops"}</span></h3>`));
+  const grid = el(`<div class="gen-grid"></div>`);
+  fields.forEach(([k, label]) => {
+    const f = el(`<label>${label}<input type="number" value="${G[k] ?? ""}"></label>`);
+    f.querySelector("input").oninput = (e) => { G[k] = +e.target.value; player.stars = null; };
+    grid.append(f);
+  });
+  box.append(grid);
+  const sw = el(`<div class="swatches"></div>`);
+  const step = G.type === "patterns" ? 2 : 1;
+  for (let i = 0; i < G.colors.length; i += step) {
+    const grp = el(`<span class="pair"></span>`);
+    for (let k = i; k < i + step && k < G.colors.length; k++) {
+      const inp = el(`<input type="color" value="${G.colors[k]}">`);
+      inp.oninput = () => (G.colors[k] = inp.value);
+      grp.append(inp);
+    }
+    sw.append(grp);
+  }
+  const add = el(`<button class="icon-btn" title="Add colour">+</button>`);
+  add.onclick = () => { G.colors.push(...(step === 2 ? ["#101018", "#ffffff"] : ["#ffffff"])); renderGen(); };
+  const rm = el(`<button class="icon-btn" title="Remove last">−</button>`);
+  rm.onclick = () => { if (G.colors.length > step) G.colors.splice(-step); renderGen(); };
+  sw.append(add, rm);
+  box.append(sw);
+}
+
+// Quota ring colours, stored on the active profile.
+const RING_DEFAULTS = { healthy: "#49d7a0", warning: "#f4bc52", critical: "#ff6b6b", weekly: "#ffff00" };
+function ringColors() { return { ...RING_DEFAULTS, ...(profile.colors || {}) }; }
+function renderRings() {
+  const c = ringColors(), levels = c.weekly === "levels";
+  document.querySelectorAll("#pageSettings [data-c]").forEach((inp) => {
+    const k = inp.dataset.c;
+    inp.value = k === "weekly" && levels ? RING_DEFAULTS.weekly : c[k];
+    inp.disabled = k === "weekly" && levels;
+    inp.oninput = () => { profile.colors = { ...ringColors(), [k]: inp.value }; touch(); drawRingMock(); };
+  });
+  $("#weeklyLevels").checked = levels;
+  drawRingMock();
+}
+$("#weeklyLevels").onchange = (e) => {
+  profile.colors = { ...ringColors(), weekly: e.target.checked ? "levels" : RING_DEFAULTS.weekly };
+  touch();
+  renderRings();
+};
+$("#ringReset").onclick = () => { delete profile.colors; touch(); renderRings(); };
+function drawRingMock() {
+  const g = $("#ringMock").getContext("2d"), c = ringColors();
+  g.fillStyle = "#101923";
+  g.fillRect(0, 0, 320, 120);
+  const ring = (x, left, col, label) => {
+    g.lineWidth = 9;
+    g.strokeStyle = "#29303d"; g.beginPath(); g.arc(x, 52, 30, 0, 7); g.stroke();
+    g.strokeStyle = col; g.beginPath(); g.arc(x, 52, 30, -Math.PI / 2, -Math.PI / 2 + 6.283 * left / 100); g.stroke();
+    g.fillStyle = col; g.font = "600 13px Segoe UI"; g.textAlign = "center"; g.fillText(`${left}%`, x, 57);
+    g.fillStyle = "#8b8aa3"; g.font = "11px Segoe UI"; g.fillText(label, x, 104);
+  };
+  const lv = (l) => (l <= 10 ? c.critical : l <= 30 ? c.warning : c.healthy);
+  [[70, "healthy"], [22, "warning"], [6, "critical"]].forEach(([l, label], i) => ring(45 + i * 70, l, lv(l), label));
+  ring(275, 58, c.weekly === "levels" ? lv(58) : c.weekly, "weekly");
+}
 
 // ------------------------------------------------------------------ importer
 let picked = [];

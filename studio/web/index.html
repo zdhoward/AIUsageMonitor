@@ -154,12 +154,26 @@
           <button class="btn primary" id="vShow">Show on display</button>
           <button class="btn ghost danger" id="vDelete">Delete</button>
         </div>
+        <div id="pageSettings" hidden>
+          <h3>Quota colours <span class="hint">applies to this profile</span></h3>
+          <canvas id="ringMock" width="320" height="120"></canvas>
+          <div class="colors">
+            <label>Healthy <input type="color" data-c="healthy"></label>
+            <label>Warning <input type="color" data-c="warning"></label>
+            <label>Critical <input type="color" data-c="critical"></label>
+            <label>Weekly <input type="color" data-c="weekly"></label>
+          </div>
+          <label class="check"><input type="checkbox" id="weeklyLevels"> Weekly ring uses the same healthy / warning / critical colours</label>
+          <div class="row-btns"><button class="btn ghost" id="ringReset">Defaults</button></div>
+          <p class="hint">Save the profile and Send to display to apply.</p>
+        </div>
         <div id="editor" hidden>
           <h3>Theme</h3>
           <div class="themes" id="eThemes"></div>
           <p class="hint">Tick extra themes to add them to the playlist too. They reuse the same art, so they cost almost nothing.</p>
-          <h3>Layers <span class="hint">back to front · speed in px/s</span></h3>
-          <div id="eLayers"></div>
+          <div id="eGen"></div>
+          <div id="eLayersWrap"><h3>Layers <span class="hint">back to front</span></h3>
+          <div id="eLayers"></div></div>
           <h3>Effects</h3>
           <div id="eFx"></div>
           <h3>Sky</h3>

@@ -234,3 +234,24 @@ h3 .hint { text-transform: none; letter-spacing: 0; margin-left: 6px; }
 .flist li { padding: 3px 0; }
 .flist button { background: none; border: 0; color: var(--faint); cursor: pointer; }
 [hidden] { display: none !important; }
+.item { position: relative; }
+.gear { position: absolute; top: 10px; left: 10px; height: 34px; width: 34px; background: rgba(11, 11, 20, .78);
+  opacity: 0; transition: .15s; z-index: 1; display: grid; place-items: center; }
+.gear svg { width: 18px; height: 18px; fill: none; stroke: var(--text); stroke-width: 1.8; }
+.item:hover .gear { opacity: 1; }
+.gear:hover { border-color: var(--pink); }
+.layer { grid-template-columns: 30px 1fr auto; }
+.layer .knobs { display: flex; gap: 8px; align-items: center; }
+.layer .knobs label { display: grid; font-size: 10.5px; color: var(--faint); gap: 2px; }
+.layer select { padding: 6px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); }
+.gen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.gen-grid label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.gen-grid input { padding: 7px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel2); width: 100%; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+.swatches input { width: 34px; height: 30px; border: 0; background: none; cursor: pointer; }
+.swatches .pair { display: flex; padding: 3px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel2); }
+.colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+.colors label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.colors input { width: 100%; height: 34px; border: 0; background: none; cursor: pointer; }
+#ringMock { width: 100%; border-radius: 10px; background: #101923; }
+.colors input:disabled { opacity: .25; cursor: default; }

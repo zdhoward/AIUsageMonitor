@@ -139,7 +139,7 @@ static void updateSaver(const Model& m, uint32_t now) {
 // Snap the panel's blue up one RGB332 step: literal #202C3B truncates
 // its blue to zero in the 8-bit sprite and produces an olive panel.
 static const uint16_t C_BG = 0x10C4, C_PANEL = 0x216B, C_TEXT = 0xF7BF, C_MUTED = 0xADF9,
-                      C_FAINT = 0x4ACD, C_GREEN = 0x4EB4, C_AMBER = 0xF5EA, C_RED = 0xFB4D,
+                      C_FAINT = 0x4ACD, C_GREEN = UI_COLOR_HEALTHY, C_AMBER = UI_COLOR_WARNING, C_RED = UI_COLOR_CRITICAL,
                       C_BLUE = 0x5D5F, C_TRACK = 0x29E9;
 
 // Dimmed mode keeps two grey levels so bars stay readable against their track.
@@ -383,7 +383,7 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
 
   int wUsed = ww ? ww->u : -1;
   int wEased = (idx >= 0 && wi >= 0) ? (int)(eased[idx][wi] + 0.5f) : wUsed;
-  drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, TFT_YELLOW, wReset);
+  drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, UI_WEEKLY_COLOR, wReset);
 }
 
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {

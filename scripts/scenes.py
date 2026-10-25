@@ -11,9 +11,16 @@ A scene is a library entry (assets/library/<id>/entry.json) with a "scene" objec
     speed     px/s scrolled leftwards (0 = static, centred); negative scrolls right
     y         top of the layer; default bottom-aligned on the 240 px scene
     scale     number (default 1), or "fit" to scale the source height to 240 px
+    fit       for still pictures: original | pixel (largest whole-number zoom) |
+              contain | cover (fill, cropping) | stretch; overrides scale and y
     gap       empty px between repeats (sprites that cross the screen)
     ms        frame time for multi-file layers
   effects[]   {"type": stars|rain|snow|lightning, "density": 1-3, "color": "#hex"}
+  generator   optional procedural backdrop replacing the sky:
+              {"type": "patterns", "tiles": [16x16 png...], "scale": 3, "vx": 12, "vy": 6,
+               "seconds": 7, "colors": [bg, fg, bg, fg, ...]}
+              {"type": "plasma", "scale": 2, "colors": [gradient stops]}
+              {"type": "warp", "speed": 300, "colors": [space, ..., near star]}
 
 Semi-transparent pixels are blended over the sky gradient (a matte), so soft
 glows such as a sun's halo survive the 1-bit transparency of the device format.
@@ -36,6 +43,31 @@ PROFILES = ROOT / "profiles"
 SCENE_H = 240
 FX = {"stars": 1, "rain": 2, "snow": 3, "lightning": 4}
 FX_FRONT = {"rain", "snow"}
+GEN = {"patterns": 1, "plasma": 2, "warp": 3}
+
+
+def tile_bits(path: Path) -> bytes:
+    """16x16 tile -> 32 bytes, 1 = light pixel, MSB on the left."""
+    with Image.open(path) as im:
+        im = im.convert("RGBA").resize((16, 16), Image.NEAREST)
+    out = bytearray()
+    for y in range(16):
+        for half in range(2):
+            v = 0
+            for x in range(8):
+                r, g, b, a = im.getpixel((half * 8 + x, y))
+                v = (v << 1) | int(a >= 128 and (r + g + b) > 384)
+            out.append(v)
+    return bytes(out)
+
+
+def gen_spec(entry_dir: Path, g: dict) -> dict:
+    colors = [ac.rgb332(*hex_rgb(c)) for c in g.get("colors", ["#000000", "#ffffff"])]
+    tiles = b"".join(tile_bits(entry_dir / t) for t in g.get("tiles", []))
+    speed = g.get("speed", 300) if g["type"] == "warp" else g.get("vx", 0)
+    return {"type": GEN[g["type"]], "scale": int(g.get("scale", 3 if g["type"] == "patterns" else 2)),
+            "vx16": int(speed * 16), "vy16": int(g.get("vy", 0) * 16), "seconds": int(g.get("seconds", 7)),
+            "tiles": tiles, "colors": colors}
 
 
 # ------------------------------------------------------------------ themes
@@ -123,8 +155,18 @@ def prepare_layer(entry_dir: Path, layer: dict, bg: dict) -> dict:
     if abs(k - 1) > 1e-3:
         size = (max(1, round(w * k)), max(1, round(h * k)))
         frames = [f.resize(size, Image.NEAREST) for f in frames]
+    fit = layer.get("fit")
+    if fit and fit != "original":
+        fw, fh = frames[0].size
+        k = {"pixel": max(1, int(min(320 / fw, SCENE_H / fh))), "contain": min(320 / fw, SCENE_H / fh),
+             "cover": max(320 / fw, SCENE_H / fh)}.get(fit)
+        size = (320, SCENE_H) if fit == "stretch" else (max(1, round(fw * k)), max(1, round(fh * k)))
+        frames = [f.resize(size, Image.NEAREST) for f in frames]
+        if fit == "cover":
+            cx, cy = (size[0] - 320) // 2, (size[1] - SCENE_H) // 2
+            frames = [f.crop((cx, cy, cx + 320, cy + SCENE_H)) for f in frames]
     w, h = frames[0].size
-    y = layer.get("y", SCENE_H - h)
+    y = (SCENE_H - h) // 2 if fit else layer.get("y", SCENE_H - h)
     out = []
     for f in frames:  # matte soft alpha against the sky behind it
         px = f.load()
@@ -139,7 +181,8 @@ def prepare_layer(entry_dir: Path, layer: dict, bg: dict) -> dict:
                     px[xx, yy] = (0, 0, 0, 0)
         out.append(f)
     return {"frames": out, "durations": durations, "y": y, "w": w, "h": h,
-            "period": w + int(layer.get("gap", 0)), "speed": float(layer.get("speed", 0))}
+            "period": w + int(layer.get("gap", 0)), "speed": float(layer.get("speed", 0)),
+            "frame_ms": int(layer.get("frame_ms", 0))}
 
 
 def quantized(im: Image.Image) -> Image.Image:
@@ -161,6 +204,17 @@ def write_preview(entry_dir: Path, layers: list) -> None:
         meta.append({"w": L["w"], "h": L["h"], "y": L["y"], "frames": len(L["frames"]),
                      "durations": L["durations"], "url": f"layer{i}.png"})
     (out / "layers.json").write_text(json.dumps(meta), encoding="utf-8")
+
+
+def write_gen_preview(entry_dir: Path, sc: dict) -> None:
+    out = entry_dir / ".build"
+    out.mkdir(exist_ok=True)
+    g = sc.get("generator")
+    data = None
+    if g:
+        spec = gen_spec(entry_dir, g)
+        data = {**spec, "tiles": list(spec["tiles"])}
+    (out / "gen.json").write_text(json.dumps(data), encoding="utf-8")
 
 
 # ------------------------------------------------------------------ library
@@ -203,15 +257,28 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
         if want is not None and sid not in want:
             continue
         sc, n = e["scene"], c_name(sid)
-        layers = [prepare_layer(d, L, sc["background"]) for L in sc["layers"]]
+        layers = [prepare_layer(d, L, sc["background"]) for L in sc.get("layers", [])]
         write_preview(d, layers)
+        write_gen_preview(d, sc)
         rows = []
         for i, L in enumerate(layers):
             body, _, size = ac.encode(f"{n}_l{i}", L["frames"], L["durations"], [])
             cpp.append(body.replace("const AnimAsset ASSET_", "static const AnimAsset ASSET_"))
             total += size
-            rows.append(f"{{&ASSET_{n}_l{i}, {L['y']}, {int(round(L['speed'] * 16))}, {L['period']}, 0}}")
-        cpp.append(f"static const SceneLayer {n}_layers[] = {{{', '.join(rows)}}};\n")
+            rows.append(f"{{&ASSET_{n}_l{i}, {L['y']}, {int(round(L['speed'] * 16))}, {L['period']}, {L['frame_ms']}}}")
+        if rows:
+            cpp.append(f"static const SceneLayer {n}_layers[] = {{{', '.join(rows)}}};\n")
+        gen = "nullptr"
+        if sc.get("generator"):
+            g = gen_spec(d, sc["generator"])
+            if g["tiles"]:
+                cpp.append(f"static const uint8_t {n}_tiles[] = {{{ac.c_bytes(g['tiles'])}}};\n")
+            cpp.append(f"static const uint8_t {n}_gcol[] = {{{', '.join(f'0x{c:02X}' for c in g['colors'])}}};\n")
+            cpp.append(f"static const SceneGen {n}_gen = {{{g['type']}, {g['scale']}, {g['vx16']}, {g['vy16']}, "
+                       f"{g['seconds']}, {f'{n}_tiles' if g['tiles'] else 'nullptr'}, {len(g['tiles']) // 32}, "
+                       f"{n}_gcol, {len(g['colors'])}}};\n")
+            gen = f"&{n}_gen"
+            total += len(g["tiles"]) + len(g["colors"])
         fx = [f"{{{FX[x['type']]}, {max(1, min(3, int(x.get('density', 2))))}, "
               f"0x{ac.rgb332(*hex_rgb(x.get('color', '#9fb4ff'))):02X}, {int(x['type'] in FX_FRONT)}}}"
               for x in sc.get("effects", []) if x.get("type") in FX]
@@ -228,8 +295,8 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
             vid = sid if k == 0 else f"{sid}-{theme}"
             vname = name if k == 0 else f"{name} ({theme})"
             defs.append(f'  {{"{vid}", "{vname}", {{{top[0]}, {top[1]}, {top[2]}}}, {{{bot[0]}, {bot[1]}, {bot[2]}}}, '
-                        f"{n}_layers, {len(layers)}, {f'{n}_fx' if fx else 'nullptr'}, {len(fx)}, "
-                        f"{luts.get(theme, 'nullptr')}}}")
+                        f"{f'{n}_layers' if rows else 'nullptr'}, {len(layers)}, {f'{n}_fx' if fx else 'nullptr'}, {len(fx)}, "
+                        f"{luts.get(theme, 'nullptr')}, {gen}}}")
         cpp.append("\n")
     if defs:
         cpp.append("const SceneDef SCENES[] = {\n" + ",\n".join(defs) + "\n};\n")
@@ -272,9 +339,11 @@ def prepare_with_still(entry_id: str) -> None:
     d = LIBRARY / entry_id
     e = json.loads((d / "entry.json").read_text(encoding="utf-8"))
     sc = e["scene"]
-    layers = [prepare_layer(d, L, sc["background"]) for L in sc["layers"]]
+    layers = [prepare_layer(d, L, sc["background"]) for L in sc.get("layers", [])]
     write_preview(d, layers)
-    render_still(d, sc, layers).save(d / "preview.png")
+    write_gen_preview(d, sc)
+    if not sc.get("generator"):
+        render_still(d, sc, layers).save(d / "preview.png")
 
 
 def aseprite_layers(path: Path) -> list[str]:
@@ -309,5 +378,7 @@ def auto_scene(entry_dir: Path, files: list[str]) -> dict:
         px = [back.getpixel((x, row)) for x in range(back.size[0])]
         px = [p for p in px if p[3] > 128] or [(10, 10, 30, 255)]
         return "#%02x%02x%02x" % tuple(sum(p[i] for p in px) // len(px) for i in range(3))
-    return {"background": {"top": avg(0), "bottom": avg(back.size[1] - 1)}, "theme": "original",
+    # Art shorter than the screen leaves sky above it: match its top edge so there is no band.
+    short = back.size[1] * k < SCENE_H - 1
+    return {"background": {"top": avg(0), "bottom": avg(0) if short else avg(back.size[1] - 1)}, "theme": "original",
             "variants": [], "layers": layers, "effects": []}

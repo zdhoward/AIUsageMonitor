@@ -1,0 +1,34 @@
+{
+  "created": "2026-10-24T20:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "kind": "scene",
+  "name": "Plasma",
+  "notes": "Classic demoscene plasma in synthwave colours.",
+  "license": "Original (procedural)",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "ice",
+      "toxic"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "plasma",
+      "scale": 4,
+      "colors": [
+        "#1a0033",
+        "#ff3ea5",
+        "#ffb84d",
+        "#29e0ff",
+        "#3a0ca3"
+      ]
+    }
+  }
+}

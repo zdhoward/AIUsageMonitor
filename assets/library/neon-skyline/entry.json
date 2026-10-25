@@ -9,7 +9,7 @@
   "license": "CC0 - Luis Zuno (Ansimuz), Cyberpunk Street",
   "scene": {
     "background": {
-      "top": "#100a26",
+      "top": "#281d51",
       "bottom": "#281d51"
     },
     "theme": "original",
