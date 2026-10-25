@@ -86,7 +86,7 @@ Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even
 
 ### Playlists and Digital Rain
 
-- **Playlists tab**: build any number of named rotations (up to 16). Pick scenes, drag them into order and set seconds per scene. Each playlist can be a tap page (`playlist:<id>` in the profile's `pages`) or the screensaver. The built-in **All scenes** page rotates through everything every `scene_seconds`. `!SHOW playlist-<n>` plays playlist n (profile order) on the display; the tab's **Show on display** button sends this.
+- **Playlists tab**: build any number of named rotations (up to 16). Pick scenes, drag them into order and set seconds per scene. Each playlist can be a tap page (`playlist:<id>` in the profile's `pages`) or the screensaver. The built-in **All scenes** page rotates through everything every `scene_seconds`. `!SHOW playlist-<n>` plays playlist n (profile order) on the display; the tab's **Show on display** button sends this. **Random weather** (`"weather": "random"` on a playlist) gives each scene turn clear skies, rain, snow or a storm, replacing the scene's own rain/snow/lightning and keeping its stars (`withWeather` in `ui.cpp`).
 - Firmware: playlist pages are ids 200 and up; `scripts/profile_gen.py` writes their scene lists to the git-ignored `playlists_gen.h`.
 - **Digital Rain** (`matrix` generator): an original take on the effect in Rezmason/matrix, with no code or font copied. Glyphs are generated from a hash, columns fall with a white head and a fading trail, and characters flicker. Settings: glyph size, fall speed, density %, colours (background, trail stops, head). About 43 ms per frame on the board.
 

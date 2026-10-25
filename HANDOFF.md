@@ -1,18 +1,19 @@
-# Handoff — v1.9.0 Long-press home, reliable link status, SVG images (2026-10-25)
+# Handoff — v1.11.0 Profiles, random weather, SVG images, long-press home (2026-10-25)
 
-## Latest session (v1.8.0)
+## Latest session (v1.8.0 – v1.11.0)
 
-`main` is tagged `v1.10.0` (local only; not pushed). Firmware 1.9.0 is flashed on COM6, and the service was restarted with the new stale threshold. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md).
+`main` is tagged `v1.11.0`. Nothing from this session is pushed yet: the repo is public, and `assets/gif/angry_skele.gif` (unknown license) would become public with it, so pushing waits for the owner's call (see Blockers). Firmware 1.11.0 is flashed on COM6 with the **Default** profile, and the service is running. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md); the owner's decisions are in [GOALS](GOALS.md).
 
-- **Long-press home:** holding for 0.7 s jumps to the AI Usage console (`uiGoHome` in `ui.cpp`, hold detection in `pollTouch` in `AIUsageMonitor.ino`, `UI_HOME_PAGE`/`UI_HOLD_MS` in `config.h`). The owner confirmed it on the device.
-- **Footer:** a green/amber/red link dot plus `Updated <newest reading age>`. Amber means no payload for 30 s and red means a source error. Old readings on one account show only as that card's `STALE` label (threshold 60 min, `limits_stale_s` / `CLIENT_STALE_S`).
-- **Why the link looked unreliable:** T3 refreshes Claude quota only every few minutes, so an idle account's reading ages on its own. The serial link itself is healthy.
-- **Account names:** the owner renamed the T3 Claude instances to `A`/`B`. Unmatched names now fill the Claude rows in order (`slotIndex`).
-- **Profile:** the default profile with 12 single-scene pages (19 pages total) is committed.
-- **Validation:** builds at 44% flash, and device screenshots were checked after each flash. No automated tests were run (sprint-end rule).
-- **SVG (v1.9.0):** the owner's logo `assets/img/grid_logo_1_light.svg` is the SVG test case. `asset_convert.py` rasterizes SVGs with `resvg-py` (a new tool dependency: `pip install resvg-py`). The Images page rotates through `"image": true` manifest entries every 10 s. See [ASSETS](docs/ASSETS.md).
-- **Studio UX pass (v1.10.0, Studio only):** see the project log. Deferred: grouping the Layout page list, and one term for display/device.
-- **Next:** optional hold-progress feedback. To clean up the row-mapping heuristic, the service could send a stable slot id per account.
+- **Profiles (v1.11.0):** Default (Console → System → Parallax; Console sleeps to the face), Dev (all originals) and Dev (themes) (all theme shifts). Only Console is a required page. Regenerate the scene lists by rerunning the generator logic if the library changes. The Dev profiles list scenes explicitly, so new scenes must be added to them.
+- **Random weather (v1.11.0):** `"weather": "random"` on a playlist (`withWeather` in `ui.cpp`, Studio checkbox in `playlists.js`). Confirmed on the display: Miami Drive got snow.
+- **Long-press home:** holding for 0.7 s jumps to the Console (`uiGoHome` in `ui.cpp`, `pollTouch` in `AIUsageMonitor.ino`, `UI_HOME_PAGE`/`UI_HOLD_MS`). The owner confirmed it on the display.
+- **Footer:** a link dot (green; amber when no payload for 30 s; red on a source error) plus `Updated <newest reading age>`. A stale account is shown only by its card's `STALE` label (60 min, `limits_stale_s` / `CLIENT_STALE_S`). T3 re-polls Claude quota only every few minutes; the serial link is healthy.
+- **Account names:** unmatched names (the owner's T3 `A`/`B`) fill the Claude rows in order (`slotIndex`).
+- **SVG (v1.9.0):** `asset_convert.py` rasterizes SVGs with `resvg-py` (`pip install resvg-py`). The Images page rotates `"image": true` manifest entries every 10 s. The owner's logo is the test case.
+- **Studio UX (v1.10.0):** unsaved chip, ↑/↓ reorder, focus outlines, theme badges, library counts, auto-capture. The "display" wording is now consistent.
+- **Validation:** builds at 44% flash, with display screenshots after each flash and Playwright checks of the Studio (the T3 preview snapshot times out, so use Playwright with Edge). No automated tests were run (sprint-end rule).
+- **Blockers:** (1) Push: confirm or replace the skeleton GIF license, then `git push --follow-tags`. If it is replaced, the GIF must also be removed from the unpushed history. (2) Tests are pending sprint end.
+- **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017 and T-016.
 
 ## Previous session (v1.6.0)
 
