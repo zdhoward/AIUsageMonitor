@@ -400,7 +400,7 @@ function openViewer(e, settings = false) {
     player.shift = false;
     player.load(e.id, draft).then(renderEditor).catch(() => toast("Preview missing. Save the scene to rebuild it.", "err"));
     renderEditor();
-    $("#stageInfo").textContent = "Live preview in device colours. Scroll speeds and effects match the display.";
+    $("#stageInfo").textContent = "Live preview in the display's colours. Scroll speeds and effects match it.";
   } else {
     $("#stageImg").src = e.preview_url;
     $("#stageInfo").textContent = e.kind === "page" ? "Captured from the display." : "Saved capture.";
@@ -501,7 +501,7 @@ $("#eSave").onclick = async () => {
     $("#eSave").disabled = true;
     await api(`/api/library/${viewing.id}/scene`, { scene: draft });
     viewing.scene = structuredClone(draft);
-    toast("Scene saved. Send to display to update the device.");
+    toast("Scene saved. Send to display to update it.");
     await load();
   } catch (e) { toast(e.message, "err"); }
   $("#eSave").disabled = false;

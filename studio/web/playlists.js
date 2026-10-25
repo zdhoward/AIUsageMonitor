@@ -63,6 +63,7 @@ function renderPlEditor() {
     <div class="pl-flags">
       <label class="check"><input type="checkbox" class="pl-page" ${profile.pages.includes(pageId) ? "checked" : ""}> Tap page in Layout</label>
       <label class="check"><input type="radio" name="plsaver" class="pl-saver" ${profile.screensaver.page === pageId ? "checked" : ""}> Use as screensaver</label>
+      ${isAll ? "" : `<label class="check" title="Each scene turn picks clear skies, rain, snow or a storm, replacing the scene's own weather"><input type="checkbox" class="pl-weather" ${pl.weather === "random" ? "checked" : ""}> Random weather</label>`}
       <span class="grow"></span>
       <button class="btn ghost pl-show">Show on display</button>
       ${isAll ? "" : '<button class="btn ghost danger pl-del">Delete</button>'}
@@ -78,6 +79,8 @@ function renderPlEditor() {
   const name = ed.querySelector(".pl-name");
   name.value = isAll ? "All scenes" : pl.name;
   name.oninput = () => { pl.name = name.value; touch(); };
+  const wx = ed.querySelector(".pl-weather");
+  if (wx) wx.onchange = () => { if (wx.checked) pl.weather = "random"; else delete pl.weather; touch(); };
   const secs = ed.querySelector(".pl-sec");
   secs.value = isAll ? profile.scene_seconds || 90 : pl.seconds;
   secs.onchange = () => {

@@ -1,0 +1,66 @@
+{
+  "name": "Dev (themes)",
+  "rotation": 1,
+  "show_remaining": true,
+  "pages": [
+    "console",
+    "details",
+    "playlist:themes",
+    "scene:aurora-shift",
+    "scene:campfire-shift",
+    "scene:digital-rain-shift",
+    "scene:fireworks-shift",
+    "scene:game-of-life-shift",
+    "scene:lava-lamp-shift",
+    "scene:miami-drive-shift",
+    "scene:neon-skyline-shift",
+    "scene:pixel-patterns-shift",
+    "scene:plasma-shift",
+    "scene:rainy-street-shift",
+    "scene:ripples-shift",
+    "scene:spectre-patch-shift",
+    "scene:video-equations-shift",
+    "scene:warp-speed-shift"
+  ],
+  "screensaver": {
+    "enabled": false,
+    "page": "",
+    "timeout_s": 30,
+    "console": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    },
+    "details": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    }
+  },
+  "scene_seconds": 90,
+  "scenes": "all",
+  "playlists": [
+    {
+      "id": "themes",
+      "name": "Theme shifts",
+      "scenes": [
+        "aurora-shift",
+        "campfire-shift",
+        "digital-rain-shift",
+        "fireworks-shift",
+        "game-of-life-shift",
+        "lava-lamp-shift",
+        "miami-drive-shift",
+        "neon-skyline-shift",
+        "pixel-patterns-shift",
+        "plasma-shift",
+        "rainy-street-shift",
+        "ripples-shift",
+        "spectre-patch-shift",
+        "video-equations-shift",
+        "warp-speed-shift"
+      ],
+      "seconds": 90
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "name": "Dev",
+  "rotation": 1,
+  "show_remaining": true,
+  "pages": [
+    "console",
+    "details",
+    "system",
+    "companion",
+    "image",
+    "city",
+    "scenes",
+    "scene:aurora",
+    "scene:campfire",
+    "scene:digital-rain",
+    "scene:fireworks",
+    "scene:game-of-life",
+    "scene:lava-lamp",
+    "scene:miami-drive",
+    "scene:neon-skyline",
+    "scene:pixel-patterns",
+    "scene:plasma",
+    "scene:rainy-street",
+    "scene:ripples",
+    "scene:spectre-patch",
+    "scene:video-equations",
+    "scene:warp-speed"
+  ],
+  "screensaver": {
+    "enabled": false,
+    "page": "",
+    "timeout_s": 30,
+    "console": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    },
+    "details": {
+      "enabled": true,
+      "timeout_s": 30,
+      "wake_on_usage": true
+    }
+  },
+  "scene_seconds": 90,
+  "scenes": "all",
+  "playlists": []
+}

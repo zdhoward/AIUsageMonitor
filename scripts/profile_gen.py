@@ -74,9 +74,8 @@ def validate(p: dict) -> list[str]:
             errs.append(f"playlist '{pg[9:]}' does not exist")
     if len(set(pages)) != len(pages):
         errs.append("a page is listed twice")
-    for required in ("console", "details"):
-        if required not in pages:
-            errs.append(f"{required} page is required")
+    if "console" not in pages:  # home page for the long-press gesture
+        errs.append("console page is required")
     if p.get("rotation") not in (0, 1, 2, 3):
         errs.append("rotation must be 0-3")
     s = p.get("screensaver", {})
@@ -142,8 +141,9 @@ def playlists_header(p: dict, index: dict) -> str:
     for k, pl in enumerate(p.get("playlists", [])):
         ids = [str(index[s]) for s in pl.get("scenes", [])] or ["0"]
         out.append(f"static const uint8_t kPl{k}[] = {{{', '.join(ids)}}};  // {pl.get('name', '')}")
-        rows.append(f"  {{kPl{k}, {len(pl.get('scenes', []))}, {int(pl.get('seconds', 60))}}}")
-    out.append("static const Playlist kPlaylists[] = {\n" + (",\n".join(rows) or "  {nullptr, 0, 0}") + "\n};")
+        weather = int(pl.get("weather") == "random")  # "random": clear/rain/snow/storm per scene turn
+        rows.append(f"  {{kPl{k}, {len(pl.get('scenes', []))}, {int(pl.get('seconds', 60))}, {weather}}}")
+    out.append("static const Playlist kPlaylists[] = {\n" + (",\n".join(rows) or "  {nullptr, 0, 0, 0}") + "\n};")
     out.append(f"static const uint8_t kPlaylistCount = {len(rows)};")
     return "\n".join(out) + "\n"
 
