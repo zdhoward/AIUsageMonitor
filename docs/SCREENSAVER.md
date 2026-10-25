@@ -6,6 +6,11 @@ for another 30 seconds. Face and Images remain awake. There is no saver page in
 the navigation cycle. A tap or `!NEXT` during saving wakes the original view;
 the next tap advances. See [UI.md](UI.md) for policy switches and comparison rules.
 
+If any reported quota window is `due` and its known used percentage is below
+100%, Console and Details stay awake (or leave an active saver) so the available
+quota stays visible. Unknown usage/reset times and 100%-used windows do not
+block saving. This also applies when usage-change waking is disabled.
+
 ## Device evidence (2026-10-23)
 
 Production build flashed to COM6 with hash verification. With the service
