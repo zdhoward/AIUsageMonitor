@@ -64,7 +64,7 @@ For the default three console rows, use T3 display names `CL1`, `CL2` and `Codex
 
 ## Reading the display
 
-Rings show **remaining** quota: full means all allowance remains. Session colors follow capacity thresholds; Weekly stays yellow. `--` means unavailable, `due` means a reset deadline passed, and `STALE` means the source or link has aged. A fresh USB connection does not guarantee a fresh provider measurement.
+Rings show **remaining** quota: full means all allowance remains. Session colors follow capacity thresholds; Weekly stays yellow. `--` means unavailable, `due` means a reset deadline passed, and `STALE` (or an amber footer dot) means the source or link has aged; a red footer dot is a source error. A fresh USB connection does not guarantee a fresh provider measurement.
 
 Tap to open the detailed dashboard for activity, quota windows, reset credits, token totals, free-model activity and API-equivalent cost estimates. Those estimates are **not subscription charges**. Cached values are held in RAM and are lost on device reboot.
 
