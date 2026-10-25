@@ -1,5 +1,15 @@
 # Accepted display decisions
 
+## Profiles and wording (2026-10-25)
+
+- **Wording:** the hardware is "the display" in the UI and user docs. "Device" is only for hardware/technical contexts (USB detection, reboot).
+- **Profiles** (`profiles/`):
+  - **Default:** Console → System → Parallax, no Details. The Console sleeps to the Companion face. System and Parallax never sleep. The Parallax playlist cycles the layered scenes (Miami Drive, Neon Skyline, Rainy Street), with random weather per scene turn: clear, rain, snow or storm.
+  - **Dev:** every page and the original of every scene, with no screensaver.
+  - **Dev (themes):** Console, Details, a theme-shift playlist and every theme-shift scene, with no screensaver.
+- Only the Console page is required (it is the long-press home). Details is optional.
+- **Pushing:** push completed work at milestones. Private repos need no confirmation; this repo is public, so anything newly public needs the owner's OK first.
+
 ## Automatic brightness (2026-10-24)
 
 - Owner requested configurable daylight brightness and selected the owner's city. PC service fetches/caches SunriseSunset.io schedules; ESP applies PWM targets across every view without waking idle views.

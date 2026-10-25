@@ -78,7 +78,7 @@ python -m unittest discover -s tests -t .
 Pop-Location
 ```
 
-Capture the connected device after starting the service:
+Capture the connected display after starting the service:
 
 ```powershell
 python scripts/screenshot.py --feed --out build/dashboard.png

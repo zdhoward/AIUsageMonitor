@@ -206,3 +206,9 @@
 - **Review:** all five tabs at 1280 and 900 px. Unsaved-change warnings and flash progress already existed. The gaps were visibility, keyboard access and small labels.
 - **Changes:** a more visible "Unsaved changes" chip; ↑/↓ move buttons on enabled pages (keyboard alternative to dragging, focus follows the row); `:focus-visible` outlines and a reduced-motion rule; toasts announced (`aria-live`); thumbnail and switch labels; a theme badge on themed or shift thumbnails; library filter counts; the Display tab captures on arrival; button tooltips that say what Save and Send do; no button text wrapping at narrow widths; Images described as an image rotation.
 - **Deferred:** grouping the 19-row page list (main pages vs scene pages) needs a design sketch first. Using one term for display/device across UI and docs is also still open.
+
+## 2026-10-25 — v1.11.0 Profiles, random weather, display wording
+
+- **Profiles:** Default (Console → System → Parallax; Console sleeps to the Companion face; System and Parallax never sleep), Dev (every page and every original scene) and Dev (themes) (theme-shift playlist and every shift scene). They were generated from the library so the scene lists are exact. Details is no longer required; only Console is (the long-press home).
+- **Random weather:** playlists take `"weather": "random"`. Each scene turn picks clear, rain, snow or storm (rain plus lightning). The firmware replaces the scene's own weather effects and keeps its stars. The Studio playlist editor has a "Random weather" checkbox.
+- **Wording:** the owner calls the hardware "the display"; Studio strings were updated, and the rule is recorded in GOALS.md.
