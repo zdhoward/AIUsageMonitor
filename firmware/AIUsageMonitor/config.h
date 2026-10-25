@@ -9,7 +9,7 @@
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
 // ============================================================================
 
-#define FW_VERSION "1.4.2"
+#define FW_VERSION "1.5.0"
 
 // ---------------------------------------------------------------------------
 // DISPLAY_ROTATION: the one setting to change when you remount the screen.

@@ -1,35 +1,49 @@
-# Handoff — MINT implementation complete, visual pages continue (2026-10-23)
+# Handoff — v1.5.0 Scene Studio and scene engine (2026-10-25)
 
-Latest installation (2026-10-24): T-011 automatic brightness is installed on COM6 (420,143 bytes flash / 29,808 bytes static RAM). Main service resumed ACKs and reports the owner's city night duty 40/255, 1000ms interpolation, nine cached dates and no brightness errors. See [brightness configuration](docs/BRIGHTNESS.md) and `.tickets/T-011.md`; evidence is under ignored `build/t011-*`. Firmware still reports development baseline 1.4.2; no new release tag. Automated tests, physical calibration and broader acceptance remain pending. Older build sizes below predate T-011.
+## State
 
-Previous continuation: T-010 implements automatic 30-second idle saving and
-usage-change wake for Console/Details, with separate per-view settings.
-Face/Images are exempt; Screensaver is removed from navigation. Built at
-419,663 bytes flash / 29,760 bytes static RAM and flashed to COM6 with hash
-verification; service ACKs resumed. See [screensaver acceptance](docs/SCREENSAVER.md)
-and [T-010](.tickets/T-010.md). Automated tests remain deferred. The earlier
-T-008A five-entry navigation and saver-unimplemented statements below are history.
+`main` is tagged `v1.5.0` (local only; not pushed). The firmware reports 1.5.0 and is flashed on COM6 with the Default profile. No open PRs.
 
-## Current state
+Delivered this session (details in [ASSETS](docs/ASSETS.md), [plan](docs/SCENE_LIBRARY_PLAN.md), [project log](docs/PROJECT_LOG.md)):
 
-The Grobot-powered MINT face and PC-owned behavior are integrated on local `main`. Main commits for this work: `d46c8c3` (face), `d8c81f6` (service behavior), `1ea6046` (restart/expiry fixes), `bc50a81` (mouth canvas path), `7fead74` (unsigned blend fix), `0d6dd47` (wrap-up evidence/docs). The face has seven table-driven expressions, independent blink/gaze/mouth/sweat animation, smooth target blending and the upstream MIT notice. Service behavior provides gradual mood, finite local pet/play/nap reactions and optional default-off Windows CPU/RAM stress. The existing service remains the sole serial owner.
+- **Assets:** `scripts/asset_convert.py` converts GIF/PNG/Aseprite to RLE RGB332. `anim.cpp` is the player. The Images page plays a GIF; the City page is `city.cpp`.
+- **Scene engine:** `scene.cpp`, built from `scripts/scenes.py`:
+  - parallax layers, effects (stars, rain, snow, lightning behind layer N), themes, theme variants and smooth theme cycles;
+  - Lospec palette themes in `assets/themes/`;
+  - generators: patterns, plasma, warp, matrix, fire, lava, aurora, life, ripple, fireworks, videoeq, spectre.
+- **Pages:** every page is compiled in. A profile chooses the tap order, `scene:<id>` pages, up to 16 playlists (`playlist:<id>`, firmware ids 200+), the screensaver target and ring colours. Generated files: `profile_gen.h` and `playlists_gen.h` (both git-ignored).
+- **Serial commands:** `!SHOW <page|scene|playlist-n>`, `!SCENES`, `!PERF`, `!TUNE <hex>|off`. The tune format is in `firmware/AIUsageMonitor/tune.h`.
+- **Scene Studio** (`Scene Studio.cmd` or `python -m studio`; test instances use `--port 8799`):
+  - tabs: Layout, Screensaver, Playlists, Library (gear settings, import, Lospec browser), Display;
+  - previews come from the native DLL (`studio/native/build.ps1`, MSVC), at about 48 fps;
+  - **Live on device** sends unsaved edits to the display.
+- **Library:** 23 entries in `assets/library/`.
 
-Current firmware was built at **418,663 bytes flash / 29,000 bytes static RAM**, flashed to COM6 with hash verification and reports rotation 1, 320×240, framebuffer enabled. Service restarted and serial ACKs resumed. Actual captures inspected by the coordinator: [happy](docs/img/MINT-happy-device.png), [idle](docs/img/MINT-idle-device.png). They show eyes and mouth across the face, without a body or page chrome. The initial missing-mouth discovery and unsigned-time fix are recorded in the project log; do not use older worker screenshots.
+## Measured
 
-Code review passed for the main face and PC behavior, including corrective review for durable ordered service sessions and permanent lease expiry. No service tests or firmware fixtures were executed; owner sprint-end policy defers them. Still pending: sustained animation/latency and heap measurement, all emotion appearances, physical touch, portrait, direct-panel allocation fallback, reconnect/expiry fixture driver, and real optional CPU/RAM sampling. Still captures pause serial and are not FPS evidence. Development binary continues to report firmware version 1.4.2; identify it by source/artifact SHA, not that version string. No release version/tag, remote push or PR work occurred.
+- Flash use is 574 KB (43%). Static RAM is 85 KB; 184 KB heap is free during scenes.
+- Scenes run at 43-68 ms per frame on the device.
+- The native preview renders a frame in under 0.2 ms.
 
-## Current state (2026-10-24): image/GIF playback, synthwave city and Scene Studio
+## Not done / blockers
 
-Delivered: converter (`scripts/asset_convert.py`), frame player (`anim.cpp`), Images page plays `angry_skele.gif`, City page (`city.cpp` + `assets/scenes/city/*.aseprite`), `!PERF`, configurable page order (`UI_VIEW_ORDER`), build profiles (`profiles/*.json`, `build.ps1 -Profile`), and Scene Studio (`python -m studio`, `Scene Studio.cmd`). Flashed on COM6 with the default profile, screensaver set to City. Measured 42-54 ms/frame, about 232-238 KB of free heap. See [ASSETS](docs/ASSETS.md) and [scene library plan](docs/SCENE_LIBRARY_PLAN.md).
+- Automated tests: none run (owner's sprint-end rule). The service suite is `python -m unittest discover -s tests -t .` from `service/`.
+- Never observed on the device: the screensaver taking over by itself (active usage keeps waking it).
+- Untested: portrait rotation for scenes.
+- No flash-budget gate in the build.
+- `assets/gif/angry_skele.gif` has an unknown license. Confirm it before any push; the repo is public.
+- Third-party packs in `assets/sprites/` are git-ignored. Only CC0 art is committed.
 
-Scene engine (T-012) delivered on 2026-10-24: `scene.cpp`, `scripts/scenes.py`, Scene playlist page, `!SHOW`/`!SCENES`, themes and variants, Studio viewer/editor/import with a browser live preview. Three CC0 scenes were flashed and captured on COM6. Next: per-layer y/gap editing in the Studio, playlist ordering, a host DLL for pixel-exact preview of the City page, and porting `city.cpp` onto the engine. Third-party packs in `assets/sprites/` are git-ignored because the repo is public; `angry_skele.gif` has an unknown license, so confirm before pushing. City-as-screensaver was not observed on the device because live usage changes kept waking it; recheck when idle.
+## Next actions
 
-## Verification and commands
+1. T-017: VJ transitions between playlist scenes, plus more effects (boids, radar, reaction-diffusion; cracktro, beams).
+2. T-016: classic screensavers (3D Pipes, Maze, Mystify) as generators.
+3. Port `city.cpp` onto the scene engine so the city can be edited in the Studio.
+4. Add a flash-budget check to `build.ps1 -Profile`.
 
-- Production build passed after the final source change; build size above. Existing `TOUCH_CS` warning is expected for this board.
-- Python syntax compilation and `git diff --check` passed in implementation workers; focused service tests and firmware fixtures are retained but unrun.
-- Device state at handoff: aimon service healthy on COM6, firmware `1.4.2 rot=1 w=320 h=240 fb=1`, serial ACKs resumed. Screenshot helpers coordinate pause/resume.
-- Build: `powershell -NoProfile -File scripts/build.ps1`; flash: `powershell -NoProfile -File scripts/flash.ps1 -Port COM6`; capture: `python scripts/screenshot.py --port COM6 --feed --out docs/img/capture.png`.
-- Sprint-end service suite: from `service/`, `python -m unittest discover -s tests -t .`. Follow the owner’s sprint-end testing rule.
-- Worktree has a pre-existing untracked `assets/` directory with `gif/`, `img/`, `vid/`; inspect and preserve it. Ignore build logs are under ignored `build/`.
-- Wrap-up status 2026-10-23: `main` at `8031fa9` (handoff reconciliation), 32 commits ahead of `origin/main`; not fetched or pushed. No release tag. `gh pr list --state open` and T3 linked-PR list were empty, so no PRs needed merging. Preserve untracked `assets/gif`, `assets/img`, and `assets/vid`. Automated tests were not run; see sprint-end checklist.
+## Commands
+
+- Build/flash: `scripts/build.ps1 -Profile default`, then `scripts/flash.ps1`. Convert art first with `python scripts/asset_convert.py --profile default`.
+- Native preview: `powershell -File studio/native/build.ps1`.
+- Capture: `python scripts/screenshot.py --out shot.png`, or the Studio's Display tab.
+- Keep sessions short: this one reached a 612k-token context (see the retro in `~/.agents/retro/LOG.md`).
