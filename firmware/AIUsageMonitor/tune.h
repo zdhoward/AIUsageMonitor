@@ -13,7 +13,7 @@
 //   u8 flags: bit0 = 256-byte theme LUT follows, bit1 = generator settings follow
 //   [256 bytes LUT]
 //   [gen: u8 type, u8 scale, i16 vx16, i16 vy16, u16 seconds, u8 colorCount (<=32), colors]
-//   u8 cycleCount (<=5), u16 holdS, u16 fadeDs, cycleCount x 256-byte LUTs
+//   u8 cycleCount (<=16), u16 holdS, u16 fadeDs, cycleCount x 256-byte LUTs
 #include "scene.h"
 
 bool sceneTune(const uint8_t* blob, int len);  // false: malformed or mismatched

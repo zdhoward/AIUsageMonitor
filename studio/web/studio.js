@@ -189,7 +189,7 @@ function renderLibrary() {
       <div class="body"><div class="row"><b></b><span class="chip kind">${kind}</span></div>
       <p></p><div class="chips">
         <span class="chip">${(e.created || "").replace("T", " ").slice(0, 16)}</span>
-        ${e.scene && e.scene.variants && e.scene.variants.length ? `<span class="chip">+${e.scene.variants.length} themes</span>` : ""}
+        ${e.kind === "scene" && (!e.scene.cycle || (e.scene.cycle.themes || []).length > 1) ? `<span class="chip">+ theme shift</span>` : ""}
         ${e.commit ? `<span class="chip">${e.commit}</span>` : ""}</div></div></div>`);
     card.querySelector("b").textContent = e.name;
     card.querySelector("p").textContent = e.notes || "";

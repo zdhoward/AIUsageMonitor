@@ -13,9 +13,6 @@
       "bottom": "#052c46"
     },
     "theme": "original",
-    "variants": [
-      "vapor"
-    ],
     "layers": [
       {
         "src": "src/far-buildings.png",

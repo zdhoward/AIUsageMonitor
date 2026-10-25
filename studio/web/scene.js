@@ -87,7 +87,7 @@ class ScenePlayer {
   // One frame from the native engine (RGB332), with unsaved edits applied.
   async drawNative(t, warm = 0) {
     const r = await fetch("/api/frame", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entry: this.entry, t: Math.floor(t), scene: this.scene, warm }) });
+      body: JSON.stringify({ entry: this.entry, t: Math.floor(t), scene: this.scene, warm, shift: !!this.shift }) });
     if (!r.ok) throw new Error("no native frame");
     this.tuneStatus = r.headers.get("X-Tune");
     const px = new Uint8Array(await r.arrayBuffer());
@@ -147,7 +147,7 @@ class ScenePlayer {
         for (let x = -off; x < W; x += period) g.drawImage(L.img, f * L.w, 0, L.w, L.h, x, L.y, L.w, L.h);
       });
     }
-    const lut = cycleLut(s, now) || THEMES[s.theme || "original"];
+    const lut = (this.shift && cycleLut({ ...s, cycle: { hold: 20, fade: 4, ...s.cycle, themes: shiftList(s) } }, now)) || THEMES[s.theme || "original"];
     if (lut) {
       const d = g.getImageData(0, 0, W, H), p = d.data;
       for (let i = 0; i < p.length; i += 4) {
@@ -397,6 +397,7 @@ function openViewer(e, settings = false) {
   player.stop();
   if (isScene) {
     draft = structuredClone(e.scene);
+    player.shift = false;
     player.load(e.id, draft).then(renderEditor).catch(() => toast("Preview missing. Save the scene to rebuild it.", "err"));
     renderEditor();
     $("#stageInfo").textContent = "Live preview in device colours. Scroll speeds and effects match the display.";
@@ -424,7 +425,7 @@ function setLive(on) {
 }
 async function pushLive() {
   if (!liveOn || !viewing || !draft) return;
-  const body = JSON.stringify({ entry: viewing.id, scene: draft });
+  const body = JSON.stringify({ entry: viewing.id, scene: draft, shift: !!player.shift });
   if (body === liveSent) return;
   liveSent = body;
   try {
@@ -438,7 +439,7 @@ document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeMod
 
 function renderEditor() {
   const s = draft;
-  s.variants = s.variants || [];
+  delete s.variants;  // retired: theme shift replaces per-theme copies
   renderThemes();
   const layers = $("#eLayers");
   $("#eLayersWrap").hidden = !s.layers.length;
@@ -522,98 +523,100 @@ $("#vDelete").onclick = async () => {
   await load();
 };
 
-// Themes: pick the main one; ticked extras either become playlist copies or a
-// smooth in-scene cycle (cross-fading palette maps), with hold and fade times.
+// Themes: every scene plays as its original (the picked theme) and as a theme
+// shift that cross-fades through the ticked themes (all by default).
+function shiftList(s) {
+  return s.cycle ? s.cycle.themes || [] : window.THEME_INFO.map((t) => t.id);
+}
 function renderThemes() {
-  const s = draft, cycling = !!s.cycle;
+  const s = draft;
   const box = $("#eThemes");
   if (!(window.THEME_INFO || []).length) {  // themes still loading (or failed): load, then draw
     box.innerHTML = `<div class="tl-empty">Loading themes…</div>`;
     loadThemes(true).then(() => draft === s && renderThemes()).catch(() => (box.innerHTML = `<div class="tl-empty">Couldn't load themes. Is the Studio server running?</div>`));
     return;
   }
-  const extras = cycling ? (s.cycle.themes || []).slice(1) : s.variants;
-  const setExtras = (next) => { if (cycling) s.cycle.themes = [s.theme || "original", ...next]; else s.variants = next; };
-  const alsoLabel = cycling ? "In cycle" : "Playlist copy";
+  const extras = shiftList(s);
+  const setExtras = (next) => { s.cycle = { hold: 20, fade: 4, ...s.cycle, themes: next }; };
   const filter = (box.querySelector(".tl-filter") || {}).value || "";
-  box.innerHTML = `<div class="tl-head"><input class="tl-filter" placeholder="Filter ${window.THEME_INFO.length} themes…"><span>${alsoLabel}</span></div><div class="tl-rows"></div>`;
+  box.innerHTML = `<div class="tl-head"><input class="tl-filter" placeholder="Filter ${window.THEME_INFO.length} themes…"><span>In theme shift</span></div><div class="tl-rows"></div>`;
   const f = box.querySelector(".tl-filter");
   f.value = filter;
   f.oninput = () => { renderThemes(); const nf = $("#eThemes .tl-filter"); nf.focus(); nf.setSelectionRange(nf.value.length, nf.value.length); };
   const rows = box.querySelector(".tl-rows");
   const info = window.THEME_INFO;
   const main = s.theme || "original";
-  // current theme first, then ticked extras in their order, then everything else
-  const order = [main, ...extras, ...info.map((t) => t.id).filter((id) => id !== main && !extras.includes(id))];
+  // ticked themes in shift order, then everything else
+  const order = [...extras, ...info.map((t) => t.id).filter((id) => !extras.includes(id))];
   order.map((id) => info.find((t) => t.id === id)).filter(Boolean)
     .filter((t) => !filter || (t.name + " " + (t.author || "")).toLowerCase().includes(filter.toLowerCase()))
     .forEach((t) => {
       const isMain = t.id === main, extra = extras.includes(t.id), k = extras.indexOf(t.id);
-      const row = el(`<div class="tl-row ${isMain ? "main" : ""} ${extra ? "extra" : ""}" title="Click to use this theme">
+      const row = el(`<div class="tl-row ${isMain ? "main" : ""} ${extra ? "extra" : ""}" title="Click to use this theme for the original">
         <span class="tl-check">${isMain ? "✓" : ""}</span>
         <span class="sw-strip wide">${t.colors.map((c) => `<i style="background:${c}"></i>`).join("")}</span>
         <div class="tl-name"><b></b><small></small></div>
         <span class="tl-move">${extra && extras.length > 1 ? `<button class="mini-btn" data-d="-1" title="Earlier">↑</button><button class="mini-btn" data-d="1" title="Later">↓</button>` : ""}</span>
         ${t.kind === "palette" ? '<button class="mini-btn del" title="Remove palette">×</button>' : "<span></span>"}
-        <label class="tl-also" title="${cycling ? "Fade to this theme in the cycle" : "Also add this theme as its own playlist entry"}">
-          <input type="checkbox" ${extra ? "checked" : ""} ${isMain ? "disabled" : ""}></label>
+        <label class="tl-also" title="Fade to this theme in the theme shift">
+          <input type="checkbox" ${extra ? "checked" : ""}></label>
       </div>`);
-      row.querySelector("b").textContent = t.name + (isMain ? "  (current)" : "");
+      row.querySelector("b").textContent = t.name + (isMain ? "  (original)" : "");
       row.querySelector("small").textContent = t.kind === "palette" ? `Lospec · ${t.author || "unknown"} · ${t.colors.length} colours` : "Built in";
       row.onclick = (ev) => {
         if (ev.target.closest("button, label")) return;
         s.theme = t.id;
-        setExtras(extras.filter((x) => x !== t.id));
-        renderThemes();
+        setPreview(false);
       };
       row.querySelector(".tl-also input").onchange = (e) => {
         setExtras(e.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id));
-        renderThemes();
+        setPreview(true);
       };
       row.querySelectorAll("[data-d]").forEach((btn) => (btn.onclick = () => {
         const next = [...extras], j = k + +btn.dataset.d;
         if (j < 0 || j >= next.length) return;
         [next[k], next[j]] = [next[j], next[k]];
         setExtras(next);
-        renderThemes();
+        setPreview(true);
       }));
       const del = row.querySelector(".del");
       if (del) del.onclick = async () => {
         if (!confirm(`Remove the ${t.name} palette? Scenes using it fall back to original colours.`)) return;
         await api(`/api/themes/${t.id}/delete`, {});
         if (s.theme === t.id) s.theme = "original";
-        setExtras(extras.filter((x) => x !== t.id));
+        if (s.cycle) setExtras(extras.filter((x) => x !== t.id));
         await loadThemes(true);
         renderThemes();
       };
       rows.append(row);
     });
+  const shift = player.shift, n = extras.length;
   const mode = $("#eThemeMode");
-  mode.innerHTML = `<div class="seg"><button data-m="copies" class="${cycling ? "" : "on"}">Ticked themes → playlist copies</button>
-    <button data-m="cycle" class="${cycling ? "on" : ""}">Ticked themes → smooth cycle</button></div>
-    <span class="cyc" ${cycling ? "" : "hidden"}>Hold <input type="number" min="1" class="c-hold"> s · Fade <input type="number" min="0" step="0.5" class="c-fade"> s</span>
+  mode.innerHTML = `<div class="seg"><button data-m="0" class="${shift ? "" : "on"}">Preview original</button>
+    <button data-m="1" class="${shift ? "on" : ""}" ${n > 1 ? "" : "disabled"}>Preview theme shift</button></div>
+    <span class="cyc">Hold <input type="number" min="1" class="c-hold"> s · Fade <input type="number" min="0" step="0.5" class="c-fade"> s</span>
+    <button class="btn ghost" data-all="1">Tick all</button><button class="btn ghost" data-all="0">Untick all</button>
     <button class="btn ghost" id="lospecBtn">Browse Lospec palettes</button>`;
-  mode.querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => {
-    if (b.dataset.m === "cycle" && !s.cycle) {
-      s.cycle = { themes: [s.theme || "original", ...s.variants], hold: 20, fade: 4 };
-      s.variants = [];
-    } else if (b.dataset.m === "copies" && s.cycle) {
-      s.variants = s.cycle.themes.slice(1);
-      delete s.cycle;
-    }
-    renderThemes();
+  mode.querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => setPreview(b.dataset.m === "1")));
+  mode.querySelectorAll("[data-all]").forEach((b) => (b.onclick = () => {
+    setExtras(b.dataset.all === "1" ? info.map((t) => t.id) : []);
+    setPreview(b.dataset.all === "1");
   }));
-  if (cycling) {
-    const hold = mode.querySelector(".c-hold"), fade = mode.querySelector(".c-fade");
-    hold.value = s.cycle.hold ?? 20;
-    fade.value = s.cycle.fade ?? 4;
-    hold.oninput = () => (s.cycle.hold = Math.max(1, +hold.value || 1));
-    fade.oninput = () => (s.cycle.fade = Math.max(0, +fade.value || 0));
-  }
-  $("#eThemeHint").textContent = cycling
-    ? `Cycles ${s.cycle.themes.length} themes inside this scene, holding each ${s.cycle.hold}s and cross-fading for ${s.cycle.fade}s.`
-    : "Ticked themes become separate playlist entries. They reuse the same art, so they cost almost nothing.";
+  const hold = mode.querySelector(".c-hold"), fade = mode.querySelector(".c-fade");
+  hold.value = s.cycle?.hold ?? 20;
+  fade.value = s.cycle?.fade ?? 4;
+  hold.oninput = () => { setExtras(extras); s.cycle.hold = Math.max(1, +hold.value || 1); };
+  fade.oninput = () => { setExtras(extras); s.cycle.fade = Math.max(0, +fade.value || 0); };
+  $("#eThemeHint").textContent = n > 1
+    ? `Plays twice: the original in ${main}, then a theme shift through ${n} themes, holding each ${s.cycle?.hold ?? 20}s and cross-fading for ${s.cycle?.fade ?? 4}s.`
+    : "Tick two or more themes to add a theme shift. With fewer, only the original plays.";
   $("#lospecBtn").onclick = openLospec;
+}
+// Which playlist entry the preview (and live display) shows: the original or its theme shift.
+function setPreview(shift) {
+  player.shift = shift && shiftList(draft).length > 1;
+  liveSent = "";
+  renderThemes();
 }
 
 // Lospec browser: search palettes by tag, or paste a palette link.
