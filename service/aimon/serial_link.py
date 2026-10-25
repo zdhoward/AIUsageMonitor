@@ -12,6 +12,7 @@ import threading
 import time
 
 from . import log
+from .sysstats import SysSampler
 
 try:
     import serial
@@ -47,6 +48,7 @@ class SerialLink:
         self.last_ack: float | None = None
         self.last_push: float | None = None
         self.connected_port: str | None = None
+        self.sys = SysSampler()
 
     def pause(self, seconds: float) -> None:
         """Release the port (e.g. so a firmware upload can use it)."""
@@ -108,6 +110,7 @@ class SerialLink:
             return
         buf = b""
         next_push = 0.0
+        next_sys = 0.0
         retry_at = 0.0
         while not self._stop.is_set():
             now = time.time()
@@ -120,25 +123,36 @@ class SerialLink:
                     self._stop.wait(1)
                     continue
                 next_push = 0.0
+            # pause() may close and clear self._ser from the HTTP thread at any moment.
+            ser = self._ser
+            if ser is None:
+                continue
             try:
                 if now >= next_push or self._push.is_set():
                     self._push.clear()
                     line = json.dumps(self.get_payload(), separators=(",", ":")) + "\n"
                     encoded = line.encode("utf-8")
                     if len(encoded) <= 4096:
-                        self._ser.write(encoded)
+                        ser.write(encoded)
                         self.last_push = now
                     else:
                         log.warn("serial.payload_too_large", bytes=len(encoded))
                     next_push = now + min(self.interval_s, 5.0)
-                waiting = self._ser.in_waiting
+                if now >= next_sys:  # System page: small line, once a second
+                    next_sys = now + 1.0
+                    stats = self.sys.sample()
+                    if stats:
+                        ser.write((json.dumps(stats, separators=(",", ":")) + "\n").encode("utf-8"))
+                waiting = ser.in_waiting
                 if waiting:
-                    buf += self._ser.read(waiting)
+                    buf += ser.read(waiting)
                     *lines, buf = buf.split(b"\n")
                     for raw in lines:
                         self._on_device_line(raw.decode("utf-8", "replace").strip())
                     buf = buf[-2048:]
-            except (serial.SerialException, OSError) as e:
+            except Exception as e:  # never let the serial thread die
+                if self._ser is not ser:  # closed underneath us by pause(); not a device error
+                    continue
                 log.warn("serial.io_error", port=self.connected_port, err=str(e)[:120])
                 self._close("error")
                 retry_at = now + 3
