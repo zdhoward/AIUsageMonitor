@@ -22,6 +22,7 @@ PAGES = {  # profile name -> (page macro, enable macro or None when always prese
     "image": ("UI_PAGE_IMAGE", "UI_IMAGE_ENABLED"),
     "city": ("UI_PAGE_CITY", "UI_CITY_ENABLED"),
     "scenes": ("UI_PAGE_SCENES", "UI_SCENES_ENABLED"),
+    "system": ("UI_PAGE_SYSTEM", None),
 }
 MAX_MS = 2147483647
 

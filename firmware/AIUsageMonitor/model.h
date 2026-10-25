@@ -82,3 +82,27 @@ struct Model {
 };
 
 bool parsePayload(const char* json, size_t len, Model& out);
+
+// PC resources for the System page. Arrives as its own {"t":"sys"} line about
+// once a second, independent of the usage payload. History rings hold the last
+// SYS_HIST samples, oldest at `head`.
+#define SYS_HIST 60
+#define SYS_CORES 16
+struct SysData {
+  bool valid = false;
+  uint32_t rxMillis = 0;
+  int8_t cpu = -1;
+  uint8_t ncores = 0;
+  uint8_t core[SYS_CORES] = {};
+  uint32_t memUsed = 0, memTotal = 0;  // MiB
+  uint32_t diskR = 0, diskW = 0, netR = 0, netS = 0;  // KiB/s
+  uint32_t uptime = 0;  // s, 0 unknown
+  struct { char n[15]; uint8_t c; } top[3];
+  uint8_t ntop = 0;
+  uint8_t cpuHist[SYS_HIST] = {}, memHist[SYS_HIST] = {};
+  uint32_t netHist[SYS_HIST] = {};
+  uint8_t head = 0, count = 0;
+};
+extern SysData gSys;
+
+bool parseSys(const char* json, size_t len, SysData& out);

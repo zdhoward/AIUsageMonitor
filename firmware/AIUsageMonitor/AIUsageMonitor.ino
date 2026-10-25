@@ -171,7 +171,10 @@ static void pollSerial() {
     if (c == '\n') {
       lineBuf[lineLen] = 0;
       if (!overflow && lineLen > 0 && lineBuf[0] == '!') handleCommand(lineBuf);
-      if (!overflow && lineLen > 0 && lineBuf[0] == '{') acceptPayload(lineBuf, lineLen);
+      if (!overflow && lineLen > 0 && lineBuf[0] == '{') {
+        if (!strncmp(lineBuf, "{\"t\":\"sys\"", 10)) parseSys(lineBuf, lineLen, gSys);  // no ACK
+        else acceptPayload(lineBuf, lineLen);
+      }
       lineLen = 0;
       overflow = false;
     } else if (c != '\r') {

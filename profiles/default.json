@@ -5,6 +5,7 @@
   "pages": [
     "console",
     "details",
+    "system",
     "companion",
     "image",
     "city",

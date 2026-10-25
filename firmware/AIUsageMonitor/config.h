@@ -9,7 +9,7 @@
 // Board: ESP32-2432S024C (ESP32-D0WD-V3, ILI9341 240x320 SPI, CH340 USB-serial)
 // ============================================================================
 
-#define FW_VERSION "1.5.0"
+#define FW_VERSION "1.6.0"
 
 // ---------------------------------------------------------------------------
 // DISPLAY_ROTATION: the one setting to change when you remount the screen.
@@ -141,6 +141,7 @@
 #define UI_PAGE_SCREENSAVER 4
 #define UI_PAGE_CITY 5
 #define UI_PAGE_SCENES 6
+#define UI_PAGE_SYSTEM 7
 // Single-scene pages: UI_SCENE_PAGE_BASE + index into SCENES (scenes_gen.h).
 #define UI_SCENE_PAGE_BASE 100
 // Playlist pages: UI_PLAYLIST_PAGE_BASE + index into the profile's playlists.
@@ -188,7 +189,7 @@
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
-#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || (UI_SCREENSAVER_PAGE > UI_PAGE_SCENES && UI_SCREENSAVER_PAGE < UI_SCENE_PAGE_BASE) || UI_SCREENSAVER_PAGE > 255
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || (UI_SCREENSAVER_PAGE > UI_PAGE_SYSTEM && UI_SCREENSAVER_PAGE < UI_SCENE_PAGE_BASE) || UI_SCREENSAVER_PAGE > 255
 #error "Unknown screensaver target page"
 #endif
 #endif
