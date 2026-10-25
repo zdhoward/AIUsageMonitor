@@ -23,7 +23,7 @@
       "type": "matrix",
       "speed": 12,
       "density": 70,
-      "scale": 1,
+      "scale": 2,
       "colors": [
         "#000000",
         "#003b12",

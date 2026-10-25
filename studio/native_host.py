@@ -79,25 +79,28 @@ class NativeHost:
     def index(self, scene_id: str) -> int:
         return self.ids.index(scene_id) if scene_id in self.ids else -1
 
-    def blob(self, entry_id: str, scene: dict) -> bytes:
+    def blob(self, entry_id: str, scene: dict, shift: bool = False) -> bytes:
         import scenes  # scripts/ is on sys.path (server.py)
-        key = entry_id + json.dumps(scene, sort_keys=True)
+        key = f"{entry_id}{shift}" + json.dumps(scene, sort_keys=True)
         if key not in self.blobs:
             if len(self.blobs) > 64:
                 self.blobs.clear()
-            self.blobs[key] = scenes.tune_blob(entry_id, scene, self.index(entry_id))
+            target = entry_id + scenes.SHIFT_SUFFIX if shift else entry_id
+            self.blobs[key] = scenes.tune_blob(entry_id, scene, self.index(target), shift)
         return self.blobs[key]
 
-    def render(self, entry_id: str, t: int, scene: dict | None, warm: int = 0) -> tuple[bytes, str]:
-        """RGB332 frame for an entry (optionally with unsaved edits)."""
-        i = self.index(entry_id)
+    def render(self, entry_id: str, t: int, scene: dict | None, warm: int = 0,
+               shift: bool = False) -> tuple[bytes, str]:
+        """RGB332 frame for an entry or its theme shift (optionally with unsaved edits)."""
+        import scenes
+        i = self.index(entry_id + scenes.SHIFT_SUFFIX if shift else entry_id)
         if not self.dll or i < 0:
             raise LookupError("not in the preview engine yet")
         status = "ok"
         blob = b""
         if scene is not None:
             try:
-                blob = self.blob(entry_id, scene)
+                blob = self.blob(entry_id, scene, shift)
             except (ValueError, OSError, KeyError) as e:
                 status = f"untuned: {e}"
         buf = (ctypes.c_ubyte * (W * H))()

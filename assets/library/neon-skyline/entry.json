@@ -13,10 +13,6 @@
       "bottom": "#281d51"
     },
     "theme": "original",
-    "variants": [
-      "toxic",
-      "dusk"
-    ],
     "layers": [
       {
         "src": "src/back.png",

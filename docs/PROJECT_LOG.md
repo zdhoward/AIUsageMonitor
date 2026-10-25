@@ -182,3 +182,9 @@
 - **Fix:** the display stopped updating because a Studio pause cleared the serial handle mid-write and the uncaught `AttributeError` killed the serial thread silently (pythonw has no stderr). The loop now uses a local handle and survives any exception.
 - **System page** (`system`): CPU history and per-core bars, memory, disk and network rates, top three processes. Stats travel as a separate 1 Hz `{"t":"sys"}` line so the 4 KB usage push keeps its cadence; the device keeps 60 s of history. Needs `psutil`. No GPU stats (no vendor-neutral source without extra tooling).
 - **System page redesign** (same day): owner wanted CPU, RAM, GPU, disk R/W, upload and download only, no graphs, smoother updates. Dropped histories and the process scan (it blocked the serial loop every 3 s, causing stutter). Added GPU load from Windows "GPU Engine" PDH counters via ctypes (busiest engine type, as Task Manager shows). Values ease on the device at ~250 ms.
+
+## 2026-10-25 — v1.7.0 Theme shift replaces per-theme copies
+
+- **Two entries per scene:** the original (its picked theme) and `<id>-shift`, which cross-fades through the ticked themes. All themes are ticked by default (a scene with no `cycle` uses every theme). `variants` is retired. The owner wanted fewer near-duplicate copies and themes they can edit in one place.
+- **Studio:** the theme list ticks themes for the shift, a toggle previews the original or the shift, and hold and fade are always editable. Tune blobs carry the cycle only for the shift entry. `MAX_CYCLE` went from 5 to 16 (needs a reflash for live tuning on the device).
+- **Fix:** on Windows, `SO_REUSEADDR` let a second Studio bind port 8798 alongside the first, so requests split between old and new code (broken previews, settings that "did nothing"). The server now binds exclusively, so a second launch only opens a window.

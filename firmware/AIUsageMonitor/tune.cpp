@@ -2,7 +2,7 @@
 #include <string.h>
 #include "scenes_gen.h"
 
-static const int MAX_LAYERS = 16, MAX_FX = 8, MAX_COLORS = 32, MAX_CYCLE = 5;
+static const int MAX_LAYERS = 16, MAX_FX = 8, MAX_COLORS = 32, MAX_CYCLE = 16;
 static SceneDef tDef;
 static SceneLayer tLayers[MAX_LAYERS];
 static SceneEffect tFx[MAX_FX];

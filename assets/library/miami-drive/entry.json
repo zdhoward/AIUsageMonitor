@@ -13,10 +13,6 @@
       "bottom": "#133e88"
     },
     "theme": "original",
-    "variants": [
-      "night",
-      "ice"
-    ],
     "layers": [
       {
         "src": "src/back.png",

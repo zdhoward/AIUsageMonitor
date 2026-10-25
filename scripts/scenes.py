@@ -4,11 +4,12 @@ A scene is a library entry (assets/library/<id>/entry.json) with a "scene" objec
 
   background  {"top": "#hex", "bottom": "#hex"}       sky gradient
   theme       name from THEMES (palette remap applied on the device)
-  variants    extra themes; each is its own playlist entry sharing the layer data
-  cycle       {"themes": [...], "hold": s, "fade": s}: the scene itself cycles
-              through these themes, cross-fading for `fade` seconds after holding
-              each for `hold` seconds. Themes may be built in or palettes from
-              assets/themes/*.json (e.g. imported from Lospec).
+  cycle       {"themes": [...], "hold": s, "fade": s}: every scene compiles to two
+              playlist entries, the original (in `theme`) and "<id>-shift", which
+              cycles through these themes, cross-fading for `fade` seconds after
+              holding each for `hold` seconds. Missing cycle = all themes; fewer
+              than two themes = no shift entry. Themes may be built in or palettes
+              from assets/themes/*.json (e.g. imported from Lospec).
   layers[]    back to front:
     src       file or list of files (png/gif/aseprite) relative to the entry folder
     layer     optional Aseprite layer name
@@ -137,6 +138,7 @@ THEMES = {
 
 
 THEMES_DIR = ROOT / "assets" / "themes"
+MAX_CYCLE = 16  # themes per shift; MAX_CYCLE in firmware tune.cpp
 
 
 def palettes() -> dict:
@@ -305,20 +307,28 @@ def selected(profile: str | None) -> set | None:
     return None if sel == "all" else set(sel)
 
 
-def scene_themes(sc: dict) -> list[str]:
-    return [sc.get("theme", "original")] + [t for t in sc.get("variants", []) if t != sc.get("theme")]
+SHIFT_SUFFIX = "-shift"
+
+
+def shift_themes(sc: dict) -> list[str]:
+    """Themes the scene's theme-shift entry cycles through ([] = no shift entry)."""
+    names = theme_names()
+    cyc = sc.get("cycle")
+    themes = names if cyc is None else [t for t in cyc.get("themes", []) if t in names]
+    return themes[:MAX_CYCLE] if len(themes) > 1 else []
 
 
 def scene_list(profile: str | None = None) -> list[dict]:
-    """Compiled scenes in firmware order (SCENES[i]); variants follow their base."""
+    """Compiled scenes in firmware order (SCENES[i]); each theme shift follows its original."""
     want = selected(profile)
     out = []
     for sid, _, e in library_scenes():
         if want is not None and sid not in want:
             continue
-        for k, theme in enumerate(scene_themes(e["scene"])):
-            out.append({"id": sid if k == 0 else f"{sid}-{theme}", "entry": sid, "theme": theme,
-                        "name": e.get("name", sid) + ("" if k == 0 else f" ({theme})")})
+        name = e.get("name", sid)
+        out.append({"id": sid, "entry": sid, "theme": e["scene"].get("theme", "original"), "name": name})
+        if shift_themes(e["scene"]):
+            out.append({"id": sid + SHIFT_SUFFIX, "entry": sid, "theme": "shift", "name": f"{name} (theme shift)"})
     return out
 
 
@@ -381,21 +391,22 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
             return luts[key]
 
         cyc = sc.get("cycle") or {}
-        cyc_themes = [t for t in cyc.get("themes", []) if t in theme_names()]
-        cycle = "nullptr, 0, 0, 0"
-        if len(cyc_themes) > 1:
+        cyc_themes = shift_themes(sc)
+        cycle = ""
+        if cyc_themes:
             refs = [lut_ref(t) for t in cyc_themes]
             cpp.append(f"static const uint8_t* const {n}_cycle[] = {{{', '.join(refs)}}};\n")
             cycle = (f"{n}_cycle, {len(refs)}, {int(max(1, cyc.get('hold', 20)))}, "
                      f"{int(max(0, cyc.get('fade', 4)) * 10)}")
-        themes = scene_themes(sc)
-        for k, theme in enumerate(themes):
-            ref = lut_ref(theme) if lut(theme) else "nullptr"
-            vid = sid if k == 0 else f"{sid}-{theme}"
-            vname = name if k == 0 else f"{name} ({theme})"
+        theme = sc.get("theme", "original")
+        ref = lut_ref(theme) if lut(theme) else "nullptr"
+        entries = [(sid, name, "nullptr, 0, 0, 0")]
+        if cycle:
+            entries.append((sid + SHIFT_SUFFIX, f"{name} (theme shift)", cycle))
+        for vid, vname, cyc_ref in entries:
             defs.append(f'  {{"{vid}", "{vname}", {{{top[0]}, {top[1]}, {top[2]}}}, {{{bot[0]}, {bot[1]}, {bot[2]}}}, '
                         f"{f'{n}_layers' if rows else 'nullptr'}, {len(layers)}, {f'{n}_fx' if fx else 'nullptr'}, {len(fx)}, "
-                        f"{ref}, {gen}, {cycle if k == 0 else 'nullptr, 0, 0, 0'}}}")
+                        f"{ref}, {gen}, {cyc_ref}}}")
         cpp.append("\n")
     if defs:
         cpp.append("const SceneDef SCENES[] = {\n" + ",\n".join(defs) + "\n};\n")
@@ -412,7 +423,7 @@ if __name__ == "__main__":
 
 
 # ------------------------------------------------------------------ live tuning
-def tune_blob(entry_id: str, sc: dict, index: int) -> bytes:
+def tune_blob(entry_id: str, sc: dict, index: int, shift: bool = False) -> bytes:
     """Encode a scene's adjustable settings in the tune.h v1 format.
 
     Layer art is not re-sent: positions and sizes come from the last build's
@@ -445,8 +456,7 @@ def tune_blob(entry_id: str, sc: dict, index: int) -> bytes:
         out += struct.pack("<BBhhHB", spec["type"], spec["scale"], spec["vx16"], spec["vy16"], spec["seconds"], len(colors))
         out += bytes(colors)
     cyc = sc.get("cycle") or {}
-    themes = [t for t in cyc.get("themes", []) if t in theme_names()][:5]
-    themes = themes if len(themes) > 1 else []
+    themes = shift_themes(sc) if shift else []
     out += struct.pack("<BHH", len(themes), int(max(1, cyc.get("hold", 20))), int(max(0, cyc.get("fade", 4)) * 10))
     for t in themes:
         out += bytes(lut(t) or range(256))
@@ -522,4 +532,4 @@ def auto_scene(entry_dir: Path, files: list[str]) -> dict:
     # Art shorter than the screen leaves sky above it: match its top edge so there is no band.
     short = back.size[1] * k < SCENE_H - 1
     return {"background": {"top": avg(0), "bottom": avg(0) if short else avg(back.size[1] - 1)}, "theme": "original",
-            "variants": [], "layers": layers, "effects": []}
+            "layers": layers, "effects": []}
