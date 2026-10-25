@@ -37,8 +37,8 @@
     </div>
     <div class="actions">
       <span class="dirty" id="dirty">Unsaved changes</span>
-      <button class="btn ghost" id="save">Save profile</button>
-      <button class="btn primary" id="send"><span>Send to display</span></button>
+      <button class="btn ghost" id="save" title="Saves the profile without changing the display">Save profile</button>
+      <button class="btn primary" id="send" title="Saves the profile, then builds and flashes the display (about a minute)"><span>Send to display</span></button>
     </div>
   </header>
 
@@ -237,7 +237,7 @@
   </div>
 </div>
 
-<div class="toasts" id="toasts"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <script src="studio.js"></script>
 <script src="scene.js"></script>
 <script src="playlists.js"></script>

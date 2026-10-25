@@ -200,3 +200,9 @@
 
 - **SVG sources:** `asset_convert.py` rasterizes `.svg` with `resvg-py` (prebuilt wheels, no Cairo install on Windows), fitted to 300x210 by the `viewBox`. An optional `bg` flattens anti-aliased edges onto the page colour, because RGB332 has no alpha and a plain 128 cut leaves jagged edges.
 - **Images page rotation:** manifest entries with `"image": true` rotate every `UI_IMAGE_SECONDS` (10 s). Each turn restarts its animation. The owner's grid logo (`assets/img/grid_logo_1_light.svg`, 3.5 KB encoded) is the SVG test case; the device capture is in `docs/img/svg-logo.png`.
+
+## 2026-10-25 — v1.10.0 Studio UX pass (Studio only, firmware unchanged at 1.9.0)
+
+- **Review:** all five tabs at 1280 and 900 px. Unsaved-change warnings and flash progress already existed. The gaps were visibility, keyboard access and small labels.
+- **Changes:** a more visible "Unsaved changes" chip; ↑/↓ move buttons on enabled pages (keyboard alternative to dragging, focus follows the row); `:focus-visible` outlines and a reduced-motion rule; toasts announced (`aria-live`); thumbnail and switch labels; a theme badge on themed or shift thumbnails; library filter counts; the Display tab captures on arrival; button tooltips that say what Save and Send do; no button text wrapping at narrow widths; Images described as an image rotation.
+- **Deferred:** grouping the 19-row page list (main pages vs scene pages) needs a design sketch first. Using one term for display/device across UI and docs is also still open.
