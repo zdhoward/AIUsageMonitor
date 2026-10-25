@@ -1,5 +1,9 @@
 # Accepted display decisions
 
+## Due quota visibility (2026-10-25)
+
+- Keep Console/Details awake, and leave an active automatic saver, whenever any reported quota window is due and its known usage is below 100% used. Unknown values and fully used quotas do not block saving. Delivered in v1.11.1; direct trigger acceptance remains pending.
+
 ## Profiles and wording (2026-10-25)
 
 - **Wording:** the hardware is "the display" in the UI and user docs. "Device" is only for hardware/technical contexts (USB detection, reboot).

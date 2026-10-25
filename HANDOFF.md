@@ -1,4 +1,12 @@
-# Handoff — v1.11.0 Profiles, random weather, SVG images, long-press home (2026-10-25)
+# Handoff — v1.11.1 Due quota keeps the dashboard awake (2026-10-25)
+
+## Latest session: due-quota screensaver suppression
+
+- Implemented and flashed **v1.11.1**, Default profile, COM6. Commit `c5d4858` and tag `v1.11.1` are pushed on `main`; no open PRs.
+- `hasDueAvailableUsage` in `firmware/AIUsageMonitor/ui.cpp` checks every reported account/window using the same elapsed reset countdown as the caption. Known usage of 0–99% used with a due reset blocks automatic saving and wakes an active saver, including when usage-change waking is disabled. Unknown values and 100%-used windows do not block it.
+- Validation: production build passed (583,159 bytes flash / 87,984 bytes static RAM), upload hash verified, and actual framebuffer captures inspected. `build/screensaver-build.log`, `build/screensaver-flash.log`, `build/screensaver-due.png` and `build/screensaver-dashboard.png` are local evidence. The 31-second capture showed the normal saver; live data had no qualifying due window. The final capture restored Console. These captures do **not** verify the new due trigger.
+- Next: at the owner's testing phase, feed a known due window below 100% used and confirm Console/Details remain awake beyond 30 seconds and wake from an active saver. Also check unknown/100%-used exclusions and a deadline crossing. Broader existing acceptance stays open in `docs/SCREENSAVER.md`; automated tests were not run this session.
+- Existing scene/audio/stock backlog is unchanged; see the previous session below and `.tickets/README.md`.
 
 ## Latest session (v1.8.0 – v1.11.0)
 

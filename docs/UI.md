@@ -17,6 +17,11 @@ Each dashboard has separate `UI_CONSOLE_SAVER_ENABLED` / `UI_DETAILS_SAVER_ENABL
 
 Usage comparison includes quota percentages, account/window identity, availability/errors, costs, tokens, request counts and activity state/model. It ignores packet sequence, clock, reset countdown, source age/staleness and MINT updates. Repeated identical measurements do not wake the display. Policies are for logical views on this panel, not independent physical displays.
 
+A separate visibility rule overrides saving and the usage-change wake switches:
+any reported window that is `due` with known usage below 100% used keeps the
+dashboard awake and wakes an active saver. Unknown usage/reset times and fully
+used windows do not block saving. See [screensaver acceptance](SCREENSAVER.md).
+
 Optional pages default on and are removable with `UI_COMPANION_ENABLED` and `UI_IMAGE_ENABLED` in `config.h`. Console and Details remain available. Visual pages render without quota data; dashboard waiting behaviour remains for Console/Details.
 
 Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px rows starting at y24, and a footer at y222. Portrait stacks three taller cards with 4px gaps and wider spacing between lines. Both derive geometry from `width()`/`height()`, so all four rotations work.

@@ -4,6 +4,7 @@
 
 - A known quota below 100% used with a passed reset deadline now prevents automatic saving and wakes an active saver, keeping available usage visible. Unknown values and exhausted quotas do not block saving.
 - Default-profile production build passed: 583,159 bytes flash and 87,984 bytes static RAM. Flashed COM6 with hash verification. Automated tests remain deferred to the owner's sprint-end phase.
+- Wrap-up: recorded accepted behavior, refreshed handoff/ticket baseline and retained direct due-trigger acceptance. Inspected live captures (normal saver, then restored Console); no qualifying due state was present. No open PRs to merge. Session retrospective logged; no shared policy changes or pending approvals.
 
 ## 2026-10-24: daylight brightness installed
 

@@ -1,5 +1,11 @@
 # Test report
 
+## v1.11.1 due quota visibility (2026-10-25)
+
+- Default-profile firmware build passed: 583,159 bytes flash / 87,984 bytes static RAM. COM6 flash hash verified; `git diff --check` passed.
+- Inspected local framebuffer captures: `build/screensaver-due.png` shows the normal saver after 31 seconds; `build/screensaver-dashboard.png` shows Console restored afterward. Live windows had no qualifying due state, so these captures do not verify the new suppression trigger.
+- Direct due-trigger acceptance and automated tests remain pending under the owner's testing schedule. See [screensaver acceptance](SCREENSAVER.md).
+
 ## T-011 daylight backlight (2026-10-24)
 
 - Production firmware build: 420,143 bytes flash / 29,808 bytes static RAM; Python syntax/runtime import and live API passed. Temporary HTTP-only service demonstrated configured brightness fields and clean shutdown; evidence `build/t011-http-smoke.log`.
