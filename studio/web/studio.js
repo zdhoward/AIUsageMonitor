@@ -5,7 +5,7 @@ const PAGES = {
   console:   { name: "Console", desc: "Quota rings for every client", thumb: "/docimg/v1.4.2-rings.png", locked: true },
   details:   { name: "Details", desc: "Full usage breakdown", thumb: "/docimg/T-008A-details.png", locked: true },
   companion: { name: "Companion", desc: "MINT, the robot face", thumb: "/docimg/MINT-happy-device.png", scene: true },
-  image:     { name: "Images", desc: "GIF player", thumb: "/docimg/images-page.png", scene: true },
+  image:     { name: "Images", desc: "Rotates your images (GIF, PNG, SVG)", thumb: "/docimg/images-page.png", scene: true },
   city:      { name: "Synthwave City", desc: "Living pixel scene", thumb: "/docimg/city.png", scene: true },
   system:    { name: "System", desc: "Task Manager style PC resources", thumb: "/docimg/system-page.png" },
   scenes:    { name: "All scenes", desc: "Rotates through every scene in the library", thumb: "/library/miami-drive/preview.png", scene: true },
@@ -78,14 +78,22 @@ function renderPages() {
   const ul = $("#pages");
   ul.innerHTML = "";
   orderedPages().forEach((id) => {
-    const p = pageInfo(id), on = profile.pages.includes(id);
+    const p = pageInfo(id), on = profile.pages.includes(id), at = profile.pages.indexOf(id);
     const li = el(`<li class="page ${on ? "" : "off"}" draggable="true" data-id="${id}">
-      <span class="grip">⋮⋮</span><span class="num">${profile.pages.indexOf(id) + 1}</span>
-      <div class="thumb${p.theme && p.theme !== "original" ? " themed" : ""}" style="background-image:url('${p.thumb}')"></div>
+      <span class="grip" aria-hidden="true">⋮⋮</span><span class="num">${at + 1}</span>
+      <div class="thumb${p.theme && p.theme !== "original" ? " themed" : ""}" data-theme="${p.theme || ""}" role="img" aria-label="${p.name} preview" style="background-image:url('${p.thumb}')"></div>
       <div class="meta"><b>${p.name}</b><small>${p.desc}</small></div>
+      ${on ? `<span class="move"><button class="icon-btn up" title="Move up" aria-label="Move ${p.name} up" ${at === 0 ? "disabled" : ""}>↑</button><button class="icon-btn down" title="Move down" aria-label="Move ${p.name} down" ${at === profile.pages.length - 1 ? "disabled" : ""}>↓</button></span>` : ""}
       ${p.locked ? '<span class="lock">Always on</span>'
-                 : `<label class="switch"><input type="checkbox" ${on ? "checked" : ""}><i></i></label>`}
+                 : `<label class="switch"><input type="checkbox" aria-label="Show ${p.name} on the display" ${on ? "checked" : ""}><i></i></label>`}
     </li>`);
+    // Keyboard-friendly alternative to dragging; keeps focus on the moved row.
+    li.querySelectorAll(".move button").forEach((b) => (b.onclick = () => {
+      const to = at + (b.classList.contains("up") ? -1 : 1), pages = profile.pages;
+      [pages[at], pages[to]] = [pages[to], pages[at]];
+      touch();
+      $(`#pages [data-id="${id}"] .move .${b.classList.contains("up") ? "up" : "down"}`)?.focus();
+    }));
     const box = li.querySelector("input");
     if (box) box.onchange = () => {
       profile.pages = box.checked ? [...profile.pages, id] : profile.pages.filter((x) => x !== id);
@@ -134,7 +142,7 @@ function renderSaver() {
   allPages().filter((id) => pageInfo(id).scene).forEach((id) => {
     const p = pageInfo(id);
     const b = el(`<button class="scene ${s.page === id ? "on" : ""}">
-      <div class="img${p.theme && p.theme !== "original" ? " themed" : ""}" style="background-image:url('${p.thumb}')"></div>
+      <div class="img${p.theme && p.theme !== "original" ? " themed" : ""}" data-theme="${p.theme || ""}" role="img" aria-label="${p.name} preview" style="background-image:url('${p.thumb}')"></div>
       <div class="cap">${p.name}<small>${p.desc}</small></div></button>`);
     b.onclick = () => { s.page = id; touch(); };
     box.append(b);
@@ -177,6 +185,10 @@ let libFilter = "all";
 function renderLibrary() {
   const box = $("#library");
   box.innerHTML = "";
+  document.querySelectorAll("#libFilter button").forEach((b) => {
+    const n = state.library.filter((e) => b.dataset.f === "all" || (e.kind || "capture") === b.dataset.f).length;
+    b.textContent = `${b.dataset.label || (b.dataset.label = b.textContent)} (${n})`;
+  });
   const items = state.library.filter((e) => libFilter === "all" || (e.kind || "capture") === libFilter);
   if (!items.length) {
     box.append(el(`<div class="empty">Nothing here yet. Import art, or capture the display and save it from the Display tab.</div>`));
@@ -332,6 +344,8 @@ document.querySelectorAll(".nav").forEach((b) => (b.onclick = () => {
   document.querySelectorAll(".nav").forEach((x) => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === `tab-${b.dataset.tab}`));
   [$("#title").textContent, $("#subtitle").textContent] = TABS[b.dataset.tab];
+  // The Display tab is empty until a capture; take the first one on arrival.
+  if (b.dataset.tab === "device" && !$("#screen img")) capture();
 }));
 window.onbeforeunload = () => (dirty ? true : undefined);
 
