@@ -1,0 +1,34 @@
+{
+  "name": "Ripples",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by termflix (MIT)",
+  "notes": "Raindrops on a dark pond: a height-field water simulation.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "night"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "ripple",
+      "scale": 4,
+      "density": 60,
+      "colors": [
+        "#010a1a",
+        "#05305a",
+        "#1a7ab0",
+        "#8fe0ff",
+        "#ffffff"
+      ]
+    }
+  }
+}

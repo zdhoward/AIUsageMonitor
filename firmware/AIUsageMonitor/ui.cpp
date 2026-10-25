@@ -8,6 +8,7 @@
 #include "assets_gen.h"
 #include "city.h"
 #include "scenes_gen.h"
+#include "tune.h"
 
 static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
@@ -831,14 +832,14 @@ static void drawScenes(const Model&, uint32_t now, const ViewDef& v, int) {
     playSince[slot] = now;
   }
   const uint8_t p = playPos[slot] % len;
-  sceneDraw(c, SCENES[(custom ? kPlaylists[k].scenes[p] : p) % SCENE_COUNT], now);
+  sceneDraw(c, sceneResolve((custom ? kPlaylists[k].scenes[p] : p) % SCENE_COUNT), now);
 }
 
 static void drawOneScene(const Model&, uint32_t now, const ViewDef& v, int) {
   Canvas8 c;
   if (!canvas(c)) return;
   const uint8_t i = v.id - UI_SCENE_PAGE_BASE;
-  if (i < SCENE_COUNT) sceneDraw(c, SCENES[i], now);
+  if (i < SCENE_COUNT) sceneDraw(c, sceneResolve(i), now);
 }
 
 // ---------------------------------------------------------------- public

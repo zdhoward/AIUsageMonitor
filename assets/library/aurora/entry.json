@@ -1,0 +1,35 @@
+{
+  "name": "Aurora",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by termflix (MIT)",
+  "notes": "Northern lights curtains swaying over a starry sky.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "vapor"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "aurora",
+      "scale": 2,
+      "speed": 10,
+      "density": 100,
+      "colors": [
+        "#020611",
+        "#06323a",
+        "#18b878",
+        "#7dffb0",
+        "#e0fff0"
+      ]
+    }
+  }
+}

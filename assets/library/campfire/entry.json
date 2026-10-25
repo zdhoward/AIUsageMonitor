@@ -1,0 +1,36 @@
+{
+  "name": "Campfire",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by termflix (MIT)",
+  "notes": "Classic demoscene fire rising from the bottom of the screen.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "toxic"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "fire",
+      "scale": 4,
+      "speed": 0,
+      "density": 100,
+      "colors": [
+        "#000000",
+        "#3a0008",
+        "#a01010",
+        "#ff5a00",
+        "#ffb000",
+        "#fff2b0"
+      ]
+    }
+  }
+}
