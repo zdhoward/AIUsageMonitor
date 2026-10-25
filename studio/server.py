@@ -172,6 +172,7 @@ def library() -> list[dict]:
         e = json.loads(d.read_text(encoding="utf-8"))
         e["id"] = d.parent.name
         e["preview_url"] = f"/library/{d.parent.name}/{e.get('preview', 'preview.png')}"
+        e["has_preview"] = (d.parent / e.get("preview", "preview.png")).is_file()
         items.append(e)
     return sorted(items, key=lambda e: e.get("created", ""), reverse=True)
 
@@ -302,6 +303,13 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(device(cmds, bool(b.get("shot"))))
             if path == "/api/library":
                 return self.send_json(save_to_library(b))
+            m = re.fullmatch(r"/api/library/([a-z0-9-]+)/preview", path)
+            if m and (LIBRARY / m.group(1) / "entry.json").is_file():
+                png = base64.b64decode(b["data"].split(",")[-1])
+                if not png.startswith(b"\x89PNG"):
+                    raise ValueError("preview must be a PNG")
+                (LIBRARY / m.group(1) / "preview.png").write_bytes(png)
+                return self.send_json({"ok": True})
             if path == "/api/import":
                 return self.send_json(import_files(b))
             m = re.fullmatch(r"/api/library/([a-z0-9-]+)/scene", path)
