@@ -46,6 +46,15 @@
         "type": "lightning",
         "density": 1
       }
-    ]
+    ],
+    "cycle": {
+      "themes": [
+        "original",
+        "neon-pulse-8",
+        "dusk"
+      ],
+      "hold": 10,
+      "fade": 4
+    }
   }
 }

@@ -231,7 +231,31 @@ static bool lightning(const SceneEffect* e, uint32_t now) {
   return (t > at && t < at + 70) || (t > at + 160 && t < at + 230);
 }
 
-void sceneDraw(const Canvas8& c, const SceneDef& s, uint32_t now) {
+// Theme cycle: hold each palette map, then cross-fade to the next by blending
+// the two maps channel by channel (256 entries per frame).
+static uint8_t blendLut[256];
+
+static const uint8_t* cycleLut(const SceneDef& s, uint32_t now) {
+  const uint32_t hold = s.holdS * 1000UL, fade = s.fadeDs * 100UL, period = hold + fade;
+  const uint32_t t = now % (period * s.cycleCount);
+  const uint8_t k = t / period;
+  const uint32_t u = t % period;
+  const uint8_t* a = s.cycle[k];
+  if (u < hold || !fade) return a;
+  const uint8_t* b = s.cycle[(k + 1) % s.cycleCount];
+  const int f = (int)((u - hold) * 256 / fade);  // 0..255
+  for (int i = 0; i < 256; ++i) {
+    const int r = (a[i] >> 5) * (256 - f) + (b[i] >> 5) * f;
+    const int g = ((a[i] >> 2) & 7) * (256 - f) + ((b[i] >> 2) & 7) * f;
+    const int bl = (a[i] & 3) * (256 - f) + (b[i] & 3) * f;
+    blendLut[i] = (uint8_t)((((r + 128) >> 8) << 5) | (((g + 128) >> 8) << 2) | ((bl + 128) >> 8));
+  }
+  return blendLut;
+}
+
+void sceneDraw(const Canvas8& c, const SceneDef& def, uint32_t now) {
+  SceneDef s = def;
+  if (def.cycleCount > 1) s.lut = cycleLut(def, now);
   const int oy = (c.h - SCENE_H) / 2;
   const SceneEffect* bolt = nullptr;
   for (uint8_t i = 0; i < s.fxCount; ++i)
