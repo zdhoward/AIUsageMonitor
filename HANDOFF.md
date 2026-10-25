@@ -2,7 +2,7 @@
 
 ## Latest session (v1.8.0 – v1.11.0)
 
-`main` is tagged `v1.11.0`. Nothing from this session is pushed yet: the repo is public, and `assets/gif/angry_skele.gif` (unknown license) would become public with it, so pushing waits for the owner's call (see Blockers). Firmware 1.11.0 is flashed on COM6 with the **Default** profile, and the service is running. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md); the owner's decisions are in [GOALS](GOALS.md).
+`main` and tags up to `v1.11.0` are **pushed** to the public GitHub repo. The owner wants it public as portfolio work, with code and the system only. Firmware 1.11.0 is flashed on COM6 with the **Default** profile, and the service is running. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md); the owner's decisions are in [GOALS](GOALS.md).
 
 - **Profiles (v1.11.0):** Default (Console → System → Parallax; Console sleeps to the face), Dev (all originals) and Dev (themes) (all theme shifts). Only Console is a required page. Regenerate the scene lists by rerunning the generator logic if the library changes. The Dev profiles list scenes explicitly, so new scenes must be added to them.
 - **Random weather (v1.11.0):** `"weather": "random"` on a playlist (`withWeather` in `ui.cpp`, Studio checkbox in `playlists.js`). Confirmed on the display: Miami Drive got snow.
@@ -12,8 +12,14 @@
 - **SVG (v1.9.0):** `asset_convert.py` rasterizes SVGs with `resvg-py` (`pip install resvg-py`). The Images page rotates `"image": true` manifest entries every 10 s. The owner's logo is the test case.
 - **Studio UX (v1.10.0):** unsaved chip, ↑/↓ reorder, focus outlines, theme badges, library counts, auto-capture. The "display" wording is now consistent.
 - **Validation:** builds at 44% flash, with display screenshots after each flash and Playwright checks of the Studio (the T3 preview snapshot times out, so use Playwright with Edge). No automated tests were run (sprint-end rule).
-- **Blockers:** (1) Push: confirm or replace the skeleton GIF license, then `git push --follow-tags`. If it is replaced, the GIF must also be removed from the unpushed history. (2) Tests are pending sprint end.
-- **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017, T-016 and T-018 (audio visualizer plan, owner questions open).
+- **Public repo hygiene (owner rule):** no art, no personal data.
+  - Art is local and git-ignored: the owner's GIF, logo, scene `src/` and previews, `assets/manifest.json`, and the generated `assets_gen.*` / `scenes_gen.*`. A clean clone builds at 33% flash: missing art is skipped, and the Images and City pages show hints.
+  - The owner's location lives only in the ignored `service/aimon.config.json`; the code defaults are a Greenwich placeholder.
+  - Before the first push, the 74 unpushed commits were rewritten with `git-filter-repo` (`python -m git_filter_repo`) in a scratch clone to drop art and scrub paths, username, email and location. They were then pushed as a fast-forward with no force.
+  - Backup of the pre-rewrite state: `S:/ZX/Programming/AIUsageMonitor-art-backup-20261025/` (art, generated files and a git bundle). Delete it once satisfied.
+- **Before each push:** scan the outgoing diff for personal paths, location, emails, keys and new art.
+- **Blockers:** tests are pending sprint end.
+- **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017, T-016, T-018 (audio visualizer plan, owner questions open) and T-019 (stock ticker idea).
 
 ## Previous session (v1.6.0)
 
