@@ -23,5 +23,6 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-017 | Planned: VJ transitions between playlist scenes (after VIDEO_XCHNG), plus more termflix/sysc-Go effects. |
 | T-018 | Planned: audio visualizer page (bars, spectrogram, scope, radial, VU), with PC-side loopback capture and FFT and a `{"t":"aud"}` serial line. Open owner questions inside. |
 | T-019 | Idea: stock ticker page or strip (PC fetches quotes, `{"t":"stk"}` line, no keys in the repo). Not scheduled. |
+| T-020 | Planned: settings-pass follow-ups from docs/SETTINGS_REVIEW.md (hide dead sky colours, labels, Studio service Settings tab; 4 items to decide). |
 
 Current installed and published firmware: `v1.11.1` / `c5d4858`, Default profile on COM6. Due quota below 100% used suppresses automatic saving. Build and flash passed; direct trigger acceptance remains pending. See [HANDOFF.md](../HANDOFF.md) for evidence and next steps.

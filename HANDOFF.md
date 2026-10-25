@@ -1,5 +1,11 @@
 # Handoff — v1.11.1 Due quota keeps the dashboard awake (2026-10-25)
 
+## Settings review (2026-10-25)
+
+- `docs/SETTINGS_REVIEW.md`: every scene reviewed by local `gemma4:e4b`, checked against `scripts/settings_audit.py`. Only dead controls: sky colours on the 12 generator scenes.
+- Follow-ups are [T-020](.tickets/T-020.md). The owner wants each task done in its own session to keep context small.
+- Other open items: T-018 owner questions, optional full-history scan of the other public repos, delete the art backup when satisfied, sprint-end tests.
+
 ## Latest session: due-quota screensaver suppression
 
 - Implemented and flashed **v1.11.1**, Default profile, COM6. Commit `c5d4858` and tag `v1.11.1` are pushed on `main`; no open PRs.
