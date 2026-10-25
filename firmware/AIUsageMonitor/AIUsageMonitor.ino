@@ -44,10 +44,18 @@ static void pollTouch() {
   if (Wire.endTransmission(false) != 0) return;
   if (Wire.requestFrom(0x15, 1) != 1) return;
   bool down = (Wire.read() & 0x0f) != 0;
-  if (down && !pressed) { pressed = true; pressedAt = now; }
+  static bool held = false;
+  if (down && !pressed) { pressed = true; held = false; pressedAt = now; }
+  // A hold jumps home as soon as it qualifies, so the finger can lift on the
+  // home page; the release that follows is then not a tap.
+  if (down && pressed && !held && now - pressedAt >= UI_HOLD_MS) {
+    held = true;
+    uiGoHome();
+    lastDraw = 0;
+  }
   if (!down && pressed) {
     pressed = false;
-    if (now - pressedAt >= 25 && now - pressedAt < 1500) {
+    if (!held && now - pressedAt >= 25) {
       uiNextView(model);
       lastDraw = 0;
     }

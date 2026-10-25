@@ -167,6 +167,7 @@ Edit [config.h](../firmware/AIUsageMonitor/config.h), rebuild and flash:
 - `UI_COMPANION_ENABLED`, `UI_IMAGE_ENABLED`: default-on optional navigation entries (1/0).
 - `UI_SCREENSAVER_ENABLED`, `UI_SCREENSAVER_AUTO_ENABLED`: both default on; either can disable automatic saving.
 - `UI_SCREENSAVER_PAGE`: automatic target, default `UI_PAGE_COMPANION`; must be compiled in when saving is active.
+- `UI_HOME_PAGE`, `UI_HOLD_MS`: long-press home target (default `UI_PAGE_CONSOLE`) and hold time (default 700 ms).
 - `UI_SCREENSAVER_TIMEOUT_MS`: default 30000. Override each view with `UI_CONSOLE_SAVER_TIMEOUT_MS` / `UI_DETAILS_SAVER_TIMEOUT_MS`.
 - `UI_CONSOLE_SAVER_ENABLED`, `UI_DETAILS_SAVER_ENABLED`: per-view saving, default 1.
 - `UI_CONSOLE_WAKE_ON_USAGE`, `UI_DETAILS_WAKE_ON_USAGE`: per-view automatic wake, default 1.
