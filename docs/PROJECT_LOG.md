@@ -195,3 +195,8 @@
 - **Footer dot:** the `CONNECTED`/`STALE`/`SOURCE ERROR` word overlapped the age because the footer reserved one dot slot per page (198 px with 19 pages, after the page counter replaced the dots). It is now a green/amber/red dot, and the reservation matches the real page indicator.
 - **"Unreliable connection" investigation:** the serial link was healthy (no unplanned closes, no parse errors since the 1.6.0 development flash; payload 0.9 KB against a 4 KB line buffer). The real cause: T3 re-polls Claude quota only every few minutes, and an idle account went 14+ minutes without a reading while Codex refreshed every ~20 s. The footer showed the oldest age and turned amber past 20 minutes. Now the footer shows the newest reading, the dot reflects only the link (no payload for 30 s) and source errors, and the stale threshold is 60 minutes (service and firmware). Per-card `STALE` labels still mark old readings.
 - **Renamed accounts:** the owner renamed the T3 instances to `A`/`B`; those names matched no console row and showed `--`. Unmatched names now fill the free Claude rows in service order (T3 cache-file order).
+
+## 2026-10-25 — v1.9.0 SVG images
+
+- **SVG sources:** `asset_convert.py` rasterizes `.svg` with `resvg-py` (prebuilt wheels, no Cairo install on Windows), fitted to 300x210 by the `viewBox`. An optional `bg` flattens anti-aliased edges onto the page colour, because RGB332 has no alpha and a plain 128 cut leaves jagged edges.
+- **Images page rotation:** manifest entries with `"image": true` rotate every `UI_IMAGE_SECONDS` (10 s). Each turn restarts its animation. The owner's grid logo (`assets/img/grid_logo_1_light.svg`, 3.5 KB encoded) is the SVG test case; the device capture is in `docs/img/svg-logo.png`.
