@@ -148,9 +148,28 @@ def playlists_header(p: dict, index: dict) -> str:
     return "\n".join(out) + "\n"
 
 
+def drop_missing_scenes(p: dict) -> None:
+    """Scene art is personal and git-ignored, so a clone may lack scenes a
+    profile names. Build without them (with a warning) instead of failing."""
+    have = scene_index(p.get("id"))
+    gone = lambda sid: sid not in have  # noqa: E731
+    for pl in p.get("playlists", []):
+        for sid in [s for s in pl.get("scenes", []) if gone(s)]:
+            print(f"warning: playlist '{pl.get('name')}' skips '{sid}' (art not installed)")
+        pl["scenes"] = [s for s in pl.get("scenes", []) if not gone(s)]
+    for pg in [x for x in p.get("pages", []) if x.startswith("scene:") and gone(x[6:])]:
+        print(f"warning: page '{pg}' skipped (art not installed)")
+    p["pages"] = [x for x in p.get("pages", []) if not (x.startswith("scene:") and gone(x[6:]))]
+    s = p.get("screensaver", {})
+    if s.get("page", "").startswith("scene:") and gone(s["page"][6:]):
+        print(f"warning: screensaver scene '{s['page'][6:]}' not installed; screensaver off")
+        s["enabled"] = False
+
+
 def write(name: str) -> Path:
     p = load(name)
     p["id"] = name
+    drop_missing_scenes(p)
     errs = validate(p)
     if errs:
         raise ValueError("; ".join(errs))
