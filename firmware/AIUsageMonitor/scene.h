@@ -16,6 +16,18 @@ struct SceneLayer {
 struct SceneEffect {
   uint8_t type, density, color, front;  // front: draw above the layers
 };
+// Full-screen procedural backdrop drawn instead of the sky gradient.
+enum SceneGenType : uint8_t { GEN_PATTERNS = 1, GEN_PLASMA, GEN_WARP };
+struct SceneGen {
+  uint8_t type, scale;      // scale: pattern tile zoom / plasma block size
+  int16_t vx16, vy16;       // pattern scroll, px/s * 16; warp: speed in vx16
+  uint16_t seconds;         // pattern hold time before the next tile
+  const uint8_t* tiles;     // 16x16 1-bit tiles, 32 bytes each, MSB = left
+  uint8_t tileCount;
+  const uint8_t* colors;    // RGB332: pattern bg/fg pairs, or plasma/warp gradient stops
+  uint8_t colorCount;
+};
+
 struct SceneDef {
   const char* id;
   const char* name;
@@ -25,6 +37,7 @@ struct SceneDef {
   const SceneEffect* fx;
   uint8_t fxCount;
   const uint8_t* lut;  // theme palette remap, nullptr for original colours
+  const SceneGen* gen;  // optional procedural backdrop
 };
 
 void sceneDraw(const Canvas8& c, const SceneDef& s, uint32_t nowMs);

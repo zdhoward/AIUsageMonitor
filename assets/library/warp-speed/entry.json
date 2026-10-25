@@ -1,0 +1,30 @@
+{
+  "created": "2026-10-24T20:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "kind": "scene",
+  "name": "Warp Speed",
+  "notes": "The classic Windows starfield: stars stream out of the centre.",
+  "license": "Original (procedural)",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "warp",
+      "speed": 350,
+      "colors": [
+        "#000008",
+        "#203070",
+        "#8fb0ff",
+        "#ffffff"
+      ]
+    }
+  }
+}

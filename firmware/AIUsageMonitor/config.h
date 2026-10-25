@@ -87,6 +87,22 @@
 // Screen refresh period (countdowns and the activity pulse).
 #define REDRAW_MS 50UL
 
+// Quota colours (RGB565). The session ring uses healthy/warning/critical by
+// remaining capacity. UI_WEEKLY_COLOR is the weekly ring's fixed colour
+// (yellow by request); set it to 0 to give weekly the same threshold colours.
+#ifndef UI_COLOR_HEALTHY
+#define UI_COLOR_HEALTHY 0x4EB4
+#endif
+#ifndef UI_COLOR_WARNING
+#define UI_COLOR_WARNING 0xF5EA
+#endif
+#ifndef UI_COLOR_CRITICAL
+#define UI_COLOR_CRITICAL 0xFB4D
+#endif
+#ifndef UI_WEEKLY_COLOR
+#define UI_WEEKLY_COLOR 0xFFE0
+#endif
+
 // Set to 0 for immediate value changes and a slower, static display.
 #define UI_ANIMATION 1
 

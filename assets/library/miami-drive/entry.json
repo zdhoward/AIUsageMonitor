@@ -40,7 +40,6 @@
       },
       {
         "src": [
-          "src/car1.png",
           "src/car2.png",
           "src/car3.png",
           "src/car4.png",
@@ -48,7 +47,7 @@
         ],
         "speed": 0,
         "y": 150,
-        "ms": 70
+        "ms": 160
       },
       {
         "src": "src/palm-tree.png",

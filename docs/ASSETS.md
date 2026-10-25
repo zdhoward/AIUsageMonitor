@@ -77,3 +77,8 @@ Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even
 - **Library → click any card** to open the viewer. Pages and scenes have **Show on display**. Scenes play a live preview in device colours and can be edited: themes and playlist variants, layer speeds, effects, sky. **Save scene**, then **Send to display**.
 - **Import art**: drop PNG/GIF/JPG/Aseprite files, ordered back to front. Several files, or one Aseprite file with layers, become a parallax scene with depth-based speeds from 4 to 60 px/s and a sky sampled from the back layer. A single image becomes a still scene.
 - Imported art is copied to `assets/library/<id>/src/` and committed with the library. **The repo is public**: import only art whose license allows redistribution, and record it in the License field.
+
+### Generators and per-card settings
+
+- `generator` in a scene replaces the sky with a procedural backdrop: `patterns` (1-bit 16x16 tiles in colour pairs, drifting, wiping to the next every few seconds), `plasma`, and `warp` (starfield). See `scripts/scenes.py`. Measured 46-52 ms per frame.
+- Every library card has a **gear** that opens its settings. Scenes: layer speed, frame time (for example the Miami car, now 160 ms over 4 frames), gap, and fit for still pictures (original, pixel, contain, cover, stretch). Generators: zoom, drift, timing and colours. Console/Details: quota ring colours for the active profile; the weekly ring can use the session thresholds instead of yellow.

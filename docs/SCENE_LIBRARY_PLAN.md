@@ -74,3 +74,20 @@ The Studio has to share the COM port with the running aimon service the same way
 - Licenses: Miami-synth and cyberpunk-street (Ansimuz) and pixelmojis are CC0, verified from their bundled license files, so they may be committed. City, City Landscape, Dead City, Urban Nightscape, SynthCities, Rain effect, Waterfalls, Space Backgrounds and PixelPatterns have no bundled license; check each one's itch.io page before committing any of their art. Until then they stay local and are referenced by path.
 - `assets/gif/angry_skele.gif` is committed locally (`ec85856`, not pushed) with an unknown license. Confirm it may be published before pushing.
 - Whether the screensaver should rotate through several scenes or show one per profile.
+
+## Status 2026-10-24 (later)
+
+- T-012 scene engine: delivered (parallax, themes and variants, playlist, `!SHOW`, Studio viewer/editor/import).
+- Generators delivered: **patterns** (PixelPatterns tiles, CC0), **plasma**, **warp** starfield. Per-card gear settings: layer frame time, gap, fit modes (original, pixel, contain, cover, stretch), generator parameters, quota ring colours per profile.
+
+## T-016 Classic screensavers (planned)
+
+Add more generator types to `scene.cpp`, each a small state machine with no art, previewed in `scene.js`:
+
+- **3D Pipes**: grid walk with random turns, shaded tube segments and ball joints; reset when the screen fills.
+- **Maze**: generate with recursive backtracking, then solve it with a first-person or top-down walker.
+- **Mystify**: bouncing polygons with fading trails.
+- **Starfield**: the warp generator already covers it.
+- Also possible: Bezier ribbons, Matrix rain, Flying objects (original art only).
+
+Each generator keeps bounded state (well under 8 KB of RAM) and runs at or under the current ~50 ms frame budget.

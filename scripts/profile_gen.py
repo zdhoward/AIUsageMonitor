@@ -54,6 +54,12 @@ def validate(p: dict) -> list[str]:
     return errs
 
 
+def rgb565(hexcolor: str) -> int:
+    h = hexcolor.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+
+
 def header(p: dict) -> str:
     s = p.get("screensaver", {})
     on = bool(s.get("enabled"))
@@ -64,6 +70,12 @@ def header(p: dict) -> str:
     for name, (_, enable) in PAGES.items():
         if enable:
             lines.append(f"#define {enable} {int(name in p['pages'])}")
+    colors = p.get("colors", {})
+    for key, macro in (("healthy", "UI_COLOR_HEALTHY"), ("warning", "UI_COLOR_WARNING"), ("critical", "UI_COLOR_CRITICAL")):
+        if colors.get(key):
+            lines.append(f"#define {macro} 0x{rgb565(colors[key]):04X}")
+    if colors.get("weekly"):  # "levels" = same threshold colours as the session ring
+        lines.append(f"#define UI_WEEKLY_COLOR {0 if colors['weekly'] == 'levels' else hex(rgb565(colors['weekly']))}")
     lines.append(f"#define UI_SCENE_SECONDS {int(p.get('scene_seconds', 90))}")
     lines.append("#define UI_VIEW_ORDER " + ", ".join(PAGES[pg][0] for pg in p["pages"]))
     lines += [f"#define UI_SCREENSAVER_ENABLED {int(on)}",

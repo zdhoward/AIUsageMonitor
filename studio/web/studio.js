@@ -167,6 +167,7 @@ function renderLibrary() {
   items.forEach((e) => {
     const kind = e.kind === "page" ? "page" : e.kind === "scene" ? "scene" : "capture";
     const card = el(`<div class="item"><img src="${e.preview_url}?${Date.now()}" alt="">
+      <button class="icon-btn gear" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
       <div class="body"><div class="row"><b></b><span class="chip kind">${kind}</span></div>
       <p></p><div class="chips">
         <span class="chip">${(e.created || "").replace("T", " ").slice(0, 16)}</span>
@@ -175,6 +176,7 @@ function renderLibrary() {
     card.querySelector("b").textContent = e.name;
     card.querySelector("p").textContent = e.notes || "";
     card.onclick = () => openViewer(e);
+    card.querySelector(".gear").onclick = (ev) => { ev.stopPropagation(); openViewer(e, true); };
     box.append(card);
   });
 }
