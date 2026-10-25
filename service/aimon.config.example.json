@@ -6,7 +6,7 @@
   "serial_baud": 115200,
   "push_interval_s": 5,
   "refresh_s": 10,
-  "limits_stale_s": 1200,
+  "limits_stale_s": 3600,
   "t3_home": "~/.t3",
   "opencode_refresh_s": 30,
   "openrouter_enabled": false,

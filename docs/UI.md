@@ -23,7 +23,7 @@ Landscape uses 10px padding, a slim header at y4..20, divider at 22, three 64px 
 
 ## Freshness and unknown values
 
-A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (1200s), the serial link times out, or the payload flags it. Cached numbers stay at full brightness; stale is a label, never a reason to hide the reading. The footer shows the oldest provider source age (`Updated 4m`) rather than pretending a fresh serial push means fresh provider data, led by a status dot: green connected, amber stale, red source error.
+A client is `STALE` when its service source age exceeds `CLIENT_STALE_S` (3600s), the serial link times out, or the payload flags it. Cached numbers stay at full brightness; stale is a label, never a reason to hide the reading. The footer shows the newest provider reading age (`Updated 2m`) rather than the serial push age, led by a link dot: green receiving, amber no payload for 30 s, red source error. An old reading on one account shows as that card's `STALE` label.
 
 Unknown quotas show `--`, never `0%`. A real 0% remains distinct from unknown. Percentages are never averaged across windows.
 
@@ -35,7 +35,7 @@ The service wakes at upcoming reset deadlines to reread T3's usage cache and loc
 
 RGB565 values in `ui.cpp` come from: background `#101923`, panel `#202C3B`, text `#F3F6FA`, secondary `#AEBCCC`, healthy `#49D7A0`, warning `#F4BC52`, critical `#FF6B6B`. The 8-bit RGB332 framebuffer quantizes them; the panel blue is snapped up one step to retain a blue-gray surface rather than olive.
 
-`config.h`: `DISPLAY_ROTATION` (1 default, landscape), `BACKLIGHT_LEVEL` (0..255, ESP32 LEDC on GPIO27), `UI_CRITICAL_LEFT` (20), `UI_WARNING_LEFT` (50), `CLIENT_STALE_S` (1200), `SHOW_REMAINING` (details mode), `UI_ANIMATION`. Bars ease quietly toward new values; exact numbers update immediately.
+`config.h`: `DISPLAY_ROTATION` (1 default, landscape), `BACKLIGHT_LEVEL` (0..255, ESP32 LEDC on GPIO27), `UI_CRITICAL_LEFT` (20), `UI_WARNING_LEFT` (50), `CLIENT_STALE_S` (3600), `SHOW_REMAINING` (details mode), `UI_ANIMATION`. Bars ease quietly toward new values; exact numbers update immediately.
 
 ## Where Claude edits later
 

@@ -81,7 +81,7 @@
 // A console client is marked STALE when its provider source is older than
 // this many seconds (or the link timed out, or the service flagged it).
 #ifndef CLIENT_STALE_S
-#define CLIENT_STALE_S 1200
+#define CLIENT_STALE_S 3600
 #endif
 
 // Screen refresh period (countdowns and the activity pulse).

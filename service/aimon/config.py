@@ -29,7 +29,7 @@ class Settings:
     openrouter_refresh_s: float = 600.0
 
     # Data older than this is flagged stale on the display.
-    limits_stale_s: float = 20 * 60
+    limits_stale_s: float = 60 * 60
 
     # Ignore T3 runs stuck in "running" for longer than this (crashed turns).
     max_run_age_s: float = 6 * 3600
