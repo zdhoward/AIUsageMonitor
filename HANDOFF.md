@@ -2,7 +2,7 @@
 
 ## Latest session (v1.8.0)
 
-`main` is tagged `v1.9.0` (local only; not pushed). Firmware 1.9.0 is flashed on COM6, and the service was restarted with the new stale threshold. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md).
+`main` is tagged `v1.10.0` (local only; not pushed). Firmware 1.9.0 is flashed on COM6, and the service was restarted with the new stale threshold. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md).
 
 - **Long-press home:** holding for 0.7 s jumps to the AI Usage console (`uiGoHome` in `ui.cpp`, hold detection in `pollTouch` in `AIUsageMonitor.ino`, `UI_HOME_PAGE`/`UI_HOLD_MS` in `config.h`). The owner confirmed it on the device.
 - **Footer:** a green/amber/red link dot plus `Updated <newest reading age>`. Amber means no payload for 30 s and red means a source error. Old readings on one account show only as that card's `STALE` label (threshold 60 min, `limits_stale_s` / `CLIENT_STALE_S`).
@@ -11,6 +11,7 @@
 - **Profile:** the default profile with 12 single-scene pages (19 pages total) is committed.
 - **Validation:** builds at 44% flash, and device screenshots were checked after each flash. No automated tests were run (sprint-end rule).
 - **SVG (v1.9.0):** the owner's logo `assets/img/grid_logo_1_light.svg` is the SVG test case. `asset_convert.py` rasterizes SVGs with `resvg-py` (a new tool dependency: `pip install resvg-py`). The Images page rotates through `"image": true` manifest entries every 10 s. See [ASSETS](docs/ASSETS.md).
+- **Studio UX pass (v1.10.0, Studio only):** see the project log. Deferred: grouping the Layout page list, and one term for display/device.
 - **Next:** optional hold-progress feedback. To clean up the row-mapping heuristic, the service could send a stable slot id per account.
 
 ## Previous session (v1.6.0)
