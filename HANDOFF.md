@@ -1,8 +1,8 @@
-# Handoff — v1.8.0 Long-press home and reliable link status (2026-10-25)
+# Handoff — v1.9.0 Long-press home, reliable link status, SVG images (2026-10-25)
 
 ## Latest session (v1.8.0)
 
-`main` is tagged `v1.8.0` (local only; not pushed). Firmware 1.8.0 is flashed on COM6, and the service was restarted with the new stale threshold. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md).
+`main` is tagged `v1.9.0` (local only; not pushed). Firmware 1.9.0 is flashed on COM6, and the service was restarted with the new stale threshold. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md).
 
 - **Long-press home:** holding for 0.7 s jumps to the AI Usage console (`uiGoHome` in `ui.cpp`, hold detection in `pollTouch` in `AIUsageMonitor.ino`, `UI_HOME_PAGE`/`UI_HOLD_MS` in `config.h`). The owner confirmed it on the device.
 - **Footer:** a green/amber/red link dot plus `Updated <newest reading age>`. Amber means no payload for 30 s and red means a source error. Old readings on one account show only as that card's `STALE` label (threshold 60 min, `limits_stale_s` / `CLIENT_STALE_S`).
@@ -10,7 +10,7 @@
 - **Account names:** the owner renamed the T3 Claude instances to `A`/`B`. Unmatched names now fill the Claude rows in order (`slotIndex`).
 - **Profile:** the default profile with 12 single-scene pages (19 pages total) is committed.
 - **Validation:** builds at 44% flash, and device screenshots were checked after each flash. No automated tests were run (sprint-end rule).
-- **Left alone:** the untracked `assets/img/grid_logo_1_light.svg` has an unknown purpose, so ask the owner.
+- **SVG (v1.9.0):** the owner's logo `assets/img/grid_logo_1_light.svg` is the SVG test case. `asset_convert.py` rasterizes SVGs with `resvg-py` (a new tool dependency: `pip install resvg-py`). The Images page rotates through `"image": true` manifest entries every 10 s. See [ASSETS](docs/ASSETS.md).
 - **Next:** optional hold-progress feedback. To clean up the row-mapping heuristic, the service could send a stable slot id per account.
 
 ## Previous session (v1.6.0)
