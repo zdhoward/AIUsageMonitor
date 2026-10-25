@@ -33,8 +33,9 @@ class ScenePlayer {
       img.src = base + m.url + "?" + Date.now();
     })));
     this.gen = await (await fetch(base + "gen.json?" + Date.now())).json().catch(() => null);
-    this.stars = null;
+    this.warpStars = null;
     this.scene = scene;
+    this.savedFit = scene.layers.map((L) => L.fit || "original");  // what the strips were built with
     this.start();
   }
   start() {
@@ -82,7 +83,15 @@ class ScenePlayer {
           let t = now % total;
           while (t >= L.durations[f]) t -= L.durations[f++];
         }
-        if (!speed) return g.drawImage(L.img, f * L.w, 0, L.w, L.h, (W - period) / 2 | 0, L.y, L.w, L.h);
+        if (!speed) {
+          // Mock an unsaved fit change by scaling the built strip; Save bakes exact pixels.
+          const fit = cfg.fit || "original";
+          if (fit === this.savedFit[i]) return g.drawImage(L.img, f * L.w, 0, L.w, L.h, (W - period) / 2 | 0, L.y, L.w, L.h);
+          const k = { pixel: Math.max(1, Math.floor(Math.min(W / L.w, H / L.h))), contain: Math.min(W / L.w, H / L.h),
+                      cover: Math.max(W / L.w, H / L.h), original: 1 }[fit];
+          const dw = fit === "stretch" ? W : Math.round(L.w * k), dh = fit === "stretch" ? H : Math.round(L.h * k);
+          return g.drawImage(L.img, f * L.w, 0, L.w, L.h, (W - dw) / 2 | 0, (H - dh) / 2 | 0, dw, dh);
+        }
         let off = Math.floor(now * speed / 1000) % period;
         if (off < 0) off += period;
         for (let x = -off; x < W; x += period) g.drawImage(L.img, f * L.w, 0, L.w, L.h, x, L.y, L.w, L.h);
@@ -147,14 +156,14 @@ class ScenePlayer {
           }
       } else {
         for (let i = 0; i < W * H; i++) { p[i * 4] = rgb[0][0]; p[i * 4 + 1] = rgb[0][1]; p[i * 4 + 2] = rgb[0][2]; p[i * 4 + 3] = 255; }
-        if (!this.stars) this.stars = [...Array(150)].map((_, i) => {
+        if (!this.warpStars) this.warpStars = [...Array(150)].map((_, i) => {
           const h = hash(u32(i * 977 + 5));
           return { x: h % 2000 - 1000, y: (h >>> 11) % 1500 - 750, z: 1 + (h >>> 22) % 1000 };
         });
         const dt = Math.min(200, now - (this.last || now)) || 40;
         this.last = now;
         const speed = Math.trunc((+G.speed || 300) * dt / 1000);
-        this.stars.forEach((st, i) => {
+        this.warpStars.forEach((st, i) => {
           const pz = st.z;
           st.z = st.z > speed + 1 ? st.z - speed : 0;
           if (!st.z) { const h = hash(u32(i + now)); Object.assign(st, { x: h % 2000 - 1000, y: (h >>> 11) % 1500 - 750, z: 1000 }); return; }
@@ -331,7 +340,7 @@ function renderEditor() {
       const k = inp.dataset.k;
       if (k === "fit") {
         if (inp.value === "original") delete L.fit; else L.fit = inp.value;
-        $("#eNote").textContent = "Fit changes the art itself: Save scene to see it.";
+        $("#eNote").textContent = "The preview shows the new fit now; Save scene bakes it into the art.";
       } else if (inp.value === "") delete L[k];
       else L[k] = +inp.value;
       if (k === "speed" && !!+inp.value === still) renderEditor();
@@ -404,7 +413,7 @@ function renderGen() {
   const grid = el(`<div class="gen-grid"></div>`);
   fields.forEach(([k, label]) => {
     const f = el(`<label>${label}<input type="number" value="${G[k] ?? ""}"></label>`);
-    f.querySelector("input").oninput = (e) => { G[k] = +e.target.value; player.stars = null; };
+    f.querySelector("input").oninput = (e) => { G[k] = +e.target.value; player.warpStars = null; };
     grid.append(f);
   });
   box.append(grid);
