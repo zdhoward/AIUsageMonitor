@@ -926,8 +926,12 @@ static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
   if (!canvas(c)) return;
   // Rotates through the manifest's "image" assets; each frame time restarts
   // at its own turn so an animation always plays from the start.
+#if IMAGE_ASSET_COUNT == 0  // art is personal and not in the repo
+  text("Add images in assets/manifest.json", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+  return;
+#endif
   const uint32_t turn = UI_IMAGE_SECONDS * 1000UL;
-  const AnimAsset& a = *IMAGE_ASSETS[(now / turn) % IMAGE_ASSET_COUNT];
+  const AnimAsset& a = *IMAGE_ASSETS[(now / turn) % max(1, IMAGE_ASSET_COUNT)];
   now %= turn;
   const uint8_t scale = min(W / a.w, (H - 16) / a.h) ? min(W / a.w, (H - 16) / a.h) : 1;
   animBlit(c, a, animFrameAt(a, now), (W - a.w * scale) / 2 - a.x * scale,
@@ -936,7 +940,12 @@ static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
 
 static void drawCity(const Model&, uint32_t now, const ViewDef&, int) {
   Canvas8 c;
-  if (canvas(c)) cityDraw(c, now);
+  if (!canvas(c)) return;
+#if CITY_ART
+  cityDraw(c, now);
+#else
+  text("City art not installed (assets/scenes/city)", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+#endif
 }
 
 

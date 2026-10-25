@@ -10,7 +10,14 @@ assets/<gif|png|aseprite>  --(assets/manifest.json)-->  scripts/asset_convert.py
    --> anim.cpp player  --> Images page / City page
 ```
 
-1. Put the source file under `assets/` and add an entry to `assets/manifest.json`.
+**Art is yours and stays local.** The repo ships the code and the system, not images. `assets/manifest.json`, `assets/gif|img|scenes/`, each library scene's `src/` and `preview.png`, and the generated `assets_gen.*` / `scenes_gen.*` are git-ignored. A fresh clone builds anyway:
+- missing manifest entries and scenes whose art is absent are skipped;
+- the Images and City pages show a hint;
+- procedural scenes (plasma, fire, aurora…) work out of the box.
+
+`scripts/build.ps1` regenerates the art tables on every build.
+
+1. Put the source file under `assets/` and add an entry to `assets/manifest.json`. Copy `assets/manifest.example.json` to start it.
 2. Run `python scripts/asset_convert.py`. It prints the encoded size of each asset.
 3. Build and flash: `scripts/build.ps1`, then `scripts/flash.ps1`.
 

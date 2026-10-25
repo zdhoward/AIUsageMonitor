@@ -1,0 +1,12 @@
+{
+  "_comment": "Copy to assets/manifest.json (git-ignored) and list your own art. Entries whose src is missing are skipped. See docs/ASSETS.md.",
+  "assets": [
+    {"name": "my_gif", "src": "gif/my.gif", "max_bytes": 120000, "image": true},
+    {"name": "my_logo", "src": "img/my_logo.svg", "bg": "#000000", "image": true},
+    {"name": "city_far", "src": "scenes/city/city.aseprite", "layer": "far"},
+    {"name": "city_near", "src": "scenes/city/city.aseprite", "layer": "near"},
+    {"name": "city_windows", "src": "scenes/city/city.aseprite", "layer": "windows", "mode": "rects"},
+    {"name": "city_sign", "src": "scenes/city/sign.aseprite"},
+    {"name": "city_car", "src": "scenes/city/car.aseprite"}
+  ]
+}

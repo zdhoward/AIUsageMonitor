@@ -1,6 +1,7 @@
 #include "city.h"
 #include <math.h>
 #include "assets_gen.h"
+#if CITY_ART
 
 // Art is authored on a 320x240 canvas; other canvas sizes centre it.
 static const int ART_W = 320, ART_H = 240, HORIZON = 168;
@@ -162,3 +163,4 @@ void cityDraw(const Canvas8& c, uint32_t now) {
   drawCar(c, ox, oy, now, 138, 64, true, 40);
   drawRain(c, now);
 }
+#endif  // CITY_ART
