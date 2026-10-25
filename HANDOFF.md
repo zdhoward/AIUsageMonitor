@@ -13,7 +13,7 @@
 - **Studio UX (v1.10.0):** unsaved chip, ↑/↓ reorder, focus outlines, theme badges, library counts, auto-capture. The "display" wording is now consistent.
 - **Validation:** builds at 44% flash, with display screenshots after each flash and Playwright checks of the Studio (the T3 preview snapshot times out, so use Playwright with Edge). No automated tests were run (sprint-end rule).
 - **Blockers:** (1) Push: confirm or replace the skeleton GIF license, then `git push --follow-tags`. If it is replaced, the GIF must also be removed from the unpushed history. (2) Tests are pending sprint end.
-- **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017 and T-016.
+- **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017, T-016 and T-018 (audio visualizer plan, owner questions open).
 
 ## Previous session (v1.6.0)
 

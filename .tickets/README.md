@@ -21,5 +21,6 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-014 | Delivered as a web app: native DLL preview, live device tuning, build/flash/capture/PERF. |
 | T-015 | Delivered: import, per-card gear settings, theme list, Lospec palettes, playlists tab. |
 | T-017 | Planned: VJ transitions between playlist scenes (after VIDEO_XCHNG), plus more termflix/sysc-Go effects. |
+| T-018 | Planned: audio visualizer page (bars, spectrogram, scope, radial, VU), with PC-side loopback capture and FFT and a `{"t":"aud"}` serial line. Open owner questions inside. |
 
 Published release baseline: `v1.4.2` / `315d70c`. The current local development firmware includes later untagged MINT commits and still reports 1.4.2; see [HANDOFF.md](../HANDOFF.md) before identifying the installed build. Public docs and MIT license remain pushed; no changes from this session were pushed.
