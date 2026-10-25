@@ -370,7 +370,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json({"ok": True})
             if path == "/api/frame":
                 try:
-                    frame, status = native.render(b["entry"], int(b.get("t", 0)), b.get("scene"), int(b.get("warm", 0)))
+                    frame, status = native.render(b["entry"], int(b.get("t", 0)), b.get("scene"), int(b.get("warm", 0)),
+                                                  bool(b.get("shift")))
                 except LookupError as e:
                     return self.send_json({"error": str(e)}, 404)
                 self.send_response(200)
@@ -383,8 +384,10 @@ class Handler(SimpleHTTPRequestHandler):
                 if b.get("off"):
                     live.close()
                     return self.send_json({"ok": True})
-                blob = native.blob(b["entry"], b["scene"]) if native.index(b["entry"]) >= 0 else \
-                    scenes.tune_blob(b["entry"], b["scene"], [s["id"] for s in scenes.scene_list()].index(b["entry"]))
+                shift = bool(b.get("shift"))
+                target = b["entry"] + scenes.SHIFT_SUFFIX if shift else b["entry"]
+                blob = native.blob(b["entry"], b["scene"], shift) if native.index(target) >= 0 else \
+                    scenes.tune_blob(b["entry"], b["scene"], [s["id"] for s in scenes.scene_list()].index(target), shift)
                 live.send("!TUNE " + blob.hex())
                 return self.send_json({"ok": True, "bytes": len(blob), "last": live.last_reply})
             if path == "/api/native/rebuild":
@@ -442,12 +445,18 @@ def open_window(url: str) -> None:
         webbrowser.open(url)
 
 
+class StudioServer(ThreadingHTTPServer):
+    # Windows lets SO_REUSEADDR sockets share a listening port, so a second
+    # Studio would bind alongside the first and requests would split between them.
+    allow_reuse_address = sys.platform != "win32"
+
+
 def main() -> None:
     LIBRARY.mkdir(parents=True, exist_ok=True)
     port = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else PORT
     url = f"http://127.0.0.1:{port}"
     try:
-        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+        server = StudioServer(("127.0.0.1", port), Handler)
     except OSError:
         # A Studio is already running: open a window onto it instead of failing silently.
         if "--no-window" not in sys.argv:
