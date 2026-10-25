@@ -22,7 +22,7 @@ Code review passed for the main face and PC behavior, including corrective revie
 
 Delivered: converter (`scripts/asset_convert.py`), frame player (`anim.cpp`), Images page plays `angry_skele.gif`, City page (`city.cpp` + `assets/scenes/city/*.aseprite`), `!PERF`, configurable page order (`UI_VIEW_ORDER`), build profiles (`profiles/*.json`, `build.ps1 -Profile`), and Scene Studio (`python -m studio`, `Scene Studio.cmd`). Flashed on COM6 with the default profile, screensaver set to City. Measured 42-54 ms/frame, about 232-238 KB of free heap. See [ASSETS](docs/ASSETS.md) and [scene library plan](docs/SCENE_LIBRARY_PLAN.md).
 
-Next: T-012 generic scene engine (parallax/tile layers) with Miami-synth (CC0) as the first imported pack; then Studio live preview through a host DLL. Third-party packs in `assets/sprites/` are git-ignored because the repo is public; `angry_skele.gif` has an unknown license, so confirm before pushing. City-as-screensaver was not observed on the device because live usage changes kept waking it; recheck when idle.
+Scene engine (T-012) delivered on 2026-10-24: `scene.cpp`, `scripts/scenes.py`, Scene playlist page, `!SHOW`/`!SCENES`, themes and variants, Studio viewer/editor/import with a browser live preview. Three CC0 scenes were flashed and captured on COM6. Next: per-layer y/gap editing in the Studio, playlist ordering, a host DLL for pixel-exact preview of the City page, and porting `city.cpp` onto the engine. Third-party packs in `assets/sprites/` are git-ignored because the repo is public; `angry_skele.gif` has an unknown license, so confirm before pushing. City-as-screensaver was not observed on the device because live usage changes kept waking it; recheck when idle.
 
 ## Verification and commands
 

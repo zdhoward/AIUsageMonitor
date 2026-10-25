@@ -11,6 +11,7 @@
 #include "config.h"
 #include "model.h"
 #include "ui.h"
+#include "scenes_gen.h"
 #include "face.h"
 #include <Wire.h>
 
@@ -107,13 +108,22 @@ static void printHello() {
 
 // Commands: "!HELLO" repeats the boot info, "!SHOT" dumps the frame buffer,
 // "!ROT n" applies rotation n until reboot (test only), "!PERF" reports the
-// last render time and free heap.
+// last render time and free heap, "!SHOW name" shows a page or scene until
+// the next tap, "!SCENES" lists compiled scene ids.
 static void handleCommand(const char* cmd) {
   if (!strcmp(cmd, "!HELLO")) {
     printHello();
   } else if (!strcmp(cmd, "!SHOT")) {
     uiRender(model, millis(), linkInfo());
     if (!uiScreenshot(Serial)) Serial.print("@ERR no framebuffer\n");
+  } else if (!strncmp(cmd, "!SHOW ", 6)) {
+    const bool ok = uiShow(cmd + 6);
+    Serial.print(ok ? "@SHOW ok\n" : "@ERR unknown page or scene\n");
+    lastDraw = 0;
+  } else if (!strcmp(cmd, "!SCENES")) {
+    Serial.print("@SCENES");
+    for (uint8_t i = 0; i < SCENE_COUNT; ++i) Serial.printf(" %s", SCENES[i].id);
+    Serial.print("\n");
   } else if (!strcmp(cmd, "!PERF")) {
     Serial.printf("@PERF render_us=%lu heap=%lu\n", (unsigned long)uiLastRenderUs(), (unsigned long)ESP.getFreeHeap());
   } else if (!strcmp(cmd, "!NEXT")) {

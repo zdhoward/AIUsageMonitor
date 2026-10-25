@@ -1,0 +1,61 @@
+{
+  "name": "Miami Drive",
+  "kind": "scene",
+  "notes": "Endless drive past palms and neon diners. Parallax from Ansimuz's Miami Synth pack.",
+  "created": "2026-10-24T18:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "CC0 - Luis Zuno (Ansimuz), Miami Synth",
+  "scene": {
+    "background": {
+      "top": "#a254a2",
+      "bottom": "#133e88"
+    },
+    "theme": "original",
+    "variants": [
+      "night",
+      "ice"
+    ],
+    "layers": [
+      {
+        "src": "src/back.png",
+        "speed": 3
+      },
+      {
+        "src": "src/sun.png",
+        "speed": 0
+      },
+      {
+        "src": "src/buildings.png",
+        "speed": 8
+      },
+      {
+        "src": "src/palms.png",
+        "speed": 18
+      },
+      {
+        "src": "src/highway.png",
+        "speed": 70
+      },
+      {
+        "src": [
+          "src/car1.png",
+          "src/car2.png",
+          "src/car3.png",
+          "src/car4.png",
+          "src/car5.png"
+        ],
+        "speed": 0,
+        "y": 150,
+        "ms": 70
+      },
+      {
+        "src": "src/palm-tree.png",
+        "speed": 110,
+        "gap": 420
+      }
+    ],
+    "effects": []
+  }
+}

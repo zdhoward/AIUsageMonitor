@@ -7,6 +7,7 @@ const PAGES = {
   companion: { name: "Companion", desc: "MINT, the robot face", thumb: "/docimg/MINT-happy-device.png", scene: true },
   image:     { name: "Images", desc: "GIF player", thumb: "/docimg/images-page.png", scene: true },
   city:      { name: "Synthwave City", desc: "Living pixel scene", thumb: "/docimg/city.png", scene: true },
+  scenes:    { name: "Scene playlist", desc: "Parallax scenes from your library, rotating", thumb: "/library/miami-drive/preview.png", scene: true },
 };
 const TIMEOUTS = [10, 20, 30, 45, 60, 120, 180, 300, 600, 900, 1800, 3600];
 const TABS = {
@@ -154,31 +155,34 @@ $("#timeout").oninput = (e) => {
   touch();
 };
 
+let libFilter = "all";
 function renderLibrary() {
   const box = $("#library");
   box.innerHTML = "";
-  if (!state.library.length) {
-    box.append(el(`<div class="empty">Nothing saved yet. Capture the display and save it from the Display tab.</div>`));
+  const items = state.library.filter((e) => libFilter === "all" || (e.kind || "capture") === libFilter);
+  if (!items.length) {
+    box.append(el(`<div class="empty">Nothing here yet. Import art, or capture the display and save it from the Display tab.</div>`));
     return;
   }
-  state.library.forEach((e) => {
-    const card = el(`<div class="item"><img src="${e.preview_url}" alt="">
-      <button class="icon-btn del" title="Delete">×</button>
-      <div class="body"><div class="row"><b></b><span class="chip kind">${e.kind}</span></div>
+  items.forEach((e) => {
+    const kind = e.kind === "page" ? "page" : e.kind === "scene" ? "scene" : "capture";
+    const card = el(`<div class="item"><img src="${e.preview_url}?${Date.now()}" alt="">
+      <div class="body"><div class="row"><b></b><span class="chip kind">${kind}</span></div>
       <p></p><div class="chips">
         <span class="chip">${(e.created || "").replace("T", " ").slice(0, 16)}</span>
-        ${e.profile ? `<span class="chip">${e.profile}</span>` : ""}
+        ${e.scene && e.scene.variants && e.scene.variants.length ? `<span class="chip">+${e.scene.variants.length} themes</span>` : ""}
         ${e.commit ? `<span class="chip">${e.commit}</span>` : ""}</div></div></div>`);
     card.querySelector("b").textContent = e.name;
     card.querySelector("p").textContent = e.notes || "";
-    card.querySelector(".del").onclick = async () => {
-      if (!confirm(`Delete "${e.name}" from the library?`)) return;
-      await api(`/api/library/${e.id}/delete`, {});
-      await load();
-    };
+    card.onclick = () => openViewer(e);
     box.append(card);
   });
 }
+document.querySelectorAll("#libFilter button").forEach((b) => (b.onclick = () => {
+  libFilter = b.dataset.f;
+  document.querySelectorAll("#libFilter button").forEach((x) => x.classList.toggle("on", x === b));
+  renderLibrary();
+}));
 
 // ------------------------------------------------------------- profiles
 function renderProfiles() {

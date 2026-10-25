@@ -7,11 +7,12 @@
     "details",
     "companion",
     "image",
-    "city"
+    "city",
+    "scenes"
   ],
   "screensaver": {
     "enabled": true,
-    "page": "city",
+    "page": "scenes",
     "timeout_s": 30,
     "console": {
       "enabled": true,
@@ -23,5 +24,7 @@
       "timeout_s": 30,
       "wake_on_usage": true
     }
-  }
+  },
+  "scene_seconds": 90,
+  "scenes": "all"
 }

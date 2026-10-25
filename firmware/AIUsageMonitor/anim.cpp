@@ -22,32 +22,58 @@ uint16_t animFrameAt(const AnimAsset& a, uint32_t ms, const char* tag) {
   return to;
 }
 
-void animBlit(const Canvas8& c, const AnimAsset& a, uint16_t frame, int x, int y, uint8_t scale, bool flipX) {
+void animBlit(const Canvas8& c, const AnimAsset& a, uint16_t frame, int x, int y, uint8_t scale, bool flipX,
+              const uint8_t* lut) {
   if (frame >= a.frameCount || !scale) return;
+  const int ox = x + a.x * scale, oy = y + a.y * scale;
+  if (ox >= c.w || oy >= c.h || ox + a.w * scale <= 0 || oy + a.h * scale <= 0) return;  // off-screen
   const uint8_t* p = a.frames[frame].rle;
   const uint32_t total = (uint32_t)a.w * a.h;
-  const int ox = x + a.x * scale, oy = y + a.y * scale;
+  const bool fast = scale == 1 && !flipX;
+  int sx = 0, sy = 0;  // source position, advanced incrementally (no division per pixel)
   uint32_t i = 0;
-  auto plot = [&](uint32_t idx, uint8_t col) {
-    int sx = idx % a.w, sy = idx / a.w;
-    if (flipX) sx = a.w - 1 - sx;
-    int dx = ox + sx * scale, dy = oy + sy * scale;
-    if (scale == 1) c.put(dx, dy, col);
-    else c.fill(dx, dy, scale, scale, col);
+  auto advance = [&](uint32_t n) {
+    sx += n;
+    while (sx >= a.w) sx -= a.w, ++sy;
+  };
+  // Writes a run of `n` pixels starting at the current position; runs may wrap rows.
+  auto run = [&](uint32_t n, const uint8_t* lit, uint8_t col) {
+    while (n) {
+      const uint32_t span = (uint32_t)(a.w - sx) < n ? (uint32_t)(a.w - sx) : n;
+      const int dy = oy + sy * scale;
+      if (fast && dy >= 0 && dy < c.h) {
+        int dx = ox + sx, k0 = 0, k1 = (int)span;
+        if (dx < 0) k0 = -dx;
+        if (dx + k1 > c.w) k1 = c.w - dx;
+        uint8_t* row = c.px + dy * c.w + dx;
+        if (lit) for (int k = k0; k < k1; ++k) row[k] = lut ? lut[lit[k]] : lit[k];
+        else if (k1 > k0) memset(row + k0, lut ? lut[col] : col, k1 - k0);
+      } else if (!fast) {
+        for (uint32_t k = 0; k < span; ++k) {
+          const int fx = flipX ? a.w - 1 - (sx + (int)k) : sx + (int)k;
+          uint8_t v = lit ? lit[k] : col;
+          if (lut) v = lut[v];
+          if (scale == 1) c.put(ox + fx, oy + sy, v);
+          else c.fill(ox + fx * scale, oy + sy * scale, scale, scale, v);
+        }
+      }
+      if (lit) lit += span;
+      n -= span;
+      advance(span);
+    }
   };
   while (i < total) {
     const uint8_t op = *p++;
     const uint32_t n = (op & (op & 0x80 ? 0x7F : 0x3F)) + 1;
     if (op & 0x80) {
-      i += n;
+      advance(n);
     } else if (op & 0x40) {
-      const uint8_t col = *p++;
-      for (uint32_t k = 0; k < n; ++k) plot(i + k, col);
-      i += n;
+      run(n, nullptr, *p++);
     } else {
-      for (uint32_t k = 0; k < n; ++k) plot(i + k, p[k]);
+      run(n, p, 0);
       p += n;
-      i += n;
     }
+    i += n;
+    if (oy + sy * scale >= c.h) return;  // everything below is clipped
   }
 }

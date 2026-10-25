@@ -1,0 +1,51 @@
+{
+  "name": "Neon Skyline",
+  "kind": "scene",
+  "notes": "Rainy cyberpunk skyline with lightning. Ansimuz's cyberpunk city skyline layers.",
+  "created": "2026-10-24T18:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "CC0 - Luis Zuno (Ansimuz), Cyberpunk Street",
+  "scene": {
+    "background": {
+      "top": "#100a26",
+      "bottom": "#281d51"
+    },
+    "theme": "original",
+    "variants": [
+      "toxic",
+      "dusk"
+    ],
+    "layers": [
+      {
+        "src": "src/back.png",
+        "speed": 4
+      },
+      {
+        "src": "src/buildings.png",
+        "speed": 12
+      },
+      {
+        "src": "src/front.png",
+        "speed": 30
+      }
+    ],
+    "effects": [
+      {
+        "type": "stars",
+        "density": 2,
+        "color": "#b0a0ff"
+      },
+      {
+        "type": "rain",
+        "density": 2,
+        "color": "#8f8fff"
+      },
+      {
+        "type": "lightning",
+        "density": 1
+      }
+    ]
+  }
+}

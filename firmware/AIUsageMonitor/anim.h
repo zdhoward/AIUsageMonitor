@@ -43,5 +43,6 @@ uint16_t animFrameAt(const AnimAsset& a, uint32_t ms, const char* tag = nullptr)
 
 // Draws a frame with the source canvas origin at (x, y). Transparent pixels
 // are skipped; output is clipped to the canvas.
+// `lut` optionally remaps every colour (scene themes).
 void animBlit(const Canvas8& c, const AnimAsset& a, uint16_t frame, int x, int y,
-              uint8_t scale = 1, bool flipX = false);
+              uint8_t scale = 1, bool flipX = false, const uint8_t* lut = nullptr);

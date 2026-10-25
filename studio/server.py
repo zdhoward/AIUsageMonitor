@@ -24,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import profile_gen  # noqa: E402
+import scenes  # noqa: E402
 
 WEB = Path(__file__).with_name("web")
 LIBRARY = ROOT / "assets" / "library"
@@ -144,7 +145,7 @@ def run_job(kind: str, profile: str) -> str:
 
     def work():
         ps = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
-        ok = step("Converting art", [sys.executable, "scripts/asset_convert.py"])
+        ok = step("Converting art", [sys.executable, "scripts/asset_convert.py", "--profile", profile])
         ok = ok and step("Building firmware", ps + ["scripts/build.ps1", "-Profile", profile])
         if ok and kind == "flash":
             with serial_lock:
@@ -195,6 +196,44 @@ def save_to_library(body: dict) -> dict:
     return entry
 
 
+IMPORTABLE = {".png", ".gif", ".aseprite", ".ase", ".jpg", ".jpeg"}
+
+
+def import_files(body: dict) -> dict:
+    """Create a scene entry from dropped files (ordered back to front)."""
+    name = body.get("name", "").strip()
+    files = body.get("files", [])
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40]
+    if not name or not SLUG.match(slug):
+        raise ValueError("Give the import a name")
+    if not files:
+        raise ValueError("Drop at least one image")
+    d = LIBRARY / slug
+    if d.exists():
+        slug = f"{slug}-{datetime.now():%m%d%H%M}"
+        d = LIBRARY / slug
+    (d / "src").mkdir(parents=True)
+    saved = []
+    for f in files:
+        fname = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(f["name"]).name)
+        if Path(fname).suffix.lower() not in IMPORTABLE:
+            shutil.rmtree(d)
+            raise ValueError(f"{f['name']}: use PNG, GIF, JPG or Aseprite files")
+        (d / "src" / fname).write_bytes(base64.b64decode(f["data"].split(",")[-1]))
+        saved.append(f"src/{fname}")
+    try:
+        scene = scenes.auto_scene(d, saved)
+        entry = {"name": name, "kind": "scene", "notes": body.get("notes", ""),
+                 "created": datetime.now().isoformat(timespec="seconds"), "commit": git_commit(),
+                 "profile": "", "preview": "preview.png", "license": body.get("license", ""), "scene": scene}
+        (d / "entry.json").write_text(json.dumps(entry, indent=2) + "\n", encoding="utf-8")
+        scenes.prepare_with_still(slug)
+    except Exception as ex:  # unreadable art: leave nothing half-imported behind
+        shutil.rmtree(d, ignore_errors=True)
+        raise ValueError(f"Could not import: {ex}") from ex
+    return {"id": slug}
+
+
 # ------------------------------------------------------------------- http
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -202,6 +241,10 @@ class Handler(SimpleHTTPRequestHandler):
 
     def log_message(self, *_):
         pass
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")  # always serve the current UI and previews
+        super().end_headers()
 
     def send_json(self, obj, status=200):
         data = json.dumps(obj).encode()
@@ -220,6 +263,8 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/state":
             profiles = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(PROFILES.glob("*.json"))}
             return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit()})
+        if path == "/api/themes":
+            return self.send_json({t: scenes.lut(t) for t in scenes.THEMES})
         if path.startswith("/api/jobs/"):
             job = jobs.get(path.rsplit("/", 1)[1])
             return self.send_json(job or {"error": "unknown job"}, 200 if job else 404)
@@ -253,10 +298,22 @@ class Handler(SimpleHTTPRequestHandler):
             if path in ("/api/build", "/api/flash"):
                 return self.send_json({"job": run_job(path[5:], b["profile"])})
             if path == "/api/device":
-                cmds = [c for c in b.get("commands", []) if re.fullmatch(r"![A-Z]+( [a-z0-9]+)?", c)]
+                cmds = [c for c in b.get("commands", []) if re.fullmatch(r"![A-Z]+( [a-z0-9-]{1,48})?", c)]
                 return self.send_json(device(cmds, bool(b.get("shot"))))
             if path == "/api/library":
                 return self.send_json(save_to_library(b))
+            if path == "/api/import":
+                return self.send_json(import_files(b))
+            m = re.fullmatch(r"/api/library/([a-z0-9-]+)/scene", path)
+            if m and (LIBRARY / m.group(1) / "entry.json").is_file():
+                f = LIBRARY / m.group(1) / "entry.json"
+                e = json.loads(f.read_text(encoding="utf-8"))
+                e["scene"] = b["scene"]
+                if "name" in b:
+                    e["name"] = b["name"]
+                f.write_text(json.dumps(e, indent=2) + "\n", encoding="utf-8")
+                scenes.prepare_with_still(m.group(1))
+                return self.send_json({"ok": True})
             if path.startswith("/api/library/") and path.endswith("/delete"):
                 lid = path.split("/")[3]
                 if SLUG.match(lid) and (LIBRARY / lid).is_dir():
