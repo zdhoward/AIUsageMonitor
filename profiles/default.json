@@ -9,7 +9,19 @@
     "companion",
     "image",
     "city",
-    "scenes"
+    "scenes",
+    "scene:game-of-life",
+    "scene:video-equations",
+    "scene:video-equations-shift",
+    "scene:spectre-patch",
+    "scene:ripples",
+    "scene:rainy-street",
+    "scene:pixel-patterns",
+    "scene:neon-skyline",
+    "scene:miami-drive",
+    "scene:digital-rain",
+    "scene:campfire",
+    "scene:aurora"
   ],
   "screensaver": {
     "enabled": true,
@@ -27,5 +39,6 @@
     }
   },
   "scene_seconds": 90,
-  "scenes": "all"
+  "scenes": "all",
+  "playlists": []
 }
