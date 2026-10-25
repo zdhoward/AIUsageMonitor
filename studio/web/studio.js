@@ -44,24 +44,33 @@ const el = (html) => { const t = document.createElement("template"); t.innerHTML
 
 // ----------------------------------------------------------------- render
 function render() {
-  renderPages(); renderRotation(); renderSaver();
+  renderPages(); renderRotation(); renderSaver(); renderPlaylist();
   document.querySelectorAll("#remaining button").forEach((b) =>
     b.classList.toggle("on", +b.dataset.v === +profile.show_remaining));
 }
 
+// Built-in pages plus every library scene ("scene:<id>") can be a tap page.
+function pageInfo(id) {
+  if (!id.startsWith("scene:")) return PAGES[id];
+  const sc = (state.scenes || []).find((x) => x.id === id.slice(6));
+  if (!sc) return { name: id.slice(6), desc: "Missing from the library", thumb: "", scene: true };
+  return { name: sc.name, desc: `Scene${sc.theme !== "original" ? ` · ${sc.theme} theme` : ""}`,
+           thumb: `/library/${sc.entry}/preview.png`, scene: true, theme: sc.theme };
+}
+function allPages() { return [...Object.keys(PAGES), ...(state.scenes || []).map((x) => `scene:${x.id}`)]; }
 function orderedPages() {
   const on = profile.pages;
-  return [...on, ...Object.keys(PAGES).filter((p) => !on.includes(p))];
+  return [...on, ...allPages().filter((p) => !on.includes(p))];
 }
 
 function renderPages() {
   const ul = $("#pages");
   ul.innerHTML = "";
   orderedPages().forEach((id) => {
-    const p = PAGES[id], on = profile.pages.includes(id);
+    const p = pageInfo(id), on = profile.pages.includes(id);
     const li = el(`<li class="page ${on ? "" : "off"}" draggable="true" data-id="${id}">
       <span class="grip">⋮⋮</span><span class="num">${profile.pages.indexOf(id) + 1}</span>
-      <div class="thumb" style="background-image:url('${p.thumb}')"></div>
+      <div class="thumb${p.theme && p.theme !== "original" ? " themed" : ""}" style="background-image:url('${p.thumb}')"></div>
       <div class="meta"><b>${p.name}</b><small>${p.desc}</small></div>
       ${p.locked ? '<span class="lock">Always on</span>'
                  : `<label class="switch"><input type="checkbox" ${on ? "checked" : ""}><i></i></label>`}
@@ -70,8 +79,6 @@ function renderPages() {
     if (box) box.onchange = () => {
       profile.pages = box.checked ? [...profile.pages, id] : profile.pages.filter((x) => x !== id);
       const s = profile.screensaver;
-      if (!box.checked && s.page === id) s.page = profile.pages.find((x) => PAGES[x].scene) || "";
-      if (!s.page) s.enabled = false;
       touch();
     };
     li.ondragstart = () => li.classList.add("dragging");
@@ -94,6 +101,30 @@ $("#pages").addEventListener("dragover", (e) => {
   if (after) ul.insertBefore(drag, after); else ul.append(drag);
 });
 
+// Which scenes the "Scene playlist" page rotates through (none ticked = all).
+function renderPlaylist() {
+  const box = $("#playlist");
+  if (!box) return;
+  const list = profile.playlist || [];
+  box.innerHTML = "";
+  (state.scenes || []).forEach((sc) => {
+    const on = list.includes(sc.id);
+    const chip = el(`<label class="pl ${on ? "on" : ""}"><input type="checkbox" ${on ? "checked" : ""}>
+      <span class="pl-thumb${sc.theme !== "original" ? " themed" : ""}" style="background-image:url('/library/${sc.entry}/preview.png')"></span>${sc.name}</label>`);
+    chip.querySelector("input").onchange = (e) => {
+      const next = e.target.checked ? [...list, sc.id] : list.filter((x) => x !== sc.id);
+      if (next.length) profile.playlist = next; else delete profile.playlist;
+      touch();
+    };
+    box.append(chip);
+  });
+  $("#playlistHint").textContent = list.length ? `${list.length} of ${state.scenes.length} scenes, in this order`
+                                               : `All ${state.scenes.length} scenes`;
+  const secs = $("#sceneSeconds");
+  secs.value = profile.scene_seconds || 90;
+  secs.onchange = () => { profile.scene_seconds = Math.max(5, +secs.value || 90); touch(); };
+}
+
 function renderRotation() {
   const opts = [[1, "Landscape", "land r1"], [3, "Landscape ↻", "land r3"], [0, "Portrait", "port r0"], [2, "Portrait ↻", "port r2"]];
   const box = $("#rotation");
@@ -113,11 +144,11 @@ function renderSaver() {
   $("#saverBody").classList.toggle("off", !s.enabled);
   const box = $("#saverPage");
   box.innerHTML = "";
-  Object.entries(PAGES).filter(([, p]) => p.scene).forEach(([id, p]) => {
-    const enabled = profile.pages.includes(id);
-    const b = el(`<button class="scene ${s.page === id ? "on" : ""} ${enabled ? "" : "disabled"}">
-      <div class="img" style="background-image:url('${p.thumb}')"></div>
-      <div class="cap">${p.name}<small>${enabled ? p.desc : "Turned off in Layout"}</small></div></button>`);
+  allPages().filter((id) => pageInfo(id).scene).forEach((id) => {
+    const p = pageInfo(id);
+    const b = el(`<button class="scene ${s.page === id ? "on" : ""}">
+      <div class="img${p.theme && p.theme !== "original" ? " themed" : ""}" style="background-image:url('${p.thumb}')"></div>
+      <div class="cap">${p.name}<small>${p.desc}</small></div></button>`);
     b.onclick = () => { s.page = id; touch(); };
     box.append(b);
   });

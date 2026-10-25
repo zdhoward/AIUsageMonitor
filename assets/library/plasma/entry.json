@@ -12,11 +12,8 @@
       "top": "#000000",
       "bottom": "#000000"
     },
-    "theme": "original",
-    "variants": [
-      "ice",
-      "toxic"
-    ],
+    "theme": "matrix",
+    "variants": [],
     "layers": [],
     "effects": [],
     "generator": {

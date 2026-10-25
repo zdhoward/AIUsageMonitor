@@ -230,9 +230,28 @@ def library_scenes() -> list[tuple[str, Path, dict]]:
 def selected(profile: str | None) -> set | None:
     if not profile:
         return None
-    p = json.loads((PROFILES / f"{profile}.json").read_text(encoding="utf-8"))
-    sel = p.get("scenes", "all")
+    f = PROFILES / f"{profile}.json"
+    if not f.is_file():  # a profile being created: compile everything
+        return None
+    sel = json.loads(f.read_text(encoding="utf-8")).get("scenes", "all")
     return None if sel == "all" else set(sel)
+
+
+def scene_themes(sc: dict) -> list[str]:
+    return [sc.get("theme", "original")] + [t for t in sc.get("variants", []) if t != sc.get("theme")]
+
+
+def scene_list(profile: str | None = None) -> list[dict]:
+    """Compiled scenes in firmware order (SCENES[i]); variants follow their base."""
+    want = selected(profile)
+    out = []
+    for sid, _, e in library_scenes():
+        if want is not None and sid not in want:
+            continue
+        for k, theme in enumerate(scene_themes(e["scene"])):
+            out.append({"id": sid if k == 0 else f"{sid}-{theme}", "entry": sid, "theme": theme,
+                        "name": e.get("name", sid) + ("" if k == 0 else f" ({theme})")})
+    return out
 
 
 def prepare(entry_id: str) -> None:
@@ -286,7 +305,7 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
             cpp.append(f"static const SceneEffect {n}_fx[] = {{{', '.join(fx)}}};\n")
         top, bot = hex_rgb(sc["background"]["top"]), hex_rgb(sc["background"]["bottom"])
         name = e.get("name", sid).replace('"', "'")
-        themes = [sc.get("theme", "original")] + [t for t in sc.get("variants", []) if t != sc.get("theme")]
+        themes = scene_themes(sc)
         for k, theme in enumerate(themes):
             table = lut(theme)
             if table and theme not in luts:

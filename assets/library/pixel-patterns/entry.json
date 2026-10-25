@@ -12,8 +12,10 @@
       "top": "#000000",
       "bottom": "#000000"
     },
-    "theme": "original",
-    "variants": [],
+    "theme": "matrix",
+    "variants": [
+      "original"
+    ],
     "layers": [],
     "effects": [],
     "generator": {

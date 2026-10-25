@@ -33,6 +33,7 @@ static void drawCompanion(const Model&, uint32_t, const ViewDef&, int y);
 static void drawImage(const Model&, uint32_t, const ViewDef&, int y);
 static void drawCity(const Model&, uint32_t, const ViewDef&, int y);
 static void drawScenes(const Model&, uint32_t, const ViewDef&, int y);
+static void drawOneScene(const Model&, uint32_t, const ViewDef&, int y);
 
 static const ViewDef kAllViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
@@ -45,18 +46,26 @@ static const ViewDef kAllViews[] = {
 // Tap order comes from UI_VIEW_ORDER; pages not compiled in are skipped.
 static const uint8_t kAllCount = sizeof(kAllViews) / sizeof(kAllViews[0]);
 static const uint8_t kOrder[] = {UI_VIEW_ORDER};
-static ViewDef kStaticViews[kAllCount];
+static ViewDef kStaticViews[kAllCount + 48];  // built-in pages plus single-scene pages
+static const uint8_t kViewCap = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t kViewCount = 0;
 static uint8_t selView = 0;  // first page in UI_VIEW_ORDER
 
 // Every page is compiled in so the Studio can show any of them with !SHOW;
 // the *_ENABLED switches only decide what a tap cycles through.
 static bool inRotation(uint8_t id) {
+  if (id >= UI_SCENE_PAGE_BASE) return id - UI_SCENE_PAGE_BASE < SCENE_COUNT;
   return id == UI_PAGE_COMPANION ? UI_COMPANION_ENABLED : id == UI_PAGE_IMAGE ? UI_IMAGE_ENABLED :
          id == UI_PAGE_CITY ? UI_CITY_ENABLED : id == UI_PAGE_SCENES ? (UI_SCENES_ENABLED && SCENE_COUNT) : true;
 }
 
+// Pages from UI_SCENE_PAGE_BASE up show one scene each (index = id - base).
 static const ViewDef* viewById(uint8_t id) {
+  static ViewDef scenePage;
+  if (id >= UI_SCENE_PAGE_BASE) {
+    scenePage = {id, drawOneScene};
+    return &scenePage;
+  }
   for (const ViewDef& v : kAllViews)
     if (v.id == id) return &v;
   return &kAllViews[0];
@@ -64,13 +73,11 @@ static const ViewDef* viewById(uint8_t id) {
 
 static void buildViewOrder() {
   kViewCount = 0;
-  for (uint8_t id : kOrder)
-    if (inRotation(id))
-    for (const ViewDef& v : kAllViews) {
-      bool dup = false;
-      for (uint8_t k = 0; k < kViewCount; ++k) dup |= kStaticViews[k].id == id;
-      if (v.id == id && !dup && kViewCount < kAllCount) kStaticViews[kViewCount++] = v;
-    }
+  for (uint8_t id : kOrder) {
+    bool dup = false;
+    for (uint8_t k = 0; k < kViewCount; ++k) dup |= kStaticViews[k].id == id;
+    if (inRotation(id) && !dup && kViewCount < kViewCap) kStaticViews[kViewCount++] = *viewById(id);
+  }
   if (!kViewCount) kStaticViews[kViewCount++] = kAllViews[0];
 }
 static bool saverActive = false;
@@ -788,10 +795,18 @@ static void drawCity(const Model&, uint32_t now, const ViewDef&, int) {
   if (canvas(c)) cityDraw(c, now);
 }
 
-// Scene playlist: rotates through every compiled scene, Roku-style.
-static uint8_t sceneIdx = 0;
+// Scene playlist: rotates Roku-style through UI_PLAYLIST (scene indices), or
+// through every compiled scene when no playlist is set.
+#ifdef UI_PLAYLIST
+static const uint8_t kPlaylist[] = {UI_PLAYLIST};
+static uint8_t playlistLen() { return sizeof(kPlaylist); }
+static uint8_t playlistAt(uint8_t p) { return kPlaylist[p % sizeof(kPlaylist)]; }
+#else
+static uint8_t playlistLen() { return SCENE_COUNT; }
+static uint8_t playlistAt(uint8_t p) { return p; }
+#endif
+static uint8_t playPos = 0;
 static uint32_t sceneSince = 0;
-static bool scenePinned = false;  // chosen with !SHOW: hold until the next tap
 
 static void drawScenes(const Model&, uint32_t now, const ViewDef&, int) {
   Canvas8 c;
@@ -801,11 +816,18 @@ static void drawScenes(const Model&, uint32_t now, const ViewDef&, int) {
     return;
   }
   if (!sceneSince) sceneSince = now;
-  if (!scenePinned && now - sceneSince >= UI_SCENE_SECONDS * 1000UL) {
-    sceneIdx = (uint8_t)((sceneIdx + 1) % SCENE_COUNT);
+  if (now - sceneSince >= UI_SCENE_SECONDS * 1000UL) {
+    playPos = (uint8_t)((playPos + 1) % playlistLen());
     sceneSince = now;
   }
-  sceneDraw(c, SCENES[sceneIdx % SCENE_COUNT], now);
+  sceneDraw(c, SCENES[playlistAt(playPos) % SCENE_COUNT], now);
+}
+
+static void drawOneScene(const Model&, uint32_t now, const ViewDef& v, int) {
+  Canvas8 c;
+  if (!canvas(c)) return;
+  const uint8_t i = v.id - UI_SCENE_PAGE_BASE;
+  if (i < SCENE_COUNT) sceneDraw(c, SCENES[i], now);
 }
 
 // ---------------------------------------------------------------- public
@@ -838,7 +860,7 @@ bool uiHasFramebuffer() { return spr != nullptr; }
 
 uint32_t uiFrameIntervalMs() {
   const uint8_t id = forcedId >= 0 ? forcedId : saverActive ? UI_SCREENSAVER_PAGE : kStaticViews[selView].id;
-  if (id == UI_PAGE_CITY || id == UI_PAGE_SCENES) return 40UL;
+  if (id == UI_PAGE_CITY || id == UI_PAGE_SCENES || id >= UI_SCENE_PAGE_BASE) return 40UL;
   return id == UI_PAGE_COMPANION || id == UI_PAGE_IMAGE ? 33UL : REDRAW_MS;
 }
 
@@ -862,9 +884,7 @@ bool uiShow(const char* name) {
     }
   for (uint8_t i = 0; i < SCENE_COUNT; ++i)
     if (!strcmp(name, SCENES[i].id)) {
-      forcedId = UI_PAGE_SCENES;
-      sceneIdx = i;
-      scenePinned = true;
+      forcedId = UI_SCENE_PAGE_BASE + i;
       saverActive = false;
       return true;
     }
@@ -872,7 +892,6 @@ bool uiShow(const char* name) {
 }
 
 void uiNextView(const Model&) {
-  scenePinned = false;
   if (forcedId >= 0) forcedId = -1;
   else if (saverActive) saverActive = false;
   else selView = (uint8_t)((selView + 1) % kViewCount);
@@ -934,7 +953,8 @@ void uiRender(const Model& m, uint32_t now, const char* linkInfo) {
       v.draw(m, now, v, 0);
     }
   }
-  if (!away && v.id != UI_PAGE_COMPANION && v.id != UI_PAGE_CITY && v.id != UI_PAGE_SCENES) drawDots(current);
+  if (!away && v.id != UI_PAGE_COMPANION && v.id != UI_PAGE_CITY && v.id != UI_PAGE_SCENES && v.id < UI_SCENE_PAGE_BASE)
+    drawDots(current);
   if (spr) spr->pushSprite(0, 0);
   renderUs = micros() - t0;
 }

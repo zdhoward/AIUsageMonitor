@@ -44,8 +44,14 @@
   <!-- Layout -->
   <section class="tab on" id="tab-layout">
     <div class="card">
-      <div class="card-head"><h2>Pages</h2><span class="hint">Drag to reorder · tap on the display cycles in this order</span></div>
+      <div class="card-head"><h2>Pages</h2><span class="hint">Drag to reorder · switch on any scene to give it its own page</span></div>
       <ul class="pages" id="pages"></ul>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Scene playlist</h2><span class="hint" id="playlistHint"></span></div>
+      <p class="hint">Tick scenes for the playlist page to rotate through; leave all unticked to rotate through everything.
+        Each scene plays for <input type="number" id="sceneSeconds" min="5" class="inline-num"> seconds.</p>
+      <div class="playlist" id="playlist"></div>
     </div>
     <div class="grid2">
       <div class="card">
