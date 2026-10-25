@@ -62,6 +62,7 @@ struct Playlist {
   const uint8_t* scenes;  // indices into SCENES
   uint8_t count;
   uint16_t seconds;
+  uint8_t weather;  // 0: each scene's own effects; 1: random weather per scene turn
 };
 #if __has_include("playlists_gen.h")
 #include "playlists_gen.h"
@@ -71,6 +72,28 @@ static const uint8_t kPlaylistCount = 0;
 #endif
 static uint8_t playPos[17];      // slot 0: all scenes; 1+k: playlist k
 static uint32_t playSince[17];
+static uint8_t playWeather[17];  // 0: not picked yet, else 1 + WEATHER_*
+
+// Random weather for playlists that ask for it: the scene keeps its stars,
+// its own rain/snow/lightning is replaced. Clear skies are one of the picks.
+enum { WEATHER_CLEAR, WEATHER_RAIN, WEATHER_SNOW, WEATHER_STORM, WEATHER_COUNT };
+static const SceneDef& withWeather(const SceneDef& s, uint8_t weather) {
+  static SceneDef out;
+  static SceneEffect fx[10];
+  uint8_t n = 0;
+  for (uint8_t i = 0; i < s.fxCount && n < 8; ++i)
+    if (s.fx[i].type == FX_STARS) fx[n++] = s.fx[i];
+  if (weather == WEATHER_RAIN) fx[n++] = {FX_RAIN, 2, 0x93, 1};
+  if (weather == WEATHER_SNOW) fx[n++] = {FX_SNOW, 2, 0xFF, 1};
+  if (weather == WEATHER_STORM) {
+    fx[n++] = {FX_RAIN, 3, 0x93, 1};
+    fx[n++] = {FX_LIGHTNING, 1, 0xFF, (uint8_t)(s.layerCount > 1 ? 1 : 0)};
+  }
+  out = s;
+  out.fx = fx;
+  out.fxCount = n;
+  return out;
+}
 
 // Every page is compiled in so the Studio can show any of them with !SHOW;
 // the *_ENABLED switches only decide what a tap cycles through.
@@ -932,9 +955,16 @@ static void drawScenes(const Model&, uint32_t now, const ViewDef& v, int) {
   if (now - playSince[slot] >= hold) {
     playPos[slot] = (uint8_t)((playPos[slot] + 1) % len);
     playSince[slot] = now;
+    playWeather[slot] = 0;
   }
   const uint8_t p = playPos[slot] % len;
-  sceneDraw(c, sceneResolve((custom ? kPlaylists[k].scenes[p] : p) % SCENE_COUNT), now);
+  const SceneDef& s = sceneResolve((custom ? kPlaylists[k].scenes[p] : p) % SCENE_COUNT);
+  if (custom && kPlaylists[k].weather) {
+    if (!playWeather[slot]) playWeather[slot] = 1 + esp_random() % WEATHER_COUNT;
+    sceneDraw(c, withWeather(s, playWeather[slot] - 1), now);
+  } else {
+    sceneDraw(c, s, now);
+  }
 }
 
 static void drawOneScene(const Model&, uint32_t now, const ViewDef& v, int) {

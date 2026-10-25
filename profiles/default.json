@@ -4,28 +4,12 @@
   "show_remaining": true,
   "pages": [
     "console",
-    "details",
     "system",
-    "companion",
-    "image",
-    "city",
-    "scenes",
-    "scene:game-of-life",
-    "scene:video-equations",
-    "scene:video-equations-shift",
-    "scene:spectre-patch",
-    "scene:ripples",
-    "scene:rainy-street",
-    "scene:pixel-patterns",
-    "scene:neon-skyline",
-    "scene:miami-drive",
-    "scene:digital-rain",
-    "scene:campfire",
-    "scene:aurora"
+    "playlist:parallax"
   ],
   "screensaver": {
     "enabled": true,
-    "page": "scenes",
+    "page": "companion",
     "timeout_s": 30,
     "console": {
       "enabled": true,
@@ -40,5 +24,17 @@
   },
   "scene_seconds": 90,
   "scenes": "all",
-  "playlists": []
+  "playlists": [
+    {
+      "id": "parallax",
+      "name": "Parallax",
+      "scenes": [
+        "miami-drive",
+        "neon-skyline",
+        "rainy-street"
+      ],
+      "seconds": 90,
+      "weather": "random"
+    }
+  ]
 }

@@ -3,7 +3,7 @@
 const $ = (s) => document.querySelector(s);
 const PAGES = {
   console:   { name: "Console", desc: "Quota rings for every client", thumb: "/docimg/v1.4.2-rings.png", locked: true },
-  details:   { name: "Details", desc: "Full usage breakdown", thumb: "/docimg/T-008A-details.png", locked: true },
+  details:   { name: "Details", desc: "Full usage breakdown", thumb: "/docimg/T-008A-details.png" },
   companion: { name: "Companion", desc: "MINT, the robot face", thumb: "/docimg/MINT-happy-device.png", scene: true },
   image:     { name: "Images", desc: "Rotates your images (GIF, PNG, SVG)", thumb: "/docimg/images-page.png", scene: true },
   city:      { name: "Synthwave City", desc: "Living pixel scene", thumb: "/docimg/city.png", scene: true },
