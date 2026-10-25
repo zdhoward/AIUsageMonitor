@@ -7,6 +7,7 @@ const PAGES = {
   companion: { name: "Companion", desc: "MINT, the robot face", thumb: "/docimg/MINT-happy-device.png", scene: true },
   image:     { name: "Images", desc: "GIF player", thumb: "/docimg/images-page.png", scene: true },
   city:      { name: "Synthwave City", desc: "Living pixel scene", thumb: "/docimg/city.png", scene: true },
+  system:    { name: "System", desc: "Task Manager style PC resources", thumb: "/docimg/system-page.png" },
   scenes:    { name: "All scenes", desc: "Rotates through every scene in the library", thumb: "/library/miami-drive/preview.png", scene: true },
 };
 const TIMEOUTS = [10, 20, 30, 45, 60, 120, 180, 300, 600, 900, 1800, 3600];

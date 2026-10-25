@@ -371,7 +371,7 @@ loadThemes().catch(() => {});
 // ------------------------------------------------------------------ viewer
 const player = new ScenePlayer($("#stageCanvas"));
 let viewing = null, draft = null;
-const PAGE_NAMES = { console: "Console", details: "Details", companion: "Companion", image: "Images", city: "Synthwave City", scenes: "Scene playlist" };
+const PAGE_NAMES = { console: "Console", details: "Details", companion: "Companion", image: "Images", city: "Synthwave City", scenes: "Scene playlist", system: "System" };
 
 function openViewer(e, settings = false) {
   viewing = e;
