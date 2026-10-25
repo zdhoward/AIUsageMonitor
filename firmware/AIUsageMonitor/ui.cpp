@@ -329,14 +329,29 @@ static bool prefixNoCase(const char* s, const char* prefix) {
 }
 
 // Stable slot mapping: CL1, CL2, Codex keep their rows even when the service
-// reorders accounts. Unknown names leave the row at "--" rather than guess.
-static int slotIndex(const Model& m, int slot) {
+// reorders accounts. Names that match no row (T3 display names such as "A")
+// fill the free Claude rows in service order, which follows T3's cache files.
+static int slotByName(const Model& m, int slot) {
   static const char* const ids[3] = {"cl1", "cl2", "codex"};
   static const char* const longs[3] = {"claude a", "claude b", "codex"};
   for (int i = 0; i < m.nacc; ++i)
     if (eqNoCase(m.acc[i].p, ids[slot])) return i;
   for (int i = 0; i < m.nacc; ++i)
     if (prefixNoCase(m.acc[i].p, longs[slot])) return i;
+  return -1;
+}
+
+static int slotIndex(const Model& m, int slot) {
+  const int named = slotByName(m, slot);
+  if (named >= 0 || slot == 2) return named;
+  int skip = 0;  // unnamed accounts to pass before this row's
+  for (int s = 0; s < slot; ++s)
+    if (slotByName(m, s) < 0) skip++;
+  for (int i = 0; i < m.nacc; ++i) {
+    bool claimed = false;
+    for (int s = 0; s < 3; ++s) claimed |= slotByName(m, s) == i;
+    if (!claimed && skip-- == 0) return i;
+  }
   return -1;
 }
 
@@ -443,28 +458,28 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
   for (int slot = 0; slot < 3; ++slot)
     drawClientCard(m, now, slot, pad, top + slot * (ch + gap), W - 2 * pad, ch);
 
-  // Footer: oldest provider source age (not the serial push age) + link health.
+  // Footer: newest provider reading age (not the serial push age) + link
+  // health. An idle account's reading ages on its own (T3 re-polls quota only
+  // every few minutes); its card carries the STALE label, not the footer.
   int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
-  int32_t oldest = -1;
-  bool anyStale = now - m.rxMillis > DATA_TIMEOUT_MS;
-  for (int i = 0; i < m.nacc; ++i) {
-    if (m.acc[i].stale) anyStale = true;
+  int32_t newest = -1;
+  for (int i = 0; i < m.nacc; ++i)
     if (m.acc[i].age >= 0) {
       int32_t s = m.acc[i].age + elapsed;
-      if (s > oldest) oldest = s;
-      if (s > CLIENT_STALE_S) anyStale = true;
+      if (newest < 0 || s < newest) newest = s;
     }
-  }
   char d[10];
-  if (oldest < 0) strlcpy(b, "Updated --", sizeof b);
+  if (newest < 0) strlcpy(b, "Updated --", sizeof b);
   else {
-    if (oldest < 60) snprintf(d, sizeof d, "%lds", (long)oldest);
-    else fmtDur(d, sizeof d, oldest);
+    if (newest < 60) snprintf(d, sizeof d, "%lds", (long)newest);
+    else fmtDur(d, sizeof d, newest);
     snprintf(b, sizeof b, "Updated %s", d);
   }
-  // Link health is a dot before the age: green ok, amber stale, red source
-  // error. Reserve the page indicator's width (dots or the "n / m" counter).
-  const uint16_t sc = !m.ok ? C_RED : anyStale ? C_AMBER : C_GREEN;
+  // Link health is a dot before the age: green ok, amber when no payload has
+  // arrived for DATA_TIMEOUT_MS, red source error. Reserve the page
+  // indicator's width (dots or the "n / m" counter).
+  const bool linkLost = now - m.rxMillis > DATA_TIMEOUT_MS;
+  const uint16_t sc = !m.ok ? C_RED : linkLost ? C_AMBER : C_GREEN;
   g.fillCircle(pad + 4, fy + 7, 4, col(sc));
   const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
   text(b, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);

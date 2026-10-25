@@ -81,7 +81,7 @@ Edit that local JSON file before starting the service. It is Git-ignored. The ex
 | `bind_host`, `bind_port` | `127.0.0.1`, 8797 |
 | `refresh_s` | Local collection cadence, 10 seconds, also shortened for upcoming reset deadlines |
 | `push_interval_s` | Serial payload cadence, 5 seconds |
-| `limits_stale_s` | Service staleness threshold, 1200 seconds |
+| `limits_stale_s` | Service staleness threshold, 3600 seconds (T3 re-polls Claude quota only every few minutes, and an idle account can go 10+ minutes between readings) |
 | `openrouter_refresh_s` | Optional key-status polling cadence, 600 seconds |
 | `opencode_refresh_s` | OpenCode history polling cadence, 30 seconds |
 | `opencode_db` | Optional path override; default `~/.local/share/opencode/opencode.db` |
