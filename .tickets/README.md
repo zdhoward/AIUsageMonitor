@@ -17,8 +17,9 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-011 | Configurable daylight backlight control for the owner's city implemented after authorized paid correction, built and flashed on COM6. Live cached night target 40/255 and serial ACKs verified. Physical calibration and broader acceptance remain pending. |
 | T-012 | Delivered: scene engine, playlist, themes, generators (patterns/plasma/warp), Studio editor and import. See [plan](../docs/SCENE_LIBRARY_PLAN.md). |
 | T-016 | Planned: classic screensavers as generators (3D Pipes, Maze, Mystify). |
-| T-013 | Planned: build profiles with flash budget and screensaver scene playlist. |
-| T-014 | Planned: Scene Studio MVP (PySide6, exact preview via host DLL, build/flash/shot/PERF). |
-| T-015 | Planned: Studio import panel and profile editor. |
+| T-013 | Delivered (except a flash-budget gate): profiles, multiple playlists, scene pages, ring colours. |
+| T-014 | Delivered as a web app: native DLL preview, live device tuning, build/flash/capture/PERF. |
+| T-015 | Delivered: import, per-card gear settings, theme list, Lospec palettes, playlists tab. |
+| T-017 | Planned: VJ transitions between playlist scenes (after VIDEO_XCHNG), plus more termflix/sysc-Go effects. |
 
 Published release baseline: `v1.4.2` / `315d70c`. The current local development firmware includes later untagged MINT commits and still reports 1.4.2; see [HANDOFF.md](../HANDOFF.md) before identifying the installed build. Public docs and MIT license remain pushed; no changes from this session were pushed.
