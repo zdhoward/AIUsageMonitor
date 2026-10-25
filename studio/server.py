@@ -330,20 +330,44 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND)
         except (ValueError, RuntimeError, KeyError, OSError) as e:
             self.send_json({"error": str(e)}, 400)
+        except Exception as e:  # never answer with a bare 500 page the UI cannot read
+            log_error(f"POST {path}")
+            self.send_json({"error": f"{type(e).__name__}: {e} (details in logs/studio.log)"}, 500)
+
+
+LOG = ROOT / "logs" / "studio.log"
+
+
+def log_error(context: str) -> None:
+    import traceback
+    LOG.parent.mkdir(exist_ok=True)
+    with LOG.open("a", encoding="utf-8") as f:
+        f.write(f"{datetime.now():%Y-%m-%d %H:%M:%S} {context}\n{traceback.format_exc()}\n")
+
+
+def open_window(url: str) -> None:
+    edge = shutil.which("msedge") or r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+    try:
+        subprocess.Popen([edge, f"--app={url}", "--window-size=1280,860"])
+    except OSError:
+        import webbrowser
+        webbrowser.open(url)
 
 
 def main() -> None:
     LIBRARY.mkdir(parents=True, exist_ok=True)
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    url = f"http://127.0.0.1:{PORT}"
+    port = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else PORT
+    url = f"http://127.0.0.1:{port}"
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    except OSError:
+        # A Studio is already running: open a window onto it instead of failing silently.
+        if "--no-window" not in sys.argv:
+            open_window(url)
+        return
     print(f"Scene Studio on {url}  (Ctrl+C to quit)")
     if "--no-window" not in sys.argv:
-        edge = shutil.which("msedge") or r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-        try:
-            subprocess.Popen([edge, f"--app={url}", "--window-size=1280,860"])
-        except OSError:
-            import webbrowser
-            webbrowser.open(url)
+        open_window(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
