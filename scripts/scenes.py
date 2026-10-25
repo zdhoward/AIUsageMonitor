@@ -292,9 +292,19 @@ def library_scenes() -> list[tuple[str, Path, dict]]:
     found = []
     for f in sorted(LIBRARY.glob("*/entry.json")):
         e = json.loads(f.read_text(encoding="utf-8"))
-        if e.get("kind") == "scene" and e.get("scene"):
+        if e.get("kind") == "scene" and e.get("scene") and art_present(f.parent, e["scene"]):
             found.append((f.parent.name, f.parent, e))
     return found
+
+
+def art_present(d: Path, sc: dict) -> bool:
+    """Scene art is personal and git-ignored; a clone without it skips the scene."""
+    files = [s for L in sc.get("layers", []) for s in ([L["src"]] if isinstance(L["src"], str) else L["src"])]
+    files += (sc.get("generator") or {}).get("tiles", [])
+    missing = [f for f in files if not (d / f).exists()]
+    if missing:
+        print(f"{d.name:<16}  skipped (missing {missing[0]})")
+    return not missing
 
 
 def selected(profile: str | None) -> set | None:

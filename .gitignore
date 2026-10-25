@@ -14,3 +14,21 @@ firmware/AIUsageMonitor/profile_gen.h
 assets/library/*/.build/
 firmware/AIUsageMonitor/playlists_gen.h
 studio/native/build/
+
+# Art is personal: the public repo ships the code and system only. Add your own
+# images/scenes locally (see docs/ASSETS.md); none of these are published.
+assets/manifest.json
+assets/gif/
+assets/img/
+assets/scenes/
+assets/library/*/src/
+assets/library/*/preview.png
+assets/library/angry-skele/
+firmware/AIUsageMonitor/assets_gen.cpp
+firmware/AIUsageMonitor/assets_gen.h
+firmware/AIUsageMonitor/scenes_gen.cpp
+firmware/AIUsageMonitor/scenes_gen.h
+docs/img/city.png
+docs/img/images-page.png
+docs/img/svg-logo.png
+docs/img/T-008A-images.png

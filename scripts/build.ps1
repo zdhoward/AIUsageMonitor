@@ -17,6 +17,12 @@ if ($Profile) {
   & python "$PSScriptRoot\profile_gen.py" $Profile
   if ($LASTEXITCODE -ne 0) { throw "profile '$Profile' is invalid" }
 }
+# Generated art tables are git-ignored (art is personal); rebuild them from
+# whatever is in assets/ so a fresh clone compiles with no art at all.
+$convertArgs = @("$PSScriptRoot\asset_convert.py")
+if ($Profile) { $convertArgs += @('--profile', $Profile) }
+& python @convertArgs | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'asset conversion failed' }
 $sketch = Resolve-Path "$PSScriptRoot\..\firmware\AIUsageMonitor"
 
 # TFT_eSPI setup for this board, identical to the User_Setup.h used by earlier
