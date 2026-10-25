@@ -200,6 +200,50 @@ class ScenePlayer {
   }
 }
 
+// ------------------------------------------------------------------ library cards
+// Scene cards play on hover (one player at a time keeps the page light), and
+// scenes without a thumbnail get one rendered by the same player.
+let hoverPlayer = null;
+function livePreview(card, e) {
+  const img = card.querySelector("img");
+  card.addEventListener("mouseenter", () => {
+    const cv = document.createElement("canvas");
+    cv.width = 320; cv.height = 240;
+    cv.className = "live";
+    img.after(cv);
+    hoverPlayer?.stop();
+    hoverPlayer = new ScenePlayer(cv);
+    hoverPlayer.load(e.id, e.scene).catch(() => cv.remove());
+  });
+  card.addEventListener("mouseleave", () => {
+    hoverPlayer?.stop();
+    card.querySelectorAll("canvas.live").forEach((c) => c.remove());
+  });
+  if (!e.has_preview) renderThumb(e, img);
+}
+const thumbQueue = [];
+function renderThumb(e, img) {
+  thumbQueue.push(async () => {
+    const cv = document.createElement("canvas");
+    cv.width = 320; cv.height = 240;
+    const p = new ScenePlayer(cv);
+    await p.load(e.id, e.scene);
+    p.stop();
+    for (let t = 0; t <= 4000; t += 40) p.draw(t);  // let stateful effects (warp) settle
+    const data = cv.toDataURL("image/png");
+    img.src = data;
+    await api(`/api/library/${e.id}/preview`, { data });
+    e.has_preview = true;
+  });
+  if (thumbQueue.length === 1) drainThumbs();
+}
+async function drainThumbs() {
+  while (thumbQueue.length) {
+    try { await thumbQueue[0](); } catch (err) { console.warn("thumbnail", err); }
+    thumbQueue.shift();
+  }
+}
+
 // ------------------------------------------------------------------ viewer
 const player = new ScenePlayer($("#stageCanvas"));
 let viewing = null, draft = null;

@@ -176,6 +176,7 @@ function renderLibrary() {
     card.querySelector("b").textContent = e.name;
     card.querySelector("p").textContent = e.notes || "";
     card.onclick = () => openViewer(e);
+    if (e.kind === "scene" && e.scene) livePreview(card, e);
     card.querySelector(".gear").onclick = (ev) => { ev.stopPropagation(); openViewer(e, true); };
     box.append(card);
   });
