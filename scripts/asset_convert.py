@@ -2,7 +2,8 @@
 
 Reads assets/manifest.json and writes firmware/AIUsageMonitor/assets_gen.{h,cpp}.
 Sources: .gif (all frames, per-frame delays), .png/.jpg (one frame) and
-.aseprite/.ase (exported with the Aseprite CLI; optional single layer, tags kept).
+.aseprite/.ase (exported with the Aseprite CLI; optional single layer, tags kept)
+and .svg (rasterized with resvg-py to fit `size`, default the Images page).
 Frames are trimmed to their shared opaque bounds, snapped to RGB332 and
 run-length encoded. Alpha < 128 is transparent.
 
@@ -13,6 +14,10 @@ Manifest entry fields:
   mode   "frames" (default) or "rects": emit the bounding box and colour of each
          connected blob in frame 0, for code-driven effects such as window blinks.
   max_bytes  optional budget; conversion fails if the encoded asset is larger.
+  image  true to show the asset on the Images page (pages rotate in manifest order).
+  size   SVG only: [w, h] box the drawing is fitted into (aspect kept).
+  bg     SVG only: "#rrggbb" to flatten onto, so anti-aliased edges blend into
+         that colour instead of being cut at alpha 128 (use the page background).
 
 Usage: python scripts/asset_convert.py [--check]
 Set ASEPRITE to the executable if it is not in the default Steam location.
@@ -77,6 +82,31 @@ def load_aseprite(path: Path, layer: str | None):
     return frames, durations, tags
 
 
+SVG_FIT = (300, 210)  # Images page area (320x240 less footer) with a margin
+
+
+def load_svg(path: Path, fit, bg: str | None):
+    import io
+    import re
+
+    import resvg_py  # pip install resvg-py; only needed for SVG sources
+
+    vb = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)', path.read_text(encoding="utf-8"))
+    if not vb:
+        sys.exit(f"{path.name}: SVG needs a viewBox to size it")
+    vw, vh = float(vb.group(1)), float(vb.group(2))
+    k = min(fit[0] / vw, fit[1] / vh)
+    png = resvg_py.svg_to_bytes(svg_path=str(path), width=round(vw * k), height=round(vh * k))
+    im = Image.open(io.BytesIO(bytes(png))).convert("RGBA")
+    if bg:
+        flat = Image.new("RGBA", im.size, bg)
+        flat.alpha_composite(im)
+        # Keep only the drawing's footprint opaque so the page shows around it.
+        flat.putalpha(im.getchannel("A").point(lambda a: 255 if a else 0))
+        im = flat
+    return [im], [1000], []
+
+
 def load(entry: dict):
     path = ASSETS / entry["src"]
     ext = path.suffix.lower()
@@ -84,6 +114,8 @@ def load(entry: dict):
         return load_gif(path)
     if ext in (".aseprite", ".ase"):
         return load_aseprite(path, entry.get("layer"))
+    if ext == ".svg":
+        return load_svg(path, entry.get("size") or SVG_FIT, entry.get("bg"))
     with Image.open(path) as im:
         return [im.convert("RGBA")], [1000], []
 
@@ -207,6 +239,12 @@ def main() -> None:
         grand += size
         print(f"{entry['name']:<16} {size:>8} bytes")
     print(f"{'total':<16} {grand:>8} bytes")
+    images = [f"&ASSET_{e['name']}" for e in manifest["assets"] if e.get("image")]
+    if not images:
+        sys.exit("manifest: no asset has \"image\": true for the Images page")
+    hdr.append(f"\nextern const AnimAsset* const IMAGE_ASSETS[];  // Images page rotation\n"
+               f"#define IMAGE_ASSET_COUNT {len(images)}\n")
+    cpp.append(f"const AnimAsset* const IMAGE_ASSETS[] = {{{', '.join(images)}}};\n")
     out = {FW / "assets_gen.cpp": "".join(cpp), FW / "assets_gen.h": "".join(hdr)}
     import scenes
     scpp, shdr, ssize = scenes.generate(a.profile)

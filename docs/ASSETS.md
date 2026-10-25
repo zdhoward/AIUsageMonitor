@@ -21,8 +21,9 @@ Supported sources:
 | `.gif` | All frames, with each frame's own delay. |
 | `.png` / `.jpg` | One still frame. |
 | `.aseprite` / `.ase` | Exported through the Aseprite CLI. Frame durations and tags are kept. Set `layer` to export a single layer. |
+| `.svg` | One still frame, rasterized with `resvg-py` (`pip install resvg-py`) to fit `size` (default 300x210, aspect kept). Needs a `viewBox`. Set `bg` to the page colour (`#000000` on the Images page) so anti-aliased edges blend instead of being cut. Example: `img/grid_logo_1_light.svg`. |
 
-Manifest fields: `name`, `src`, optional `layer`, optional `mode: "rects"`, optional `max_bytes` budget. `rects` mode outputs the bounding box and colour of each separate blob in the first frame instead of image data. The city's blinking windows use it.
+Manifest fields: `name`, `src`, optional `layer`, optional `mode: "rects"`, optional `max_bytes` budget, optional `image: true` (shown on the Images page, which rotates through these in manifest order every `UI_IMAGE_SECONDS`, default 10), and the SVG options `size` and `bg`. `rects` mode outputs the bounding box and colour of each separate blob in the first frame instead of image data. The city's blinking windows use it.
 
 Colours are snapped to RGB332 (8 red, 8 green and 4 blue levels). Pixels with alpha below 128 are transparent. Frames are trimmed to the opaque area they share, so an Aseprite layer keeps its position on the canvas.
 

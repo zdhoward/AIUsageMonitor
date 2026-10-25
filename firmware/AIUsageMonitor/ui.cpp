@@ -901,7 +901,11 @@ static bool canvas(Canvas8& c) {
 static void drawImage(const Model&, uint32_t now, const ViewDef&, int) {
   Canvas8 c;
   if (!canvas(c)) return;
-  const AnimAsset& a = ASSET_skele;
+  // Rotates through the manifest's "image" assets; each frame time restarts
+  // at its own turn so an animation always plays from the start.
+  const uint32_t turn = UI_IMAGE_SECONDS * 1000UL;
+  const AnimAsset& a = *IMAGE_ASSETS[(now / turn) % IMAGE_ASSET_COUNT];
+  now %= turn;
   const uint8_t scale = min(W / a.w, (H - 16) / a.h) ? min(W / a.w, (H - 16) / a.h) : 1;
   animBlit(c, a, animFrameAt(a, now), (W - a.w * scale) / 2 - a.x * scale,
            (H - 16 - a.h * scale) / 2 - a.y * scale, scale);
