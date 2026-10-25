@@ -15,10 +15,18 @@ const FX_FRONT = { rain: 1, snow: 1 };
 let THEMES = null;
 
 const IDENTITY = [...Array(256)].map((_, i) => i);
-async function loadThemes(force = false) {
-  if (THEMES && !force) return;
-  THEMES = await (await fetch("/api/themes")).json();
-  window.THEME_INFO = await (await fetch("/api/theme-info")).json();
+let themesLoading = null;
+function loadThemes(force = false) {
+  if (force || !themesLoading) {
+    themesLoading = (async () => {
+      const [luts, info] = await Promise.all([fetch("/api/themes").then((r) => r.json()),
+                                              fetch("/api/theme-info").then((r) => r.json())]);
+      THEMES = luts;
+      window.THEME_INFO = info;
+    })();
+    themesLoading.catch(() => { themesLoading = null; });  // allow a retry after a failed load
+  }
+  return themesLoading;
 }
 function cycleLut(s, now) {
   const c = s.cycle;
@@ -518,57 +526,68 @@ $("#vDelete").onclick = async () => {
 // smooth in-scene cycle (cross-fading palette maps), with hold and fade times.
 function renderThemes() {
   const s = draft, cycling = !!s.cycle;
+  const box = $("#eThemes");
+  if (!(window.THEME_INFO || []).length) {  // themes still loading (or failed): load, then draw
+    box.innerHTML = `<div class="tl-empty">Loading themes…</div>`;
+    loadThemes(true).then(() => draft === s && renderThemes()).catch(() => (box.innerHTML = `<div class="tl-empty">Couldn't load themes. Is the Studio server running?</div>`));
+    return;
+  }
   const extras = cycling ? (s.cycle.themes || []).slice(1) : s.variants;
   const setExtras = (next) => { if (cycling) s.cycle.themes = [s.theme || "original", ...next]; else s.variants = next; };
-  const box = $("#eThemes");
+  const alsoLabel = cycling ? "In cycle" : "Playlist copy";
   const filter = (box.querySelector(".tl-filter") || {}).value || "";
-  box.innerHTML = `<div class="tl-head"><input class="tl-filter" placeholder="Filter themes…"><span>Main</span><span>${cycling ? "Cycle" : "Copy"}</span></div><div class="tl-rows"></div>`;
+  box.innerHTML = `<div class="tl-head"><input class="tl-filter" placeholder="Filter ${window.THEME_INFO.length} themes…"><span>${alsoLabel}</span></div><div class="tl-rows"></div>`;
   const f = box.querySelector(".tl-filter");
   f.value = filter;
   f.oninput = () => { renderThemes(); const nf = $("#eThemes .tl-filter"); nf.focus(); nf.setSelectionRange(nf.value.length, nf.value.length); };
   const rows = box.querySelector(".tl-rows");
-  const info = window.THEME_INFO || [];
-  // ticked extras first, in their order; then everything else
-  const ordered = [...extras.map((id) => info.find((t) => t.id === id)).filter(Boolean), ...info.filter((t) => !extras.includes(t.id))];
-  ordered.filter((t) => !filter || (t.name + " " + (t.author || "")).toLowerCase().includes(filter.toLowerCase())).forEach((t) => {
-    const main = (s.theme || "original") === t.id, extra = extras.includes(t.id), k = extras.indexOf(t.id);
-    const row = el(`<div class="tl-row ${main ? "main" : ""} ${extra ? "extra" : ""}">
-      <span class="sw-strip wide">${t.colors.map((c) => `<i style="background:${c}"></i>`).join("")}</span>
-      <div class="tl-name"><b></b><small></small></div>
-      <span class="tl-move">${extra && extras.length > 1 ? `<button class="mini-btn" data-d="-1" title="Earlier">↑</button><button class="mini-btn" data-d="1" title="Later">↓</button>` : ""}</span>
-      ${t.kind === "palette" ? '<button class="mini-btn del" title="Remove palette">×</button>' : "<span></span>"}
-      <input type="radio" name="tmain" ${main ? "checked" : ""} title="Main theme">
-      <input type="checkbox" ${extra ? "checked" : ""} ${main ? "disabled" : ""} title="${cycling ? "Include in the cycle" : "Add a playlist copy"}">
-    </div>`);
-    row.querySelector("b").textContent = t.name;
-    row.querySelector("small").textContent = t.kind === "palette" ? `Lospec · ${t.author || "unknown"} · ${t.colors.length} colours` : "Built in";
-    row.querySelector("input[type=radio]").onchange = () => {
-      s.theme = t.id;
-      setExtras(extras.filter((x) => x !== t.id));
-      renderThemes();
-    };
-    row.querySelector("input[type=checkbox]").onchange = (e) => {
-      setExtras(e.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id));
-      renderThemes();
-    };
-    row.querySelectorAll("[data-d]").forEach((btn) => (btn.onclick = () => {
-      const next = [...extras], j = k + +btn.dataset.d;
-      if (j < 0 || j >= next.length) return;
-      [next[k], next[j]] = [next[j], next[k]];
-      setExtras(next);
-      renderThemes();
-    }));
-    const del = row.querySelector(".del");
-    if (del) del.onclick = async () => {
-      if (!confirm(`Remove the ${t.name} palette? Scenes using it fall back to original colours.`)) return;
-      await api(`/api/themes/${t.id}/delete`, {});
-      if (s.theme === t.id) s.theme = "original";
-      setExtras(extras.filter((x) => x !== t.id));
-      await loadThemes(true);
-      renderThemes();
-    };
-    rows.append(row);
-  });
+  const info = window.THEME_INFO;
+  const main = s.theme || "original";
+  // current theme first, then ticked extras in their order, then everything else
+  const order = [main, ...extras, ...info.map((t) => t.id).filter((id) => id !== main && !extras.includes(id))];
+  order.map((id) => info.find((t) => t.id === id)).filter(Boolean)
+    .filter((t) => !filter || (t.name + " " + (t.author || "")).toLowerCase().includes(filter.toLowerCase()))
+    .forEach((t) => {
+      const isMain = t.id === main, extra = extras.includes(t.id), k = extras.indexOf(t.id);
+      const row = el(`<div class="tl-row ${isMain ? "main" : ""} ${extra ? "extra" : ""}" title="Click to use this theme">
+        <span class="tl-check">${isMain ? "✓" : ""}</span>
+        <span class="sw-strip wide">${t.colors.map((c) => `<i style="background:${c}"></i>`).join("")}</span>
+        <div class="tl-name"><b></b><small></small></div>
+        <span class="tl-move">${extra && extras.length > 1 ? `<button class="mini-btn" data-d="-1" title="Earlier">↑</button><button class="mini-btn" data-d="1" title="Later">↓</button>` : ""}</span>
+        ${t.kind === "palette" ? '<button class="mini-btn del" title="Remove palette">×</button>' : "<span></span>"}
+        <label class="tl-also" title="${cycling ? "Fade to this theme in the cycle" : "Also add this theme as its own playlist entry"}">
+          <input type="checkbox" ${extra ? "checked" : ""} ${isMain ? "disabled" : ""}></label>
+      </div>`);
+      row.querySelector("b").textContent = t.name + (isMain ? "  (current)" : "");
+      row.querySelector("small").textContent = t.kind === "palette" ? `Lospec · ${t.author || "unknown"} · ${t.colors.length} colours` : "Built in";
+      row.onclick = (ev) => {
+        if (ev.target.closest("button, label")) return;
+        s.theme = t.id;
+        setExtras(extras.filter((x) => x !== t.id));
+        renderThemes();
+      };
+      row.querySelector(".tl-also input").onchange = (e) => {
+        setExtras(e.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id));
+        renderThemes();
+      };
+      row.querySelectorAll("[data-d]").forEach((btn) => (btn.onclick = () => {
+        const next = [...extras], j = k + +btn.dataset.d;
+        if (j < 0 || j >= next.length) return;
+        [next[k], next[j]] = [next[j], next[k]];
+        setExtras(next);
+        renderThemes();
+      }));
+      const del = row.querySelector(".del");
+      if (del) del.onclick = async () => {
+        if (!confirm(`Remove the ${t.name} palette? Scenes using it fall back to original colours.`)) return;
+        await api(`/api/themes/${t.id}/delete`, {});
+        if (s.theme === t.id) s.theme = "original";
+        setExtras(extras.filter((x) => x !== t.id));
+        await loadThemes(true);
+        renderThemes();
+      };
+      rows.append(row);
+    });
   const mode = $("#eThemeMode");
   mode.innerHTML = `<div class="seg"><button data-m="copies" class="${cycling ? "" : "on"}">Ticked themes → playlist copies</button>
     <button data-m="cycle" class="${cycling ? "on" : ""}">Ticked themes → smooth cycle</button></div>
