@@ -325,32 +325,13 @@ bool parseSys(const char* json, size_t len, SysData& s) {
   if (deserializeJson(doc, json, len) || strcmp(doc["t"] | "", "sys")) return false;
   s.valid = true;
   s.rxMillis = millis();
-  s.cpu = constrain(doc["c"] | 0, 0, 100);
-  JsonArrayConst k = doc["k"];
-  s.ncores = 0;
-  for (JsonVariantConst v : k) {
-    if (s.ncores >= SYS_CORES) break;
-    s.core[s.ncores++] = constrain(v | 0, 0, 100);
-  }
+  s.cpu = constrain(doc["c"] | -1, -1, 100);
+  s.gpu = constrain(doc["g"] | -1, -1, 100);
   s.memUsed = doc["mu"] | 0;
   s.memTotal = doc["mt"] | 0;
   s.diskR = doc["dr"] | 0;
   s.diskW = doc["dw"] | 0;
   s.netR = doc["nr"] | 0;
   s.netS = doc["ns"] | 0;
-  s.uptime = doc["up"] | 0;
-  s.ntop = 0;
-  for (JsonArrayConst p : doc["p"].as<JsonArrayConst>()) {
-    if (s.ntop >= 3) break;
-    copyStr(s.top[s.ntop].n, sizeof s.top[0].n, p[0]);
-    s.top[s.ntop++].c = constrain(p[1] | 0, 0, 100);
-  }
-  // Append to the history rings; once full, `head` is the oldest sample.
-  const uint8_t i = s.count < SYS_HIST ? s.count : s.head;
-  s.cpuHist[i] = s.cpu;
-  s.memHist[i] = s.memTotal ? (uint8_t)(100ULL * s.memUsed / s.memTotal) : 0;
-  s.netHist[i] = s.netR + s.netS;
-  if (s.count < SYS_HIST) s.count++;
-  else s.head = (uint8_t)((s.head + 1) % SYS_HIST);
   return true;
 }

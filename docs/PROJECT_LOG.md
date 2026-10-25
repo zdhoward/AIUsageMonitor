@@ -181,3 +181,4 @@
 
 - **Fix:** the display stopped updating because a Studio pause cleared the serial handle mid-write and the uncaught `AttributeError` killed the serial thread silently (pythonw has no stderr). The loop now uses a local handle and survives any exception.
 - **System page** (`system`): CPU history and per-core bars, memory, disk and network rates, top three processes. Stats travel as a separate 1 Hz `{"t":"sys"}` line so the 4 KB usage push keeps its cadence; the device keeps 60 s of history. Needs `psutil`. No GPU stats (no vendor-neutral source without extra tooling).
+- **System page redesign** (same day): owner wanted CPU, RAM, GPU, disk R/W, upload and download only, no graphs, smoother updates. Dropped histories and the process scan (it blocked the serial loop every 3 s, causing stutter). Added GPU load from Windows "GPU Engine" PDH counters via ctypes (busiest engine type, as Task Manager shows). Values ease on the device at ~250 ms.

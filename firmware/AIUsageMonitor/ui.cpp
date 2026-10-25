@@ -788,44 +788,53 @@ static void drawDetails(const Model& m, uint32_t now, const ViewDef&, int y) {
 
 
 // ---------------------------------------------------------------- system page
-// Task Manager style view of the PC: CPU history and per-core load on the
-// left, memory, disk, network and the busiest processes on the right. Data
-// comes from gSys, which the service refreshes about once a second.
+// Task Manager style view of the PC: CPU, RAM and GPU load as large readouts
+// with bars, then disk read/write and network download/upload. Samples arrive
+// about once a second; every number and bar eases toward the latest sample on
+// each frame so the page moves smoothly instead of stepping.
 
-static void fmtRate(char* b, size_t n, uint32_t kib) {
-  if (kib < 1000) snprintf(b, n, "%luK", (unsigned long)kib);
-  else if (kib < 1024000) snprintf(b, n, "%.1fM", kib / 1024.0);
-  else snprintf(b, n, "%.1fG", kib / 1048576.0);
+static void fmtRate(char* num, size_t nn, char* unit, size_t nu, float kib) {
+  if (kib < 1000) { snprintf(num, nn, "%.0f", kib); strlcpy(unit, "KB/s", nu); }
+  else if (kib < 1024000) { snprintf(num, nn, kib < 10240 ? "%.1f" : "%.0f", kib / 1024); strlcpy(unit, "MB/s", nu); }
+  else { snprintf(num, nn, "%.1f", kib / 1048576); strlcpy(unit, "GB/s", nu); }
 }
 
-// Filled history graph of percentages (or values scaled to `peak`), oldest left.
-static void historyGraph(int x, int y, int w, int h, const uint8_t* pct, const uint32_t* raw, uint32_t peak,
-                         uint16_t c) {
+// One load row: label (and optional detail) left, big percent right, bar below.
+static void loadRow(int x, int y, int w, const char* label, const char* detail, float pct, bool known) {
   TFT_eSPI& g = G();
-  g.fillRect(x, y, w, h, col(C_PANEL));
-  for (int q = 1; q < 4; ++q) g.drawFastHLine(x, y + h * q / 4, w, col(C_TRACK));
-  g.drawRect(x, y, w, h, col(C_FAINT));
-  const SysData& s = gSys;
-  if (!s.count) return;
-  const float step = (float)(w - 2) / (SYS_HIST - 1);
-  int px = -1, py = 0;
-  for (uint8_t k = 0; k < s.count; ++k) {
-    const uint8_t i = (uint8_t)((s.head + k) % SYS_HIST);
-    const uint32_t v = pct ? pct[i] : (peak ? (uint32_t)(100ULL * raw[i] / peak) : 0);
-    const int xx = x + 1 + (int)((SYS_HIST - s.count + k) * step);
-    const int yy = y + h - 2 - (int)((h - 3) * min<uint32_t>(v, 100) / 100);
-    g.drawFastVLine(xx, yy, y + h - 1 - yy, col(C_TRACK));
-    if (px >= 0) g.drawLine(px, py, xx, yy, col(c));
-    px = xx;
-    py = yy;
-  }
+  char b[8];
+  text(label, x, y + 6, 2, C_MUTED);
+  if (detail) text(detail, x + 44, y + 10, 1, C_MUTED);
+  const int p = (int)(pct + 0.5f);
+  if (known) snprintf(b, sizeof b, "%d%%", p);
+  else strlcpy(b, "--", sizeof b);
+  text(b, x + w, y, 4, known ? C_TEXT : C_MUTED, TR_DATUM);
+  const int by = y + 28, bh = 6;
+  g.fillRoundRect(x, by, w, bh, 3, col(C_TRACK));
+  const int fw = known ? (int)(w * min(pct, 100.0f) / 100) : 0;
+  if (fw > 1) g.fillRoundRect(x, by, max(fw, bh), bh, 3, col(levelColor(p)));
 }
+
+// One I/O cell: small caption, big number with its unit.
+static void rateCell(int x, int y, const char* label, uint16_t accent, float kib) {
+  TFT_eSPI& g = G();
+  char num[12], unit[6];
+  g.fillCircle(x + 3, y + 4, 3, col(accent));
+  text(label, x + 11, y, 1, C_MUTED);
+  fmtRate(num, sizeof num, unit, sizeof unit, kib);
+  const int nw = text(num, x, y + 12, 4, C_TEXT);
+  text(unit, x + nw + 4, y + 22, 1, C_MUTED);
+}
+
+static float ease(float& v, float target, float alpha) { return v += (target - v) * alpha; }
 
 static void drawSystem(const Model&, uint32_t now, const ViewDef&, int) {
-  TFT_eSPI& g = G();
+  static float cpu, mem, gpu, dr, dw, nr, ns;
+  static uint32_t last = 0;
   const SysData& s = gSys;
-  char b[40], r1[12], r2[12];
-  text("SYSTEM", 8, 4, 2, C_TEXT);
+  char b[32];
+  const int x = 12, w = W - 24;
+  text("SYSTEM", x, 6, 2, C_TEXT);
   if (!s.valid) {
     text("Waiting for PC stats", W / 2, H / 2 - 8, 2, C_MUTED, TC_DATUM);
     text("needs aimon with psutil", W / 2, H / 2 + 12, 1, C_FAINT, TC_DATUM);
@@ -834,77 +843,38 @@ static void drawSystem(const Model&, uint32_t now, const ViewDef&, int) {
   const uint32_t age = (now - s.rxMillis) / 1000;
   if (age > 5) {
     snprintf(b, sizeof b, "stale %lus", (unsigned long)age);
-    text(b, W - 8, 6, 1, C_AMBER, TR_DATUM);
-  } else if (s.uptime) {
-    snprintf(b, sizeof b, "up %lud %luh", (unsigned long)(s.uptime / 86400), (unsigned long)(s.uptime % 86400 / 3600));
-    text(b, W - 8, 6, 1, C_MUTED, TR_DATUM);
+    text(b, x + w, 10, 1, C_AMBER, TR_DATUM);
   }
 
-  const bool wide = W > H;
-  const int lw = wide ? W * 3 / 5 : W - 16, lx = 8;
-  int y = 24;
-  // CPU: headline, history, per-core strip.
-  snprintf(b, sizeof b, "%d%%", s.cpu);
-  text("CPU", lx, y, 2, C_MUTED);
-  text(b, lx + lw, y, 2, levelColor(s.cpu), TR_DATUM);
-  y += 18;
-  const int gh = wide ? 78 : 64;
-  historyGraph(lx, y, lw, gh, s.cpuHist, nullptr, 0, C_BLUE);
-  y += gh + 4;
-  if (s.ncores) {
-    const int ch = 22, cw = lw / s.ncores;
-    for (uint8_t i = 0; i < s.ncores; ++i) {
-      const int bx = lx + i * cw, fh = ch * s.core[i] / 100;
-      g.fillRect(bx, y, cw - 2, ch, col(C_TRACK));
-      if (fh) g.fillRect(bx, y + ch - fh, cw - 2, fh, col(levelColor(s.core[i])));
-    }
-    y += ch + 4;
-  }
-  // Memory: headline and history.
-  const int mp = s.memTotal ? (int)(100ULL * s.memUsed / s.memTotal) : -1;
-  snprintf(b, sizeof b, "%.1f/%.0f GB", s.memUsed / 1024.0, s.memTotal / 1024.0);
-  text("MEM", lx, y, 2, C_MUTED);
-  text(b, lx + 40, y + 4, 1, C_TEXT);
-  snprintf(b, sizeof b, "%d%%", mp);
-  text(b, lx + lw, y, 2, levelColor(mp), TR_DATUM);
-  y += 18;
-  if (wide) historyGraph(lx, y, lw, H - y - 18, s.memHist, nullptr, 0, C_AMBER);
-  else { bar(lx, y, lw, 10, mp); y += 16; }
+  // ~250 ms time constant: fast enough to track, slow enough to glide.
+  const float a = last ? min(1.0f, (now - last) / 250.0f) : 1.0f;
+  last = now;
+  const float memPct = s.memTotal ? 100.0f * s.memUsed / s.memTotal : 0;
+  ease(cpu, max<int8_t>(s.cpu, 0), a);
+  ease(mem, memPct, a);
+  ease(gpu, max<int8_t>(s.gpu, 0), a);
+  ease(dr, s.diskR, a);
+  ease(dw, s.diskW, a);
+  ease(nr, s.netR, a);
+  ease(ns, s.netS, a);
 
-  // Right column (landscape) or below (portrait): I/O and processes.
-  const int rx = wide ? lx + lw + 10 : lx, rw = wide ? W - rx - 8 : lw;
-  int ry = wide ? 24 : y;
-  fmtRate(r1, sizeof r1, s.diskR);
-  fmtRate(r2, sizeof r2, s.diskW);
-  text("DISK", rx, ry, 2, C_MUTED);
-  ry += 18;
-  snprintf(b, sizeof b, "R %s/s", r1);
-  text(b, rx, ry, 2, C_TEXT, TL_DATUM, rw);
-  ry += 16;
-  snprintf(b, sizeof b, "W %s/s", r2);
-  text(b, rx, ry, 2, C_TEXT, TL_DATUM, rw);
-  ry += 22;
-  text("NET", rx, ry, 2, C_MUTED);
-  ry += 18;
-  fmtRate(r1, sizeof r1, s.netR);
-  fmtRate(r2, sizeof r2, s.netS);
-  snprintf(b, sizeof b, "v %s/s", r1);
-  text(b, rx, ry, 2, C_GREEN, TL_DATUM, rw);
-  ry += 16;
-  snprintf(b, sizeof b, "^ %s/s", r2);
-  text(b, rx, ry, 2, C_BLUE, TL_DATUM, rw);
-  ry += 18;
-  uint32_t peak = 1;
-  for (uint8_t i = 0; i < s.count; ++i) peak = max(peak, s.netHist[i]);
-  historyGraph(rx, ry, rw, 30, nullptr, s.netHist, peak, C_GREEN);
-  ry += 36;
-  text("TOP CPU", rx, ry, 1, C_MUTED);
-  ry += 11;
-  for (uint8_t i = 0; i < s.ntop && ry < H - 22; ++i, ry += 12) {
-    snprintf(b, sizeof b, "%d%%", s.top[i].c);
-    text(b, rx + rw, ry, 1, levelColor(s.top[i].c), TR_DATUM);
-    text(s.top[i].n, rx, ry, 1, C_TEXT, TL_DATUM, rw - 26);
-  }
+  int y = 26;
+  loadRow(x, y, w, "CPU", nullptr, cpu, s.cpu >= 0);
+  y += 40;
+  snprintf(b, sizeof b, "%.1f / %.0f GB", s.memUsed / 1024.0, s.memTotal / 1024.0);
+  loadRow(x, y, w, "RAM", s.memTotal ? b : nullptr, mem, s.memTotal > 0);
+  y += 40;
+  loadRow(x, y, w, "GPU", nullptr, gpu, s.gpu >= 0);
+  y += 40;
+
+  G().drawFastHLine(x, y, w, col(C_FAINT));
+  y += 6;
+  const int cx = x + w / 2 + 6;
+  rateCell(x, y, "DISK READ", C_BLUE, dr);
+  rateCell(cx, y, "DISK WRITE", C_AMBER, dw);
+  y += 38;
+  rateCell(x, y, "DOWNLOAD", C_GREEN, nr);
+  rateCell(cx, y, "UPLOAD", C_BLUE, ns);
 }
 
 // ---------------------------------------------------------------- optional pages
