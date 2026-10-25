@@ -264,3 +264,41 @@ h3 .hint { text-transform: none; letter-spacing: 0; margin-left: 6px; }
 .pl input { display: none; }
 .pl-thumb { width: 44px; height: 33px; border-radius: 6px; background: #000 center/cover; image-rendering: pixelated; flex: none; }
 .inline-num { width: 56px; padding: 3px 6px; margin: 0 4px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel2); }
+
+/* playlists tab */
+.pl-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start; }
+.pl-list { display: flex; flex-direction: column; gap: 10px; }
+.pl-card { text-align: left; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; transition: .15s; }
+.pl-card:hover { border-color: var(--faint); }
+.pl-card.on { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255, 62, 165, .12); }
+.pl-card.new { border-style: dashed; background: none; }
+.pl-card b { display: block; margin-top: 8px; }
+.pl-card.new b { margin-top: 0; }
+.pl-card small { color: var(--muted); font-size: 12px; }
+.pl-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.pl-strip span { aspect-ratio: 4/3; border-radius: 4px; background: #000 center/cover; image-rendering: pixelated; }
+.pl-head { display: flex; gap: 16px; align-items: center; }
+.pl-name { flex: 1; font-size: 20px; font-weight: 600; padding: 6px 10px; border-radius: 9px; border: 1px solid transparent; background: none; }
+.pl-name:hover:not(:disabled), .pl-name:focus { border-color: var(--line); background: var(--panel2); outline: none; }
+.pl-secs { color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.pl-secs input { width: 70px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); }
+.pl-flags { display: flex; gap: 18px; align-items: center; margin: 12px 0 16px; flex-wrap: wrap; }
+.grow { flex: 1; }
+.pl-body { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr); gap: 20px; }
+.pl-stage { background: linear-gradient(160deg, #24243a, #12121c); border-radius: 14px; padding: 12px; border: 1px solid var(--line); align-self: start; }
+.pl-stage canvas { display: block; width: 100%; aspect-ratio: 4/3; image-rendering: pixelated; border-radius: 6px; background: #000; }
+.pl-now { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+.pl-side h3:first-child { margin-top: 0; }
+.pl-order { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: pl; }
+.pl-order li { display: flex; align-items: center; gap: 10px; padding: 5px 8px 5px 5px; border-radius: 10px; background: var(--panel2);
+  border: 1px solid var(--line); cursor: grab; counter-increment: pl; font-size: 13px; }
+.pl-order li::before { content: counter(pl); width: 18px; text-align: center; color: var(--faint); font-size: 11.5px; }
+.pl-order li.now { border-color: var(--cyan); }
+.pl-order li.dragging { opacity: .4; }
+.pl-order li.empty-row { color: var(--muted); cursor: default; justify-content: center; padding: 14px; }
+.pl-order li.empty-row::before { content: none; }
+.pl-order .icon-btn { height: 28px; width: 28px; font-size: 15px; }
+.pl-add { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.pl-pick { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--panel2); cursor: pointer; text-align: left; font-size: 12.5px; }
+.pl-pick:hover { border-color: var(--pink); }

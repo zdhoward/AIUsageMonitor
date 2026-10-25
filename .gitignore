@@ -12,3 +12,4 @@ firmware/AIUsageMonitor/profile_gen.h
 
 # Generated Studio previews
 assets/library/*/.build/
+firmware/AIUsageMonitor/playlists_gen.h

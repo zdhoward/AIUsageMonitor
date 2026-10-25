@@ -157,6 +157,72 @@ static void drawWarp(const Canvas8& c, const SceneDef& s, const SceneGen& g, uin
   }
 }
 
+// Digital rain: columns of procedurally generated glyphs fall with a bright
+// head and a fading trail; characters flicker as they fall. The glyph set is
+// generated from a hash, so there is no font asset.
+static const int MX_COLS = 64, MX_ROWS = 40;
+static uint8_t mxGlyph[64][7];  // 5-bit rows
+static uint8_t mxCell[MX_COLS * MX_ROWS];
+struct MxDrop { int32_t head16; uint8_t speed, len; };  // head row * 16, rows/s
+static MxDrop mxDrop[MX_COLS];
+static const SceneGen* mxFor = nullptr;
+static uint32_t mxLast = 0;
+
+static void mxRespawn(MxDrop& d, const SceneGen& g, uint32_t seed, int rows) {
+  const uint32_t h = hash(seed);
+  const int base = g.vx16 ? g.vx16 / 16 : 12;
+  d.speed = (uint8_t)(base / 2 + h % (base + 1));
+  d.len = (uint8_t)(6 + (h >> 8) % (rows * 2 / 3));
+  // Columns outside the density share start far above the screen and wait.
+  const bool active = (h >> 16) % 100 < (uint32_t)(g.vy16 ? g.vy16 : 70);
+  d.head16 = -(int32_t)(((h >> 20) % (active ? rows : rows * 4)) * 16);
+}
+
+static void drawMatrix(const Canvas8& c, const SceneDef& s, const SceneGen& g, uint32_t now) {
+  buildRamp(s, g);
+  const int sc = g.scale ? g.scale : 1, cw = 6 * sc, ch = 8 * sc;
+  const int cols = c.w / cw < MX_COLS ? c.w / cw : MX_COLS, rows = c.h / ch < MX_ROWS ? c.h / ch : MX_ROWS;
+  if (mxFor != &g) {
+    for (int k = 0; k < 64; ++k)
+      for (int r = 0; r < 7; ++r) {
+        uint32_t h = hash(k * 131 + r * 7 + 9);
+        uint8_t row = h & 0x1F;
+        if (r == 0 || (h >> 5) % 4 == 0) row = (h >> 8) % 2 ? 0x1F : row | 0x11;  // strokes like kana
+        mxGlyph[k][r] = row;
+      }
+    for (int i = 0; i < MX_COLS * MX_ROWS; ++i) mxCell[i] = hash(i + 77) & 63;
+    for (int x = 0; x < MX_COLS; ++x) mxRespawn(mxDrop[x], g, x * 911 + 1, rows);
+    mxFor = &g;
+    mxLast = now;
+  }
+  const uint32_t dt = now - mxLast > 200 ? 40 : now - mxLast;
+  mxLast = now;
+  c.fill(0, 0, c.w, c.h, themed(s, g.colors[0]));
+  for (int n = cols * rows / 30; n > 0; --n) {  // flicker a few characters each frame
+    const uint32_t h = hash(now * 31 + n);
+    mxCell[h % (MX_COLS * MX_ROWS)] = (h >> 16) & 63;
+  }
+  const uint8_t head = themed(s, g.colors[g.colorCount - 1]);
+  for (int x = 0; x < cols; ++x) {
+    MxDrop& d = mxDrop[x];
+    d.head16 += d.speed * (int32_t)dt * 16 / 1000;
+    const int hr = d.head16 / 16;
+    if (hr - d.len > rows) {
+      mxRespawn(d, g, now + x * 7919, rows);
+      continue;
+    }
+    for (int k = 0; k <= d.len; ++k) {
+      const int r = hr - k;
+      if (r < 0 || r >= rows) continue;
+      const uint8_t col = k == 0 ? head : themed(s, ramp[200 - 190 * k / (d.len + 1)]);
+      const uint8_t* gl = mxGlyph[mxCell[x * MX_ROWS + r]];
+      for (int gy = 0; gy < 7; ++gy)
+        for (int gx = 0; gx < 5; ++gx)
+          if ((gl[gy] >> (4 - gx)) & 1) c.fill(x * cw + gx * sc, r * ch + gy * sc, sc, sc, col);
+    }
+  }
+}
+
 static bool lightning(const SceneEffect* e, uint32_t now) {
   if (!e) return false;
   const uint32_t period = 14000 / e->density;
@@ -174,6 +240,7 @@ void sceneDraw(const Canvas8& c, const SceneDef& s, uint32_t now) {
   else if (s.gen->type == GEN_PATTERNS) drawPatterns(c, s, *s.gen, now);
   else if (s.gen->type == GEN_PLASMA) drawPlasma(c, s, *s.gen, now);
   else if (s.gen->type == GEN_WARP) drawWarp(c, s, *s.gen, now);
+  else if (s.gen->type == GEN_MATRIX) drawMatrix(c, s, *s.gen, now);
   for (uint8_t pass = 0; pass < 2; ++pass) {
     for (uint8_t i = 0; i < s.fxCount; ++i) {
       const SceneEffect& e = s.fx[i];

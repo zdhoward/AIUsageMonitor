@@ -21,6 +21,8 @@ A scene is a library entry (assets/library/<id>/entry.json) with a "scene" objec
                "seconds": 7, "colors": [bg, fg, bg, fg, ...]}
               {"type": "plasma", "scale": 2, "colors": [gradient stops]}
               {"type": "warp", "speed": 300, "colors": [space, ..., near star]}
+              {"type": "matrix", "speed": 12, "density": 70, "scale": 1,
+               "colors": [background, trail stops..., head]}
 
 Semi-transparent pixels are blended over the sky gradient (a matte), so soft
 glows such as a sun's halo survive the 1-bit transparency of the device format.
@@ -43,7 +45,7 @@ PROFILES = ROOT / "profiles"
 SCENE_H = 240
 FX = {"stars": 1, "rain": 2, "snow": 3, "lightning": 4}
 FX_FRONT = {"rain", "snow"}
-GEN = {"patterns": 1, "plasma": 2, "warp": 3}
+GEN = {"patterns": 1, "plasma": 2, "warp": 3, "matrix": 4}
 
 
 def tile_bits(path: Path) -> bytes:
@@ -64,9 +66,11 @@ def tile_bits(path: Path) -> bytes:
 def gen_spec(entry_dir: Path, g: dict) -> dict:
     colors = [ac.rgb332(*hex_rgb(c)) for c in g.get("colors", ["#000000", "#ffffff"])]
     tiles = b"".join(tile_bits(entry_dir / t) for t in g.get("tiles", []))
-    speed = g.get("speed", 300) if g["type"] == "warp" else g.get("vx", 0)
-    return {"type": GEN[g["type"]], "scale": int(g.get("scale", 3 if g["type"] == "patterns" else 2)),
-            "vx16": int(speed * 16), "vy16": int(g.get("vy", 0) * 16), "seconds": int(g.get("seconds", 7)),
+    t = g["type"]
+    speed = {"warp": g.get("speed", 300), "matrix": g.get("speed", 12)}.get(t, g.get("vx", 0))
+    vy = g.get("density", 70) if t == "matrix" else g.get("vy", 0) * 16  # matrix: % of columns raining
+    return {"type": GEN[t], "scale": int(g.get("scale", {"patterns": 3, "matrix": 1}.get(t, 2))),
+            "vx16": int(speed * 16), "vy16": int(vy), "seconds": int(g.get("seconds", 7)),
             "tiles": tiles, "colors": colors}
 
 

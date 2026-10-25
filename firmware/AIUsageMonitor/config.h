@@ -143,6 +143,8 @@
 #define UI_PAGE_SCENES 6
 // Single-scene pages: UI_SCENE_PAGE_BASE + index into SCENES (scenes_gen.h).
 #define UI_SCENE_PAGE_BASE 100
+// Playlist pages: UI_PLAYLIST_PAGE_BASE + index into the profile's playlists.
+#define UI_PLAYLIST_PAGE_BASE 200
 
 // Tap order of the pages. Pages switched off above are skipped.
 #ifndef UI_VIEW_ORDER

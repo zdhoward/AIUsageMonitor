@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES = ROOT / "profiles"
 HEADER = ROOT / "firmware" / "AIUsageMonitor" / "profile_gen.h"
+PLAYLISTS_HEADER = ROOT / "firmware" / "AIUsageMonitor" / "playlists_gen.h"
+PLAYLIST_BASE = 200  # UI_PLAYLIST_PAGE_BASE in config.h
 
 PAGES = {  # profile name -> (page macro, enable macro or None when always present)
     "console": ("UI_PAGE_CONSOLE", None),
@@ -32,10 +34,12 @@ def scene_index(profile: str | None) -> dict:
     return {s["id"]: i for i, s in enumerate(scenes.scene_list(profile))}
 
 
-def page_macro(page: str, index: dict) -> str:
+def page_macro(page: str, index: dict, playlists: list) -> str:
     """'console' etc. map to UI_PAGE_*; 'scene:<id>' maps to its single-scene page."""
     if page.startswith("scene:"):
         return str(SCENE_BASE + index[page[6:]])
+    if page.startswith("playlist:"):
+        return str(PLAYLIST_BASE + [pl["id"] for pl in playlists].index(page[9:]))
     return PAGES[page][0]
 
 
@@ -51,11 +55,22 @@ def validate(p: dict) -> list[str]:
         if pg.startswith("scene:"):
             if pg[6:] not in index:
                 errs.append(f"scene '{pg[6:]}' is not in the library")
-        elif pg not in PAGES:
+        elif pg not in PAGES and not pg.startswith("playlist:"):
             errs.append(f"unknown page '{pg}'")
-    for sid in p.get("playlist") or []:
-        if sid not in index:
-            errs.append(f"playlist scene '{sid}' is not in the library")
+    pl_ids = [pl.get("id") for pl in p.get("playlists", [])]
+    if len(pl_ids) > 16:
+        errs.append("at most 16 playlists")
+    if len(set(pl_ids)) != len(pl_ids):
+        errs.append("two playlists share an id")
+    for pl in p.get("playlists", []):
+        for sid in pl.get("scenes", []):
+            if sid not in index:
+                errs.append(f"playlist '{pl.get('name')}': scene '{sid}' is not in the library")
+        if not 1 <= int(pl.get("seconds", 0)) <= 3600:
+            errs.append(f"playlist '{pl.get('name')}': seconds must be 1-3600")
+    for pg in pages + [s_page for s_page in [p.get("screensaver", {}).get("page", "")] if s_page]:
+        if pg.startswith("playlist:") and pg[9:] not in pl_ids:
+            errs.append(f"playlist '{pg[9:]}' does not exist")
     if len(set(pages)) != len(pages):
         errs.append("a page is listed twice")
     for required in ("console", "details"):
@@ -68,7 +83,7 @@ def validate(p: dict) -> list[str]:
         target = s.get("page", "")
         if target.startswith("scene:") and target[6:] not in index:
             errs.append(f"screensaver scene '{target[6:]}' is not in the library")
-        elif not target.startswith("scene:") and (target not in PAGES or target in ("console", "details")):
+        elif not target.startswith(("scene:", "playlist:")) and (target not in PAGES or target in ("console", "details")):
             errs.append("screensaver must show Companion, Images, City, Scenes or a scene")
         for key in ("timeout_s",):
             if not 1 <= s.get(key, 0) * 1000 <= MAX_MS:
@@ -96,8 +111,7 @@ def header(p: dict) -> str:
     for name, (_, enable) in PAGES.items():
         if enable:
             lines.append(f"#define {enable} {int(name in p['pages'])}")
-    if p.get("playlist"):
-        lines.append("#define UI_PLAYLIST " + ", ".join(str(index[s]) for s in p["playlist"]))
+
     colors = p.get("colors", {})
     for key, macro in (("healthy", "UI_COLOR_HEALTHY"), ("warning", "UI_COLOR_WARNING"), ("critical", "UI_COLOR_CRITICAL")):
         if colors.get(key):
@@ -105,11 +119,11 @@ def header(p: dict) -> str:
     if colors.get("weekly"):  # "levels" = same threshold colours as the session ring
         lines.append(f"#define UI_WEEKLY_COLOR {0 if colors['weekly'] == 'levels' else hex(rgb565(colors['weekly']))}")
     lines.append(f"#define UI_SCENE_SECONDS {int(p.get('scene_seconds', 90))}")
-    lines.append("#define UI_VIEW_ORDER " + ", ".join(page_macro(pg, index) for pg in p["pages"]))
+    lines.append("#define UI_VIEW_ORDER " + ", ".join(page_macro(pg, index, p.get("playlists", [])) for pg in p["pages"]))
     lines += [f"#define UI_SCREENSAVER_ENABLED {int(on)}",
               f"#define UI_SCREENSAVER_AUTO_ENABLED {int(on)}"]
     if on:
-        lines += [f"#define UI_SCREENSAVER_PAGE {page_macro(s['page'], index)}",
+        lines += [f"#define UI_SCREENSAVER_PAGE {page_macro(s['page'], index, p.get('playlists', []))}",
                   f"#define UI_SCREENSAVER_TIMEOUT_MS {int(s['timeout_s'] * 1000)}UL"]
         for view in ("console", "details"):
             v = s[view]
@@ -120,6 +134,19 @@ def header(p: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def playlists_header(p: dict, index: dict) -> str:
+    out = [f"// Generated from profiles/{p.get('id', 'profile')}.json by profile_gen.py. Do not edit.",
+           "#pragma once"]
+    rows = []
+    for k, pl in enumerate(p.get("playlists", [])):
+        ids = [str(index[s]) for s in pl.get("scenes", [])] or ["0"]
+        out.append(f"static const uint8_t kPl{k}[] = {{{', '.join(ids)}}};  // {pl.get('name', '')}")
+        rows.append(f"  {{kPl{k}, {len(pl.get('scenes', []))}, {int(pl.get('seconds', 60))}}}")
+    out.append("static const Playlist kPlaylists[] = {\n" + (",\n".join(rows) or "  {nullptr, 0, 0}") + "\n};")
+    out.append(f"static const uint8_t kPlaylistCount = {len(rows)};")
+    return "\n".join(out) + "\n"
+
+
 def write(name: str) -> Path:
     p = load(name)
     p["id"] = name
@@ -127,6 +154,7 @@ def write(name: str) -> Path:
     if errs:
         raise ValueError("; ".join(errs))
     HEADER.write_text(header(p), encoding="utf-8", newline="\n")
+    PLAYLISTS_HEADER.write_text(playlists_header(p, scene_index(name)), encoding="utf-8", newline="\n")
     return HEADER
 
 

@@ -51,9 +51,27 @@ static const uint8_t kViewCap = sizeof(kStaticViews) / sizeof(kStaticViews[0]);
 static uint8_t kViewCount = 0;
 static uint8_t selView = 0;  // first page in UI_VIEW_ORDER
 
+// Playlists rotate Roku-style. UI_PAGE_SCENES plays every compiled scene;
+// pages from UI_PLAYLIST_PAGE_BASE play the profile's own playlists
+// (playlists_gen.h, written by scripts/profile_gen.py).
+struct Playlist {
+  const uint8_t* scenes;  // indices into SCENES
+  uint8_t count;
+  uint16_t seconds;
+};
+#if __has_include("playlists_gen.h")
+#include "playlists_gen.h"
+#else
+static const Playlist kPlaylists[1] = {};
+static const uint8_t kPlaylistCount = 0;
+#endif
+static uint8_t playPos[17];      // slot 0: all scenes; 1+k: playlist k
+static uint32_t playSince[17];
+
 // Every page is compiled in so the Studio can show any of them with !SHOW;
 // the *_ENABLED switches only decide what a tap cycles through.
 static bool inRotation(uint8_t id) {
+  if (id >= UI_PLAYLIST_PAGE_BASE) return id - UI_PLAYLIST_PAGE_BASE < kPlaylistCount;
   if (id >= UI_SCENE_PAGE_BASE) return id - UI_SCENE_PAGE_BASE < SCENE_COUNT;
   return id == UI_PAGE_COMPANION ? UI_COMPANION_ENABLED : id == UI_PAGE_IMAGE ? UI_IMAGE_ENABLED :
          id == UI_PAGE_CITY ? UI_CITY_ENABLED : id == UI_PAGE_SCENES ? (UI_SCENES_ENABLED && SCENE_COUNT) : true;
@@ -63,7 +81,7 @@ static bool inRotation(uint8_t id) {
 static const ViewDef* viewById(uint8_t id) {
   static ViewDef scenePage;
   if (id >= UI_SCENE_PAGE_BASE) {
-    scenePage = {id, drawOneScene};
+    scenePage = {id, id >= UI_PLAYLIST_PAGE_BASE ? drawScenes : drawOneScene};
     return &scenePage;
   }
   for (const ViewDef& v : kAllViews)
@@ -795,32 +813,25 @@ static void drawCity(const Model&, uint32_t now, const ViewDef&, int) {
   if (canvas(c)) cityDraw(c, now);
 }
 
-// Scene playlist: rotates Roku-style through UI_PLAYLIST (scene indices), or
-// through every compiled scene when no playlist is set.
-#ifdef UI_PLAYLIST
-static const uint8_t kPlaylist[] = {UI_PLAYLIST};
-static uint8_t playlistLen() { return sizeof(kPlaylist); }
-static uint8_t playlistAt(uint8_t p) { return kPlaylist[p % sizeof(kPlaylist)]; }
-#else
-static uint8_t playlistLen() { return SCENE_COUNT; }
-static uint8_t playlistAt(uint8_t p) { return p; }
-#endif
-static uint8_t playPos = 0;
-static uint32_t sceneSince = 0;
 
-static void drawScenes(const Model&, uint32_t now, const ViewDef&, int) {
+static void drawScenes(const Model&, uint32_t now, const ViewDef& v, int) {
   Canvas8 c;
   if (!canvas(c)) return;
-  if (!SCENE_COUNT) {
-    text("No scenes compiled in", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+  const bool custom = v.id >= UI_PLAYLIST_PAGE_BASE;
+  const uint8_t k = custom ? v.id - UI_PLAYLIST_PAGE_BASE : 0, slot = custom ? k + 1 : 0;
+  const uint8_t len = custom ? (k < kPlaylistCount ? kPlaylists[k].count : 0) : SCENE_COUNT;
+  if (!SCENE_COUNT || !len || slot >= sizeof(playPos)) {
+    text("No scenes in this playlist", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
     return;
   }
-  if (!sceneSince) sceneSince = now;
-  if (now - sceneSince >= UI_SCENE_SECONDS * 1000UL) {
-    playPos = (uint8_t)((playPos + 1) % playlistLen());
-    sceneSince = now;
+  const uint32_t hold = (custom ? kPlaylists[k].seconds : UI_SCENE_SECONDS) * 1000UL;
+  if (!playSince[slot]) playSince[slot] = now;
+  if (now - playSince[slot] >= hold) {
+    playPos[slot] = (uint8_t)((playPos[slot] + 1) % len);
+    playSince[slot] = now;
   }
-  sceneDraw(c, SCENES[playlistAt(playPos) % SCENE_COUNT], now);
+  const uint8_t p = playPos[slot] % len;
+  sceneDraw(c, SCENES[(custom ? kPlaylists[k].scenes[p] : p) % SCENE_COUNT], now);
 }
 
 static void drawOneScene(const Model&, uint32_t now, const ViewDef& v, int) {
@@ -882,6 +893,13 @@ bool uiShow(const char* name) {
       saverActive = false;
       return true;
     }
+  if (!strncmp(name, "playlist-", 9)) {  // playlist-<index> in profile order
+    const int k = atoi(name + 9);
+    if (k < 0 || k >= kPlaylistCount) return false;
+    forcedId = UI_PLAYLIST_PAGE_BASE + k;
+    saverActive = false;
+    return true;
+  }
   for (uint8_t i = 0; i < SCENE_COUNT; ++i)
     if (!strcmp(name, SCENES[i].id)) {
       forcedId = UI_SCENE_PAGE_BASE + i;
