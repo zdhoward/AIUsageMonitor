@@ -128,6 +128,10 @@
 #ifndef UI_SCENE_SECONDS
 #define UI_SCENE_SECONDS 90
 #endif
+// Seconds each Images page asset shows before the next ("image" in manifest.json).
+#ifndef UI_IMAGE_SECONDS
+#define UI_IMAGE_SECONDS 10
+#endif
 #ifndef UI_SCREENSAVER_ENABLED
 #define UI_SCREENSAVER_ENABLED 1
 #endif
