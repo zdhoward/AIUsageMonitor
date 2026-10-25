@@ -28,6 +28,10 @@ through the existing pause/resume API and screenshot helper. Keep physical
 panel acceptance separate from framebuffer evidence.
 
 - Feed an unchanged payload repeatedly for over 30 seconds: saver must activate.
+- With a known due window at 0–99% used, remain on Console/Details beyond the
+  timeout; also start from an active saver and confirm it wakes. Check deadline
+  crossing without a new payload, and confirm unknown/100%-used windows do not
+  block saving. Repeat with usage-change waking disabled.
 - Change only seq, clock, age, reset countdown, activity elapsed time or MINT
   fields: saver remains active. Change quota percent, cost or token count:
   original dashboard wakes; another change restarts its full idle interval.

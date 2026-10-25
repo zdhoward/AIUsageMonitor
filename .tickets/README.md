@@ -24,4 +24,4 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-018 | Planned: audio visualizer page (bars, spectrogram, scope, radial, VU), with PC-side loopback capture and FFT and a `{"t":"aud"}` serial line. Open owner questions inside. |
 | T-019 | Idea: stock ticker page or strip (PC fetches quotes, `{"t":"stk"}` line, no keys in the repo). Not scheduled. |
 
-Published release baseline: `v1.4.2` / `315d70c`. The current local development firmware includes later untagged MINT commits and still reports 1.4.2; see [HANDOFF.md](../HANDOFF.md) before identifying the installed build. Public docs and MIT license remain pushed; no changes from this session were pushed.
+Current installed and published firmware: `v1.11.1` / `c5d4858`, Default profile on COM6. Due quota below 100% used suppresses automatic saving. Build and flash passed; direct trigger acceptance remains pending. See [HANDOFF.md](../HANDOFF.md) for evidence and next steps.
