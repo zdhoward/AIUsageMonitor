@@ -86,7 +86,7 @@ Edit that local JSON file before starting the service. It is Git-ignored. The ex
 | `opencode_refresh_s` | OpenCode history polling cadence, 30 seconds |
 | `opencode_db` | Optional path override; default `~/.local/share/opencode/opencode.db` |
 | `auto_brightness_enabled` | Automatic location-based backlight, default `true`; see [BRIGHTNESS](BRIGHTNESS.md) |
-| `auto_brightness_lat`, `auto_brightness_lng`, `auto_brightness_tz` | Sunrise/sunset location; defaults are approximate the owner's city city-centre coordinates (`51.4779`, `-0.0015`, `Europe/London`) — not a street address |
+| `auto_brightness_lat`, `auto_brightness_lng`, `auto_brightness_tz` | Sunrise/sunset location; defaults are a placeholder (Greenwich, London) coordinates (`51.4779`, `-0.0015`, `Europe/London`) — not a street address |
 | `auto_brightness_day_duty`, `auto_brightness_night_duty`, `auto_brightness_startup_duty` | PWM duty 0–255 for day, night and the startup/no-data fallback (255 / 40 / 80) |
 | `auto_brightness_transition_duration` | Sunrise/sunset-centred ramp window in minutes, 60 |
 | `auto_brightness_smoothing_duration` | Firmware target interpolation duration in milliseconds, 1000 (0..60000; 0 instant) |

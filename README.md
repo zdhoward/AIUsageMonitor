@@ -17,7 +17,7 @@ Built to sit beneath a monitor and answer a quick question: how much allowance i
 - USB serial carries compact JSON from the PC. The display holds no account credentials.
 - The collector combines T3 status caches, Claude/Codex transcripts and OpenCode history. Optional OpenRouter key-status polling adds reported allowance and spend data.
 - A System page, styled like Task Manager, shows the PC's CPU, RAM and GPU load, disk read/write, and download/upload rates. Updates arrive about once a second (GPU on Windows only; needs `psutil`).
-- Optional automatic backlight: the service dims the display at night and brightens it during daylight using local sunrise/sunset times (default location is approximate the owner's city city-centre coordinates). See [automatic brightness](docs/BRIGHTNESS.md).
+- Optional automatic backlight: the service dims the display at night and brightens it during daylight using local sunrise/sunset times (set your location in `service/aimon.config.json`; the default is a placeholder). See [automatic brightness](docs/BRIGHTNESS.md).
 
 This is a working, board-specific project, tested on Windows with an ESP32-2432S024C. It is not a universal usage API: subscription readings depend on the data your local tools have already recorded.
 
