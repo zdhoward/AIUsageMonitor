@@ -176,3 +176,8 @@
 - **Tune blobs** (`tune.h`) carry unsaved edits to both the preview and the device (`!TUNE`), so tuning needs no reflash.
 - **Profiles own layout:** pages, `scene:<id>` pages, up to 16 playlists, screensaver target and ring colours are compiled from `profiles/*.json` into git-ignored headers.
 - **Licensing:** third-party packs stay git-ignored (the repo is public). Only CC0 art is committed (Ansimuz Miami-synth and cyberpunk-street, PixelPatterns). The GPL open_spectre and the unlicensed Video_eq were used for ideas only; termflix and sysc-Go (MIT) ideas are credited per entry.
+
+## 2026-10-25 — v1.6.0 System page and serial-thread fix
+
+- **Fix:** the display stopped updating because a Studio pause cleared the serial handle mid-write and the uncaught `AttributeError` killed the serial thread silently (pythonw has no stderr). The loop now uses a local handle and survives any exception.
+- **System page** (`system`): CPU history and per-core bars, memory, disk and network rates, top three processes. Stats travel as a separate 1 Hz `{"t":"sys"}` line so the 4 KB usage push keeps its cadence; the device keeps 60 s of history. Needs `psutil`. No GPU stats (no vendor-neutral source without extra tooling).
