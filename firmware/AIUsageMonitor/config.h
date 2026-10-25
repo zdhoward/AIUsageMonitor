@@ -141,6 +141,8 @@
 #define UI_PAGE_SCREENSAVER 4
 #define UI_PAGE_CITY 5
 #define UI_PAGE_SCENES 6
+// Single-scene pages: UI_SCENE_PAGE_BASE + index into SCENES (scenes_gen.h).
+#define UI_SCENE_PAGE_BASE 100
 
 // Tap order of the pages. Pages switched off above are skipped.
 #ifndef UI_VIEW_ORDER
@@ -184,7 +186,7 @@
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
-#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || UI_SCREENSAVER_PAGE > UI_PAGE_SCENES
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || (UI_SCREENSAVER_PAGE > UI_PAGE_SCENES && UI_SCREENSAVER_PAGE < UI_SCENE_PAGE_BASE) || UI_SCREENSAVER_PAGE > 255
 #error "Unknown screensaver target page"
 #endif
 #endif

@@ -24,6 +24,21 @@ PAGES = {  # profile name -> (page macro, enable macro or None when always prese
 MAX_MS = 2147483647
 
 
+SCENE_BASE = 100  # UI_SCENE_PAGE_BASE in config.h
+
+
+def scene_index(profile: str | None) -> dict:
+    import scenes
+    return {s["id"]: i for i, s in enumerate(scenes.scene_list(profile))}
+
+
+def page_macro(page: str, index: dict) -> str:
+    """'console' etc. map to UI_PAGE_*; 'scene:<id>' maps to its single-scene page."""
+    if page.startswith("scene:"):
+        return str(SCENE_BASE + index[page[6:]])
+    return PAGES[page][0]
+
+
 def load(name: str) -> dict:
     return json.loads((PROFILES / f"{name}.json").read_text(encoding="utf-8"))
 
@@ -31,9 +46,16 @@ def load(name: str) -> dict:
 def validate(p: dict) -> list[str]:
     errs = []
     pages = p.get("pages", [])
+    index = scene_index(p.get("id"))
     for pg in pages:
-        if pg not in PAGES:
+        if pg.startswith("scene:"):
+            if pg[6:] not in index:
+                errs.append(f"scene '{pg[6:]}' is not in the library")
+        elif pg not in PAGES:
             errs.append(f"unknown page '{pg}'")
+    for sid in p.get("playlist") or []:
+        if sid not in index:
+            errs.append(f"playlist scene '{sid}' is not in the library")
     if len(set(pages)) != len(pages):
         errs.append("a page is listed twice")
     for required in ("console", "details"):
@@ -43,8 +65,11 @@ def validate(p: dict) -> list[str]:
         errs.append("rotation must be 0-3")
     s = p.get("screensaver", {})
     if s.get("enabled"):
-        if s.get("page") not in PAGES or s.get("page") in ("console", "details"):
-            errs.append("screensaver must show Companion, Images, City or Scenes")
+        target = s.get("page", "")
+        if target.startswith("scene:") and target[6:] not in index:
+            errs.append(f"screensaver scene '{target[6:]}' is not in the library")
+        elif not target.startswith("scene:") and (target not in PAGES or target in ("console", "details")):
+            errs.append("screensaver must show Companion, Images, City, Scenes or a scene")
         for key in ("timeout_s",):
             if not 1 <= s.get(key, 0) * 1000 <= MAX_MS:
                 errs.append("screensaver timeout out of range")
@@ -67,9 +92,12 @@ def header(p: dict) -> str:
              "#pragma once",
              f"#define DISPLAY_ROTATION {p['rotation']}",
              f"#define SHOW_REMAINING {int(p.get('show_remaining', True))}"]
+    index = scene_index(p.get("id"))
     for name, (_, enable) in PAGES.items():
         if enable:
             lines.append(f"#define {enable} {int(name in p['pages'])}")
+    if p.get("playlist"):
+        lines.append("#define UI_PLAYLIST " + ", ".join(str(index[s]) for s in p["playlist"]))
     colors = p.get("colors", {})
     for key, macro in (("healthy", "UI_COLOR_HEALTHY"), ("warning", "UI_COLOR_WARNING"), ("critical", "UI_COLOR_CRITICAL")):
         if colors.get(key):
@@ -77,11 +105,11 @@ def header(p: dict) -> str:
     if colors.get("weekly"):  # "levels" = same threshold colours as the session ring
         lines.append(f"#define UI_WEEKLY_COLOR {0 if colors['weekly'] == 'levels' else hex(rgb565(colors['weekly']))}")
     lines.append(f"#define UI_SCENE_SECONDS {int(p.get('scene_seconds', 90))}")
-    lines.append("#define UI_VIEW_ORDER " + ", ".join(PAGES[pg][0] for pg in p["pages"]))
+    lines.append("#define UI_VIEW_ORDER " + ", ".join(page_macro(pg, index) for pg in p["pages"]))
     lines += [f"#define UI_SCREENSAVER_ENABLED {int(on)}",
               f"#define UI_SCREENSAVER_AUTO_ENABLED {int(on)}"]
     if on:
-        lines += [f"#define UI_SCREENSAVER_PAGE {PAGES[s['page']][0]}",
+        lines += [f"#define UI_SCREENSAVER_PAGE {page_macro(s['page'], index)}",
                   f"#define UI_SCREENSAVER_TIMEOUT_MS {int(s['timeout_s'] * 1000)}UL"]
         for view in ("console", "details"):
             v = s[view]

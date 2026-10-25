@@ -263,7 +263,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = self.path.split("?")[0]
         if path == "/api/state":
             profiles = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(PROFILES.glob("*.json"))}
-            return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit()})
+            return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit(),
+                                   "scenes": scenes.scene_list()})
         if path == "/api/themes":
             return self.send_json({t: scenes.lut(t) for t in scenes.THEMES})
         if path.startswith("/api/jobs/"):
@@ -291,7 +292,7 @@ class Handler(SimpleHTTPRequestHandler):
                 pid = path.rsplit("/", 1)[1]
                 if not SLUG.match(pid):
                     raise ValueError("Profile names use lowercase letters, numbers and dashes")
-                errs = profile_gen.validate(b)
+                errs = profile_gen.validate({**b, "id": pid})
                 if errs:
                     raise ValueError("; ".join(errs))
                 (PROFILES / f"{pid}.json").write_text(json.dumps(b, indent=2) + "\n", encoding="utf-8")
