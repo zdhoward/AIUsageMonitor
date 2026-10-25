@@ -15,6 +15,7 @@
   <nav>
     <button class="nav on" data-tab="layout"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>Layout</button>
     <button class="nav" data-tab="saver"><svg viewBox="0 0 24 24"><path d="M20 15.5A8 8 0 1 1 8.5 4a6.5 6.5 0 0 0 11.5 11.5z"/></svg>Screensaver</button>
+    <button class="nav" data-tab="playlists"><svg viewBox="0 0 24 24"><path d="M4 6h11M4 12h11M4 18h7"/><path d="M17 15v6l4-3z"/></svg>Playlists</button>
     <button class="nav" data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Library</button>
     <button class="nav" data-tab="device"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Display</button>
   </nav>
@@ -46,12 +47,6 @@
     <div class="card">
       <div class="card-head"><h2>Pages</h2><span class="hint">Drag to reorder · switch on any scene to give it its own page</span></div>
       <ul class="pages" id="pages"></ul>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>Scene playlist</h2><span class="hint" id="playlistHint"></span></div>
-      <p class="hint">Tick scenes for the playlist page to rotate through; leave all unticked to rotate through everything.
-        Each scene plays for <input type="number" id="sceneSeconds" min="5" class="inline-num"> seconds.</p>
-      <div class="playlist" id="playlist"></div>
     </div>
     <div class="grid2">
       <div class="card">
@@ -88,6 +83,14 @@
         <div class="card-head"><h2>Per page</h2></div>
         <div class="views" id="views"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- Playlists -->
+  <section class="tab" id="tab-playlists">
+    <div class="pl-layout">
+      <div class="pl-list" id="plList"></div>
+      <div class="card pl-editor" id="plEditor"></div>
     </div>
   </section>
 
@@ -214,5 +217,6 @@
 <div class="toasts" id="toasts"></div>
 <script src="studio.js"></script>
 <script src="scene.js"></script>
+<script src="playlists.js"></script>
 </body>
 </html>

@@ -82,3 +82,9 @@ Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even
 
 - `generator` in a scene replaces the sky with a procedural backdrop: `patterns` (1-bit 16x16 tiles in colour pairs, drifting, wiping to the next every few seconds), `plasma`, and `warp` (starfield). See `scripts/scenes.py`. Measured 46-52 ms per frame.
 - Every library card has a **gear** that opens its settings. Scenes: layer speed, frame time (for example the Miami car, now 160 ms over 4 frames), gap, and fit for still pictures (original, pixel, contain, cover, stretch). Generators: zoom, drift, timing and colours. Console/Details: quota ring colours for the active profile; the weekly ring can use the session thresholds instead of yellow.
+
+### Playlists and Digital Rain
+
+- **Playlists tab**: build any number of named rotations (up to 16). Pick scenes, drag them into order and set seconds per scene. Each playlist can be a tap page (`playlist:<id>` in the profile's `pages`) or the screensaver. The built-in **All scenes** page rotates through everything every `scene_seconds`. `!SHOW playlist-<n>` plays playlist n (profile order) on the display; the tab's **Show on display** button sends this.
+- Firmware: playlist pages are ids 200 and up; `scripts/profile_gen.py` writes their scene lists to the git-ignored `playlists_gen.h`.
+- **Digital Rain** (`matrix` generator): an original take on the effect in Rezmason/matrix, with no code or font copied. Glyphs are generated from a hash, columns fall with a white head and a fading trail, and characters flicker. Settings: glyph size, fall speed, density %, colours (background, trail stops, head). About 43 ms per frame on the board.

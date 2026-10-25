@@ -94,7 +94,7 @@ def device(commands: list[str], shot: bool) -> dict:
                         line = s.readline()
                         if line.startswith(b"@SHOT "):
                             break
-                        if line.startswith(b"@ERR"):
+                        if line.startswith(b"@ERR no framebuffer"):  # other @ERR lines belong to the usage feed
                             raise RuntimeError(line.decode().strip())
                     else:
                         raise RuntimeError("no frame from the display")

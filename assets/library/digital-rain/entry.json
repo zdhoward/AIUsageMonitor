@@ -1,0 +1,36 @@
+{
+  "name": "Digital Rain",
+  "kind": "scene",
+  "created": "2026-10-24T23:30:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by Rezmason/matrix",
+  "notes": "Falling columns of generated glyphs with white heads and fading green trails; characters flicker as they fall.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "vapor",
+      "amber"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "matrix",
+      "speed": 12,
+      "density": 70,
+      "scale": 1,
+      "colors": [
+        "#000000",
+        "#003b12",
+        "#0f8a2e",
+        "#39ff6a",
+        "#d8ffe0"
+      ]
+    }
+  }
+}

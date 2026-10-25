@@ -17,10 +17,11 @@ struct SceneEffect {
   uint8_t type, density, color, front;  // front: draw above the layers
 };
 // Full-screen procedural backdrop drawn instead of the sky gradient.
-enum SceneGenType : uint8_t { GEN_PATTERNS = 1, GEN_PLASMA, GEN_WARP };
+enum SceneGenType : uint8_t { GEN_PATTERNS = 1, GEN_PLASMA, GEN_WARP, GEN_MATRIX };
 struct SceneGen {
   uint8_t type, scale;      // scale: pattern tile zoom / plasma block size
-  int16_t vx16, vy16;       // pattern scroll, px/s * 16; warp: speed in vx16
+  int16_t vx16, vy16;       // pattern scroll, px/s * 16; warp: speed in vx16;
+                            // matrix: fall speed rows/s * 16, vy16 = % of columns raining
   uint16_t seconds;         // pattern hold time before the next tile
   const uint8_t* tiles;     // 16x16 1-bit tiles, 32 bytes each, MSB = left
   uint8_t tileCount;

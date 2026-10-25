@@ -136,6 +136,8 @@ class ScenePlayer {
           p[i] = c[0]; p[i + 1] = c[1]; p[i + 2] = c[2]; p[i + 3] = 255;
         }
       }
+    } else if (G.type === "matrix") {
+      this.matrix(G, cols, now, set, p);
     } else if (G.type === "plasma" || G.type === "warp") {
       const sin8 = [...Array(256)].map((_, i) => 128 + 127 * Math.sin(i * 6.2831853 / 256) | 0);
       const n = Math.max(2, cols.length);
@@ -175,6 +177,66 @@ class ScenePlayer {
       }
     }
     this.g.putImageData(img, 0, 0);
+  }
+  // Digital rain, mirroring drawMatrix() in scene.cpp.
+  matrix(G, cols, now, set, p) {
+    const W = 320, H = 240, sc = +G.scale || 1, cw = 6 * sc, ch = 8 * sc;
+    const ncol = Math.min(64, Math.floor(W / cw)), nrow = Math.min(40, Math.floor(H / ch));
+    const ramp = this.rampFor(cols);
+    const key = `${sc}|${G.speed}|${G.density}`;
+    const respawn = (d, seed) => {
+      const h = hash(u32(seed)), base = +G.speed || 12;
+      d.speed = (base >> 1) + h % (base + 1);
+      d.len = 6 + (h >>> 8) % Math.floor(nrow * 2 / 3);
+      const active = (h >>> 16) % 100 < (+G.density || 70);
+      d.head16 = -((h >>> 20) % (active ? nrow : nrow * 4)) * 16;
+    };
+    if (this.mxKey !== key) {
+      this.mxGlyph = [...Array(64)].map((_, k) => [...Array(7)].map((_, r) => {
+        const h = hash(u32(k * 131 + r * 7 + 9));
+        let row = h & 0x1f;
+        if (r === 0 || (h >>> 5) % 4 === 0) row = (h >>> 8) % 2 ? 0x1f : row | 0x11;
+        return row;
+      }));
+      this.mxCell = [...Array(64 * 40)].map((_, i) => hash(u32(i + 77)) & 63);
+      this.mxDrop = [...Array(64)].map((_, x) => { const d = {}; respawn(d, x * 911 + 1); return d; });
+      this.mxKey = key;
+      this.mxLast = now;
+    }
+    const dt = now - this.mxLast > 200 || now < this.mxLast ? 40 : now - this.mxLast;
+    this.mxLast = now;
+    const bg = from332(cols[0]);
+    for (let i = 0; i < W * H; i++) { p[i * 4] = bg[0]; p[i * 4 + 1] = bg[1]; p[i * 4 + 2] = bg[2]; p[i * 4 + 3] = 255; }
+    for (let n = Math.floor(ncol * nrow / 30); n > 0; n--) {
+      const h = hash(u32(Math.imul(now, 31) + n));
+      this.mxCell[h % (64 * 40)] = (h >>> 16) & 63;
+    }
+    const head = cols[cols.length - 1];
+    for (let x = 0; x < ncol; x++) {
+      const d = this.mxDrop[x];
+      d.head16 += Math.trunc(d.speed * dt * 16 / 1000);
+      const hr = Math.trunc(d.head16 / 16);
+      if (hr - d.len > nrow) { respawn(d, now + x * 7919); continue; }
+      for (let k = 0; k <= d.len; k++) {
+        const r = hr - k;
+        if (r < 0 || r >= nrow) continue;
+        const c = k === 0 ? head : ramp[200 - Math.trunc(190 * k / (d.len + 1))];
+        const gl = this.mxGlyph[this.mxCell[x * 40 + r]];
+        for (let gy = 0; gy < 7; gy++)
+          for (let gx = 0; gx < 5; gx++)
+            if ((gl[gy] >> (4 - gx)) & 1)
+              for (let yy = 0; yy < sc; yy++) for (let xx = 0; xx < sc; xx++) set(x * cw + gx * sc + xx, r * ch + gy * sc + yy, c);
+      }
+    }
+  }
+  rampFor(cols) {
+    const n = Math.max(2, cols.length);
+    return [...Array(256)].map((_, i) => {
+      const seg = Math.floor(i * n / 256), a = cols[seg % cols.length], b = cols[((seg + 1) % n) % cols.length];
+      const u = (i * n) % 256;
+      const ch = (sh, bits) => { const m = (1 << bits) - 1, va = (a >> sh) & m, vb = (b >> sh) & m; return (va + Math.trunc(((vb - va) * u + 128) / 256)) & m; };
+      return (ch(5, 3) << 5) | (ch(2, 3) << 2) | ch(0, 2);
+    });
   }
   put(x, y, rgb) { this.g.fillStyle = rgb; this.g.fillRect(x | 0, y | 0, 1, 1); }
   stars(e, now) {
@@ -406,14 +468,15 @@ function renderGen() {
   box.innerHTML = "";
   if (!G) return;
   const fields = { patterns: [["scale", "Zoom"], ["vx", "Drift X px/s"], ["vy", "Drift Y px/s"], ["seconds", "Seconds each"]],
-                   plasma: [["scale", "Block size"]], warp: [["speed", "Speed"]] }[G.type] || [];
+                   plasma: [["scale", "Block size"]], warp: [["speed", "Speed"]],
+                   matrix: [["scale", "Glyph size"], ["speed", "Fall speed"], ["density", "Density %"]] }[G.type] || [];
   const tiles = player.gen ? player.gen.tiles.length / 32 : 0;
   box.append(el(`<h3>${G.type[0].toUpperCase() + G.type.slice(1)} <span class="hint">${G.type === "patterns"
     ? `${tiles} tiles · colours are background/foreground pairs` : "colours are gradient stops"}</span></h3>`));
   const grid = el(`<div class="gen-grid"></div>`);
   fields.forEach(([k, label]) => {
     const f = el(`<label>${label}<input type="number" value="${G[k] ?? ""}"></label>`);
-    f.querySelector("input").oninput = (e) => { G[k] = +e.target.value; player.warpStars = null; };
+    f.querySelector("input").oninput = (e) => { G[k] = +e.target.value; player.warpStars = null; player.mxKey = null; };
     grid.append(f);
   });
   box.append(grid);

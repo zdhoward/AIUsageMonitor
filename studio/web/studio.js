@@ -7,12 +7,13 @@ const PAGES = {
   companion: { name: "Companion", desc: "MINT, the robot face", thumb: "/docimg/MINT-happy-device.png", scene: true },
   image:     { name: "Images", desc: "GIF player", thumb: "/docimg/images-page.png", scene: true },
   city:      { name: "Synthwave City", desc: "Living pixel scene", thumb: "/docimg/city.png", scene: true },
-  scenes:    { name: "Scene playlist", desc: "Parallax scenes from your library, rotating", thumb: "/library/miami-drive/preview.png", scene: true },
+  scenes:    { name: "All scenes", desc: "Rotates through every scene in the library", thumb: "/library/miami-drive/preview.png", scene: true },
 };
 const TIMEOUTS = [10, 20, 30, 45, 60, 120, 180, 300, 600, 900, 1800, 3600];
 const TABS = {
   layout: ["Layout", "Choose which pages appear on the display and in what order."],
   saver: ["Screensaver", "What the display does when nobody is looking."],
+  playlists: ["Playlists", "Build your own rotations. Each can be a tap page or the screensaver."],
   library: ["Library", "Everything worth keeping. Captures remember the profile and code version that made them."],
   device: ["Display", "See what the display shows right now, and step through its pages."],
 };
@@ -44,20 +45,29 @@ const el = (html) => { const t = document.createElement("template"); t.innerHTML
 
 // ----------------------------------------------------------------- render
 function render() {
-  renderPages(); renderRotation(); renderSaver(); renderPlaylist();
+  renderPages(); renderRotation(); renderSaver(); renderPlaylists();
   document.querySelectorAll("#remaining button").forEach((b) =>
     b.classList.toggle("on", +b.dataset.v === +profile.show_remaining));
 }
 
 // Built-in pages plus every library scene ("scene:<id>") can be a tap page.
 function pageInfo(id) {
+  if (id.startsWith("playlist:")) {
+    const pl = (profile.playlists || []).find((p) => p.id === id.slice(9));
+    const first = pl && pl.scenes[0] && (state.scenes || []).find((x) => x.id === pl.scenes[0]);
+    return { name: pl ? pl.name : id.slice(9), desc: pl ? `Playlist · ${pl.scenes.length} scenes, ${pl.seconds}s each` : "Missing playlist",
+             thumb: first ? `/library/${first.entry}/preview.png` : "", scene: true };
+  }
   if (!id.startsWith("scene:")) return PAGES[id];
   const sc = (state.scenes || []).find((x) => x.id === id.slice(6));
   if (!sc) return { name: id.slice(6), desc: "Missing from the library", thumb: "", scene: true };
   return { name: sc.name, desc: `Scene${sc.theme !== "original" ? ` · ${sc.theme} theme` : ""}`,
            thumb: `/library/${sc.entry}/preview.png`, scene: true, theme: sc.theme };
 }
-function allPages() { return [...Object.keys(PAGES), ...(state.scenes || []).map((x) => `scene:${x.id}`)]; }
+function allPages() {
+  return [...Object.keys(PAGES), ...(profile.playlists || []).map((p) => `playlist:${p.id}`),
+          ...(state.scenes || []).map((x) => `scene:${x.id}`)];
+}
 function orderedPages() {
   const on = profile.pages;
   return [...on, ...allPages().filter((p) => !on.includes(p))];
@@ -100,30 +110,6 @@ $("#pages").addEventListener("dragover", (e) => {
   });
   if (after) ul.insertBefore(drag, after); else ul.append(drag);
 });
-
-// Which scenes the "Scene playlist" page rotates through (none ticked = all).
-function renderPlaylist() {
-  const box = $("#playlist");
-  if (!box) return;
-  const list = profile.playlist || [];
-  box.innerHTML = "";
-  (state.scenes || []).forEach((sc) => {
-    const on = list.includes(sc.id);
-    const chip = el(`<label class="pl ${on ? "on" : ""}"><input type="checkbox" ${on ? "checked" : ""}>
-      <span class="pl-thumb${sc.theme !== "original" ? " themed" : ""}" style="background-image:url('/library/${sc.entry}/preview.png')"></span>${sc.name}</label>`);
-    chip.querySelector("input").onchange = (e) => {
-      const next = e.target.checked ? [...list, sc.id] : list.filter((x) => x !== sc.id);
-      if (next.length) profile.playlist = next; else delete profile.playlist;
-      touch();
-    };
-    box.append(chip);
-  });
-  $("#playlistHint").textContent = list.length ? `${list.length} of ${state.scenes.length} scenes, in this order`
-                                               : `All ${state.scenes.length} scenes`;
-  const secs = $("#sceneSeconds");
-  secs.value = profile.scene_seconds || 90;
-  secs.onchange = () => { profile.scene_seconds = Math.max(5, +secs.value || 90); touch(); };
-}
 
 function renderRotation() {
   const opts = [[1, "Landscape", "land r1"], [3, "Landscape ↻", "land r3"], [0, "Portrait", "port r0"], [2, "Portrait ↻", "port r2"]];
