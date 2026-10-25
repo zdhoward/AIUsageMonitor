@@ -152,6 +152,14 @@
 #define UI_VIEW_ORDER UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY, UI_PAGE_SCENES
 #endif
 
+// Long-press home: holding the screen for UI_HOLD_MS jumps to UI_HOME_PAGE.
+#ifndef UI_HOME_PAGE
+#define UI_HOME_PAGE UI_PAGE_CONSOLE
+#endif
+#ifndef UI_HOLD_MS
+#define UI_HOLD_MS 700
+#endif
+
 // Screensaver target and automatic activation. This is presentation state,
 // never a navigation entry. Either global switch disables automatic saving.
 #ifndef UI_SCREENSAVER_PAGE

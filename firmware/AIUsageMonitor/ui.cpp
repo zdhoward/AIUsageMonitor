@@ -1011,6 +1011,14 @@ void uiNextView(const Model&) {
   if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
 }
 
+void uiGoHome() {
+  forcedId = -1;
+  saverActive = false;
+  for (uint8_t i = 0; i < kViewCount; ++i)
+    if (kStaticViews[i].id == UI_HOME_PAGE) { selView = i; break; }
+  if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
+}
+
 // Page position, bottom right. A few pages get dots; past UI_MAX_DOTS the dots
 // would run across the screen, so show a "3 / 14" counter over a thin track
 // whose bright segment marks the current page.

@@ -13,6 +13,10 @@ bool uiHasFramebuffer();
 uint32_t uiFrameIntervalMs();
 void uiNextView(const Model& m);
 
+// Long-press target: leaves any forced page or screensaver and selects
+// UI_HOME_PAGE (the AI Usage console by default).
+void uiGoHome();
+
 // Shows a page (console, details, companion, image, city, scenes) or a scene id
 // until the next tap, even when it is not in the tap rotation.
 bool uiShow(const char* name);
