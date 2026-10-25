@@ -12,6 +12,7 @@
 #include "model.h"
 #include "ui.h"
 #include "scenes_gen.h"
+#include "tune.h"
 #include "face.h"
 #include <Wire.h>
 
@@ -109,7 +110,8 @@ static void printHello() {
 // Commands: "!HELLO" repeats the boot info, "!SHOT" dumps the frame buffer,
 // "!ROT n" applies rotation n until reboot (test only), "!PERF" reports the
 // last render time and free heap, "!SHOW name" shows a page or scene until
-// the next tap, "!SCENES" lists compiled scene ids.
+// the next tap, "!SCENES" lists compiled scene ids, "!TUNE <hex>|off" applies
+// or clears a live scene edit from Scene Studio (see tune.h).
 static void handleCommand(const char* cmd) {
   if (!strcmp(cmd, "!HELLO")) {
     printHello();
@@ -119,6 +121,26 @@ static void handleCommand(const char* cmd) {
   } else if (!strncmp(cmd, "!SHOW ", 6)) {
     const bool ok = uiShow(cmd + 6);
     Serial.print(ok ? "@SHOW ok\n" : "@ERR unknown page or scene\n");
+    lastDraw = 0;
+  } else if (!strcmp(cmd, "!TUNE off")) {
+    sceneUntune();
+    Serial.print("@TUNE off\n");
+    lastDraw = 0;
+  } else if (!strncmp(cmd, "!TUNE ", 6)) {
+    // Live edit from Scene Studio: hex-encoded override, shown immediately.
+    static uint8_t blob[2040];
+    const char* h = cmd + 6;
+    int n = 0;
+    auto nib = [](char c) { return c <= '9' ? c - '0' : (c | 32) - 'a' + 10; };
+    while (h[0] && h[1] && n < (int)sizeof(blob)) blob[n++] = (uint8_t)(nib(h[0]) << 4 | nib(h[1])), h += 2;
+    if (sceneTune(blob, n)) {
+      char name[40];
+      strlcpy(name, SCENES[sceneTunedIndex()].id, sizeof name);
+      uiShow(name);
+      Serial.printf("@TUNE ok %s\n", name);
+    } else {
+      Serial.print("@ERR tune rejected (rebuild needed?)\n");
+    }
     lastDraw = 0;
   } else if (!strcmp(cmd, "!SCENES")) {
     Serial.print("@SCENES");

@@ -1,0 +1,37 @@
+{
+  "name": "Video Equations",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by the Video EQ video synthesiser",
+  "notes": "Bitwise video equations (XOR lattices, munching squares, moire rings) cycling like a video synth.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "neon-pulse-8"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "videoeq",
+      "scale": 2,
+      "speed": 40,
+      "mode": 0,
+      "seconds": 12,
+      "colors": [
+        "#1a0f2e",
+        "#6e348c",
+        "#df35c1",
+        "#00e5e5",
+        "#c9ff00",
+        "#f4d0d0"
+      ]
+    }
+  }
+}

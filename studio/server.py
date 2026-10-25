@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import profile_gen  # noqa: E402
 import scenes  # noqa: E402
+from studio.native_host import LiveLink, NativeHost  # noqa: E402
 
 WEB = Path(__file__).with_name("web")
 LIBRARY = ROOT / "assets" / "library"
@@ -70,6 +71,7 @@ def _open_port():
 
 def device(commands: list[str], shot: bool) -> dict:
     """Send commands, collect '@' replies, optionally capture the framebuffer."""
+    live.close(untune=False)  # a live-edit session holds the port; hand it over
     with serial_lock:
         _pause_service(60)
         try:
@@ -130,6 +132,10 @@ def rgb332_png(w: int, h: int, px: bytes) -> bytes:
             + chunk(b"IDAT", zlib.compress(bytes(raw), 6)) + chunk(b"IEND", b""))
 
 
+native = NativeHost()
+live = LiveLink(_open_port, _pause_service, _resume_service)
+
+
 # ------------------------------------------------------------------- jobs
 def run_job(kind: str, profile: str) -> str:
     jid = uuid.uuid4().hex[:8]
@@ -147,6 +153,8 @@ def run_job(kind: str, profile: str) -> str:
         ps = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
         ok = step("Converting art", [sys.executable, "scripts/asset_convert.py", "--profile", profile])
         ok = ok and step("Building firmware", ps + ["scripts/build.ps1", "-Profile", profile])
+        if ok:
+            native.rebuild(profile)
         if ok and kind == "flash":
             with serial_lock:
                 ok = step("Flashing display", ps + ["scripts/flash.ps1"])
@@ -268,6 +276,7 @@ def import_files(body: dict) -> dict:
                  "profile": "", "preview": "preview.png", "license": body.get("license", ""), "scene": scene}
         (d / "entry.json").write_text(json.dumps(entry, indent=2) + "\n", encoding="utf-8")
         scenes.prepare_with_still(slug)
+        native.rebuild()
     except Exception as ex:  # unreadable art: leave nothing half-imported behind
         shutil.rmtree(d, ignore_errors=True)
         raise ValueError(f"Could not import: {ex}") from ex
@@ -303,7 +312,11 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/state":
             profiles = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted(PROFILES.glob("*.json"))}
             return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit(),
-                                   "scenes": scenes.scene_list()})
+                                   "scenes": scenes.scene_list(), "native": native.ids,
+                                   "native_building": native.building})
+        if path == "/api/native":
+            return self.send_json({"ids": native.ids, "building": native.building, "error": native.last_error,
+                                   "live": live.last_reply})
         if path == "/api/themes":
             return self.send_json({t: scenes.lut(t) for t in scenes.theme_names()})
         if path == "/api/theme-info":
@@ -355,6 +368,28 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ValueError("preview must be a PNG")
                 (LIBRARY / m.group(1) / "preview.png").write_bytes(png)
                 return self.send_json({"ok": True})
+            if path == "/api/frame":
+                try:
+                    frame, status = native.render(b["entry"], int(b.get("t", 0)), b.get("scene"), int(b.get("warm", 0)))
+                except LookupError as e:
+                    return self.send_json({"error": str(e)}, 404)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/octet-stream")
+                self.send_header("X-Tune", status)
+                self.send_header("Content-Length", str(len(frame)))
+                self.end_headers()
+                return self.wfile.write(frame)
+            if path == "/api/live":
+                if b.get("off"):
+                    live.close()
+                    return self.send_json({"ok": True})
+                blob = native.blob(b["entry"], b["scene"]) if native.index(b["entry"]) >= 0 else \
+                    scenes.tune_blob(b["entry"], b["scene"], [s["id"] for s in scenes.scene_list()].index(b["entry"]))
+                live.send("!TUNE " + blob.hex())
+                return self.send_json({"ok": True, "bytes": len(blob), "last": live.last_reply})
+            if path == "/api/native/rebuild":
+                native.rebuild(b.get("profile"))
+                return self.send_json({"ok": True})
             if path == "/api/themes/lospec":
                 return self.send_json(import_palette(b))
             m = re.fullmatch(r"/api/themes/([a-z0-9-]+)/delete", path)
@@ -372,7 +407,9 @@ class Handler(SimpleHTTPRequestHandler):
                     e["name"] = b["name"]
                 f.write_text(json.dumps(e, indent=2) + "\n", encoding="utf-8")
                 scenes.prepare_with_still(m.group(1))
-                return self.send_json({"ok": True})
+                if native.stale():
+                    native.rebuild()
+                return self.send_json({"ok": True, "rebuilding": native.building})
             if path.startswith("/api/library/") and path.endswith("/delete"):
                 lid = path.split("/")[3]
                 if SLUG.match(lid) and (LIBRARY / lid).is_dir():
@@ -417,6 +454,8 @@ def main() -> None:
             open_window(url)
         return
     print(f"Scene Studio on {url}  (Ctrl+C to quit)")
+    if native.stale():
+        native.rebuild()
     if "--no-window" not in sys.argv:
         open_window(url)
     try:

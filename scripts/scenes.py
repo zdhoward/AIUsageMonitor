@@ -20,6 +20,8 @@ A scene is a library entry (assets/library/<id>/entry.json) with a "scene" objec
     gap       empty px between repeats (sprites that cross the screen)
     ms        frame time for multi-file layers
   effects[]   {"type": stars|rain|snow|lightning, "density": 1-3, "color": "#hex"}
+              lightning fills the whole screen with its colour behind layer
+              "behind" (default 1: in front of the back layer only)
   generator   optional procedural backdrop replacing the sky:
               {"type": "patterns", "tiles": [16x16 png...], "scale": 3, "vx": 12, "vy": 6,
                "seconds": 7, "colors": [bg, fg, bg, fg, ...]}
@@ -49,7 +51,21 @@ PROFILES = ROOT / "profiles"
 SCENE_H = 240
 FX = {"stars": 1, "rain": 2, "snow": 3, "lightning": 4}
 FX_FRONT = {"rain", "snow"}
-GEN = {"patterns": 1, "plasma": 2, "warp": 3, "matrix": 4}
+GEN = {"patterns": 1, "plasma": 2, "warp": 3, "matrix": 4, "fire": 5, "lava": 6, "aurora": 7, "life": 8,
+       "ripple": 9, "fireworks": 10, "videoeq": 11, "spectre": 12}
+SIM_GENS = {"fire", "lava", "aurora", "life", "ripple", "fireworks", "videoeq", "spectre"}
+FX_DEFAULT_COLOR = {"lightning": "#f0f0ff", "stars": "#b0a0ff"}
+
+
+def fx_tuple(x: dict, layer_count: int) -> tuple:
+    """(type, density, colour332, front) exactly as SceneEffect stores it."""
+    t = x["type"]
+    color = ac.rgb332(*hex_rgb(x.get("color") or FX_DEFAULT_COLOR.get(t, "#9fb4ff")))
+    if t == "lightning":
+        front = min(layer_count, max(0, int(x.get("behind", 1 if layer_count > 1 else 0))))
+    else:
+        front = int(t in FX_FRONT)
+    return FX[t], max(1, min(3, int(x.get("density", 2)))), color, front
 
 
 def tile_bits(path: Path) -> bytes:
@@ -71,6 +87,12 @@ def gen_spec(entry_dir: Path, g: dict) -> dict:
     colors = [ac.rgb332(*hex_rgb(c)) for c in g.get("colors", ["#000000", "#ffffff"])]
     tiles = b"".join(tile_bits(entry_dir / t) for t in g.get("tiles", []))
     t = g["type"]
+    if t in SIM_GENS:  # speed (fire: wind), density/count, or a pinned mode for videoeq/spectre
+        speed = g.get("speed", 0)
+        vy = g.get("mode", 0) if t in ("videoeq", "spectre") else g.get("density", 0)
+        return {"type": GEN[t], "scale": int(g.get("scale", 0)), "vx16": int(speed * 16), "vy16": int(vy),
+                "seconds": int(g.get("seconds", 0)), "tiles": b"",
+                "colors": [ac.rgb332(*hex_rgb(c)) for c in g.get("colors", ["#000000", "#ffffff"])]}
     speed = {"warp": g.get("speed", 300), "matrix": g.get("speed", 12)}.get(t, g.get("vx", 0))
     vy = g.get("density", 70) if t == "matrix" else g.get("vy", 0) * 16  # matrix: % of columns raining
     return {"type": GEN[t], "scale": int(g.get("scale", {"patterns": 3, "matrix": 1}.get(t, 2))),
@@ -344,9 +366,7 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
                        f"{n}_gcol, {len(g['colors'])}}};\n")
             gen = f"&{n}_gen"
             total += len(g["tiles"]) + len(g["colors"])
-        fx = [f"{{{FX[x['type']]}, {max(1, min(3, int(x.get('density', 2))))}, "
-              f"0x{ac.rgb332(*hex_rgb(x.get('color', '#9fb4ff'))):02X}, {int(x['type'] in FX_FRONT)}}}"
-              for x in sc.get("effects", []) if x.get("type") in FX]
+        fx = ["{%d, %d, 0x%02X, %d}" % fx_tuple(x, len(layers)) for x in sc.get("effects", []) if x.get("type") in FX]
         if fx:
             cpp.append(f"static const SceneEffect {n}_fx[] = {{{', '.join(fx)}}};\n")
         top, bot = hex_rgb(sc["background"]["top"]), hex_rgb(sc["background"]["bottom"])
@@ -389,6 +409,48 @@ def generate(profile: str | None = None) -> tuple[str, str, int]:
 
 if __name__ == "__main__":
     prepare(sys.argv[1])
+
+
+# ------------------------------------------------------------------ live tuning
+def tune_blob(entry_id: str, sc: dict, index: int) -> bytes:
+    """Encode a scene's adjustable settings in the tune.h v1 format.
+
+    Layer art is not re-sent: positions and sizes come from the last build's
+    preview metadata, so a scene whose art changed needs a rebuild first."""
+    import struct
+    d = LIBRARY / entry_id
+    meta = json.loads((d / ".build" / "layers.json").read_text(encoding="utf-8"))
+    layers = sc.get("layers", [])
+    if len(meta) != len(layers):
+        raise ValueError("layers changed since the last build: save and send to display first")
+    out = bytearray([1, index])
+    out += bytes(hex_rgb(sc["background"]["top"])) + bytes(hex_rgb(sc["background"]["bottom"]))
+    out.append(len(layers))
+    for L, m in zip(layers, meta):
+        y = m["y"] if L.get("fit") else int(L.get("y", m["y"]))
+        frame_ms = int(L.get("frame_ms") or (L.get("ms") if isinstance(L.get("src"), list) else 0) or 0)
+        out += struct.pack("<hhHH", y, int(round(float(L.get("speed", 0)) * 16)), m["w"] + int(L.get("gap", 0)), frame_ms)
+    fx = [fx_tuple(x, len(layers)) for x in sc.get("effects", []) if x.get("type") in FX][:8]
+    out.append(len(fx))
+    for f in fx:
+        out += bytes(f)
+    table = lut(sc.get("theme", "original"))
+    g = sc.get("generator")
+    out.append((1 if table else 0) | (2 if g else 0))
+    if table:
+        out += bytes(table)
+    if g:
+        spec = gen_spec(d, g)
+        colors = spec["colors"][:32]
+        out += struct.pack("<BBhhHB", spec["type"], spec["scale"], spec["vx16"], spec["vy16"], spec["seconds"], len(colors))
+        out += bytes(colors)
+    cyc = sc.get("cycle") or {}
+    themes = [t for t in cyc.get("themes", []) if t in theme_names()][:5]
+    themes = themes if len(themes) > 1 else []
+    out += struct.pack("<BHH", len(themes), int(max(1, cyc.get("hold", 20))), int(max(0, cyc.get("fade", 4)) * 10))
+    for t in themes:
+        out += bytes(lut(t) or range(256))
+    return bytes(out)
 
 
 # ------------------------------------------------------------------ studio helpers

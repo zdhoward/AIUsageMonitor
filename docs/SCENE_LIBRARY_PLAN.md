@@ -91,3 +91,11 @@ Add more generator types to `scene.cpp`, each a small state machine with no art,
 - Also possible: Bezier ribbons, Matrix rain, Flying objects (original art only).
 
 Each generator keeps bounded state (well under 8 KB of RAM) and runs at or under the current ~50 ms frame budget.
+
+## Ideas backlog from the reviewed repos (2026-10-25)
+
+- **VJ transitions between playlist scenes** (after VIDEO_XCHNG, MIT): dissolve, wipe, iris, pixelate and luma-key using a second frame buffer (76.8 KB) allocated during transitions.
+- More termflix-style effects (MIT): boids, fireflies, radar sweep, reaction-diffusion, ocean, physarum, DNA helix, mandelbrot zoom.
+- More sysc-Go effects (MIT): beams, burn, cracktro scroller, decrypt text, pour.
+- Video EQ / Spectre: feedback (previous frame scaled/rotated into the next) and audio-reactive inputs.
+- T-016 classic Windows screensavers (Pipes, Maze, Mystify) remain planned.

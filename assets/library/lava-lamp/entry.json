@@ -1,0 +1,35 @@
+{
+  "name": "Lava Lamp",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by termflix (MIT)",
+  "notes": "Metaballs drifting and merging like a lava lamp.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [
+      "ice"
+    ],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "lava",
+      "scale": 4,
+      "speed": 10,
+      "density": 7,
+      "colors": [
+        "#12001f",
+        "#3a0a4a",
+        "#ff3ea5",
+        "#ffb84d",
+        "#fff0d0"
+      ]
+    }
+  }
+}

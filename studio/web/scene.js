@@ -48,6 +48,9 @@ class ScenePlayer {
   }
   async load(entryId, scene) {
     await loadThemes();
+    this.entry = entryId;
+    // Scenes in the native engine stream the firmware's own pixels; edits travel as tune blobs.
+    this.native = (state.native || []).includes(entryId);
     const base = `/library/${entryId}/.build/`;
     const meta = await (await fetch(base + "layers.json?" + Date.now())).json();
     this.layers = await Promise.all(meta.map((m) => new Promise((ok) => {
@@ -64,12 +67,28 @@ class ScenePlayer {
   start() {
     if (this.running) return;
     this.running = true;
-    const tick = () => {
+    const tick = async () => {
       if (!this.running) return;
-      this.draw(performance.now() - this.t0);
-      setTimeout(() => requestAnimationFrame(tick), 30);
+      const t = performance.now() - this.t0;
+      if (this.native) await this.drawNative(t).catch(() => { this.native = false; });
+      else this.draw(t);
+      setTimeout(tick, this.native ? 15 : 30);
     };
     tick();
+  }
+  // One frame from the native engine (RGB332), with unsaved edits applied.
+  async drawNative(t, warm = 0) {
+    const r = await fetch("/api/frame", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entry: this.entry, t: Math.floor(t), scene: this.scene, warm }) });
+    if (!r.ok) throw new Error("no native frame");
+    this.tuneStatus = r.headers.get("X-Tune");
+    const px = new Uint8Array(await r.arrayBuffer());
+    const img = this.g.createImageData(320, 240), d = img.data;
+    for (let i = 0; i < px.length; i++) {
+      const c = px[i], o = i * 4;
+      d[o] = ((c >> 5) & 7) * 255 / 7; d[o + 1] = ((c >> 2) & 7) * 255 / 7; d[o + 2] = (c & 3) * 85; d[o + 3] = 255;
+    }
+    this.g.putImageData(img, 0, 0);
   }
   stop() { this.running = false; }
 
@@ -323,7 +342,8 @@ function renderThumb(e, img) {
     const p = new ScenePlayer(cv);
     await p.load(e.id, e.scene);
     p.stop();
-    for (let t = 0; t <= 4000; t += 40) p.draw(t);  // let stateful effects (warp) settle
+    if (p.native) await p.drawNative(4000, 100);  // warm-up frames let stateful effects settle
+    else for (let t = 0; t <= 4000; t += 40) p.draw(t);
     const data = cv.toDataURL("image/png");
     img.src = data;
     await api(`/api/library/${e.id}/preview`, { data });
@@ -357,6 +377,8 @@ function openViewer(e, settings = false) {
     (el.textContent = [e.created && e.created.slice(0, 10), e.license, e.commit].filter(Boolean)[i]));
   $("#vShow").hidden = !(e.kind === "scene" || e.kind === "page");
   const isScene = e.kind === "scene" && e.scene;
+  $("#vLiveRow").hidden = !isScene;
+  setLive(false);
   $("#stageCanvas").hidden = !isScene;
   $("#stageImg").hidden = isScene;
   $("#editor").hidden = !isScene;
@@ -378,6 +400,29 @@ function openViewer(e, settings = false) {
 function closeModals() {
   document.querySelectorAll(".modal").forEach((m) => (m.hidden = true));
   player.stop();
+  setLive(false);
+}
+
+// Live on device: while on, every edit is sent to the display as a tune blob.
+let liveOn = false, liveEditTimer = null, liveSent = "";
+function setLive(on) {
+  if (liveOn && !on) api("/api/live", { off: true }).catch(() => {});
+  liveOn = on;
+  const sw = $("#vLive");
+  if (sw) sw.checked = on;
+  clearInterval(liveEditTimer);
+  liveSent = "";
+  if (on) liveEditTimer = setInterval(pushLive, 400);
+}
+async function pushLive() {
+  if (!liveOn || !viewing || !draft) return;
+  const body = JSON.stringify({ entry: viewing.id, scene: draft });
+  if (body === liveSent) return;
+  liveSent = body;
+  try {
+    const r = await api("/api/live", JSON.parse(body));
+    $("#vLiveNote").textContent = r.last && r.last.startsWith("@ERR") ? r.last.slice(5) : "Edits show on the display as you make them.";
+  } catch (e) { $("#vLiveNote").textContent = e.message; }
 }
 document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = closeModals));
 document.querySelectorAll(".modal").forEach((m) => m.addEventListener("mousedown", (ev) => { if (ev.target === m) closeModals(); }));
@@ -474,27 +519,55 @@ $("#vDelete").onclick = async () => {
 function renderThemes() {
   const s = draft, cycling = !!s.cycle;
   const extras = cycling ? (s.cycle.themes || []).slice(1) : s.variants;
+  const setExtras = (next) => { if (cycling) s.cycle.themes = [s.theme || "original", ...next]; else s.variants = next; };
   const box = $("#eThemes");
-  box.innerHTML = "";
-  (window.THEME_INFO || []).forEach((t) => {
-    const main = (s.theme || "original") === t.id;
-    const strip = t.colors.map((c) => `<i style="background:${c}"></i>`).join("");
-    const b = el(`<div class="theme ${main ? "on" : ""}" title="${t.kind === "palette" ? `${t.name} by ${t.author} (Lospec)` : t.name}">
-      <span class="sw-strip">${strip}</span><span class="tname"></span>
-      <input type="checkbox" ${extras.includes(t.id) ? "checked" : ""} ${main ? "disabled" : ""}></div>`);
-    b.querySelector(".tname").textContent = t.name;
-    b.onclick = (ev) => {
-      if (ev.target.tagName === "INPUT") {
-        const next = ev.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id);
-        if (cycling) s.cycle.themes = [s.theme || "original", ...next]; else s.variants = next;
-      } else {
-        s.theme = t.id;
-        if (cycling) s.cycle.themes = [t.id, ...extras.filter((x) => x !== t.id)];
-        else s.variants = s.variants.filter((x) => x !== t.id);
-      }
+  const filter = (box.querySelector(".tl-filter") || {}).value || "";
+  box.innerHTML = `<div class="tl-head"><input class="tl-filter" placeholder="Filter themes…"><span>Main</span><span>${cycling ? "Cycle" : "Copy"}</span></div><div class="tl-rows"></div>`;
+  const f = box.querySelector(".tl-filter");
+  f.value = filter;
+  f.oninput = () => { renderThemes(); const nf = $("#eThemes .tl-filter"); nf.focus(); nf.setSelectionRange(nf.value.length, nf.value.length); };
+  const rows = box.querySelector(".tl-rows");
+  const info = window.THEME_INFO || [];
+  // ticked extras first, in their order; then everything else
+  const ordered = [...extras.map((id) => info.find((t) => t.id === id)).filter(Boolean), ...info.filter((t) => !extras.includes(t.id))];
+  ordered.filter((t) => !filter || (t.name + " " + (t.author || "")).toLowerCase().includes(filter.toLowerCase())).forEach((t) => {
+    const main = (s.theme || "original") === t.id, extra = extras.includes(t.id), k = extras.indexOf(t.id);
+    const row = el(`<div class="tl-row ${main ? "main" : ""} ${extra ? "extra" : ""}">
+      <span class="sw-strip wide">${t.colors.map((c) => `<i style="background:${c}"></i>`).join("")}</span>
+      <div class="tl-name"><b></b><small></small></div>
+      <span class="tl-move">${extra && extras.length > 1 ? `<button class="mini-btn" data-d="-1" title="Earlier">↑</button><button class="mini-btn" data-d="1" title="Later">↓</button>` : ""}</span>
+      ${t.kind === "palette" ? '<button class="mini-btn del" title="Remove palette">×</button>' : "<span></span>"}
+      <input type="radio" name="tmain" ${main ? "checked" : ""} title="Main theme">
+      <input type="checkbox" ${extra ? "checked" : ""} ${main ? "disabled" : ""} title="${cycling ? "Include in the cycle" : "Add a playlist copy"}">
+    </div>`);
+    row.querySelector("b").textContent = t.name;
+    row.querySelector("small").textContent = t.kind === "palette" ? `Lospec · ${t.author || "unknown"} · ${t.colors.length} colours` : "Built in";
+    row.querySelector("input[type=radio]").onchange = () => {
+      s.theme = t.id;
+      setExtras(extras.filter((x) => x !== t.id));
       renderThemes();
     };
-    box.append(b);
+    row.querySelector("input[type=checkbox]").onchange = (e) => {
+      setExtras(e.target.checked ? [...extras, t.id] : extras.filter((x) => x !== t.id));
+      renderThemes();
+    };
+    row.querySelectorAll("[data-d]").forEach((btn) => (btn.onclick = () => {
+      const next = [...extras], j = k + +btn.dataset.d;
+      if (j < 0 || j >= next.length) return;
+      [next[k], next[j]] = [next[j], next[k]];
+      setExtras(next);
+      renderThemes();
+    }));
+    const del = row.querySelector(".del");
+    if (del) del.onclick = async () => {
+      if (!confirm(`Remove the ${t.name} palette? Scenes using it fall back to original colours.`)) return;
+      await api(`/api/themes/${t.id}/delete`, {});
+      if (s.theme === t.id) s.theme = "original";
+      setExtras(extras.filter((x) => x !== t.id));
+      await loadThemes(true);
+      renderThemes();
+    };
+    rows.append(row);
   });
   const mode = $("#eThemeMode");
   mode.innerHTML = `<div class="seg"><button data-m="copies" class="${cycling ? "" : "on"}">Ticked themes → playlist copies</button>
@@ -578,7 +651,15 @@ function renderGen() {
   if (!G) return;
   const fields = { patterns: [["scale", "Zoom"], ["vx", "Drift X px/s"], ["vy", "Drift Y px/s"], ["seconds", "Seconds each"]],
                    plasma: [["scale", "Block size"]], warp: [["speed", "Speed"]],
-                   matrix: [["scale", "Glyph size"], ["speed", "Fall speed"], ["density", "Density %"]] }[G.type] || [];
+                   matrix: [["scale", "Glyph size"], ["speed", "Fall speed"], ["density", "Density %"]],
+                   fire: [["scale", "Cell size"], ["speed", "Wind"], ["density", "Heat %"]],
+                   lava: [["scale", "Cell size"], ["speed", "Speed"], ["density", "Blobs"]],
+                   aurora: [["scale", "Cell size"], ["speed", "Speed"], ["density", "Brightness %"]],
+                   life: [["scale", "Cell size"], ["speed", "Generations/s"], ["density", "Seed %"], ["seconds", "Reseed every s"]],
+                   ripple: [["scale", "Cell size"], ["density", "Drops/min"]],
+                   fireworks: [["speed", "Gravity"], ["density", "Launches/min"]],
+                   videoeq: [["scale", "Cell size"], ["speed", "Speed"], ["mode", "Equation 1-8 (0 cycles)"], ["seconds", "Seconds each"]],
+                   spectre: [["scale", "Cell size"], ["speed", "Speed"], ["mode", "Patch 1-6 (0 cycles)"], ["seconds", "Seconds each"]] }[G.type] || [];
   const tiles = player.gen ? player.gen.tiles.length / 32 : 0;
   box.append(el(`<h3>${G.type[0].toUpperCase() + G.type.slice(1)} <span class="hint">${G.type === "patterns"
     ? `${tiles} tiles · colours are background/foreground pairs` : "colours are gradient stops"}</span></h3>`));
@@ -680,3 +761,5 @@ $("#impGo").onclick = async () => {
   btn.disabled = false;
   btn.textContent = "Create scene";
 };
+
+$("#vLive").onchange = (e) => setLive(e.target.checked);

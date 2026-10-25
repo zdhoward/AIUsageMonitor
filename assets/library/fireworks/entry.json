@@ -1,0 +1,33 @@
+{
+  "name": "Fireworks",
+  "kind": "scene",
+  "created": "2026-10-25T04:00:00",
+  "commit": "",
+  "profile": "default",
+  "preview": "preview.png",
+  "license": "Original (procedural); inspired by sysc-Go (MIT)",
+  "notes": "Rockets burst into fading sparks with trails.",
+  "scene": {
+    "background": {
+      "top": "#000000",
+      "bottom": "#000000"
+    },
+    "theme": "original",
+    "variants": [],
+    "layers": [],
+    "effects": [],
+    "generator": {
+      "type": "fireworks",
+      "speed": 10,
+      "density": 90,
+      "colors": [
+        "#000000",
+        "#ff3ea5",
+        "#29e0ff",
+        "#ffb84d",
+        "#c9ff00",
+        "#ffffff"
+      ]
+    }
+  }
+}

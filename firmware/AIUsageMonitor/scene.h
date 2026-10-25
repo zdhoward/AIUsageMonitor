@@ -17,7 +17,12 @@ struct SceneEffect {
   uint8_t type, density, color, front;  // front: draw above the layers
 };
 // Full-screen procedural backdrop drawn instead of the sky gradient.
-enum SceneGenType : uint8_t { GEN_PATTERNS = 1, GEN_PLASMA, GEN_WARP, GEN_MATRIX };
+enum SceneGenType : uint8_t {
+  GEN_PATTERNS = 1, GEN_PLASMA, GEN_WARP, GEN_MATRIX,
+  GEN_FIRE, GEN_LAVA, GEN_AURORA, GEN_LIFE, GEN_RIPPLE, GEN_FIREWORKS, GEN_VIDEOEQ, GEN_SPECTRE
+};
+// Simulation generators: scale = cell size, vx16 = speed * 16 (fire: wind),
+// vy16 = density / intensity / count, or the pinned mode (video EQ, spectre).
 struct SceneGen {
   uint8_t type, scale;      // scale: pattern tile zoom / plasma block size
   int16_t vx16, vy16;       // pattern scroll, px/s * 16; warp: speed in vx16;
