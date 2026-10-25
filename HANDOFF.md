@@ -16,7 +16,7 @@
   - Art is local and git-ignored: the owner's GIF, logo, scene `src/` and previews, `assets/manifest.json`, and the generated `assets_gen.*` / `scenes_gen.*`. A clean clone builds at 33% flash: missing art is skipped, and the Images and City pages show hints.
   - The owner's location lives only in the ignored `service/aimon.config.json`; the code defaults are a Greenwich placeholder.
   - Before the first push, the 74 unpushed commits were rewritten with `git-filter-repo` (`python -m git_filter_repo`) in a scratch clone to drop art and scrub paths, username, email and location. They were then pushed as a fast-forward with no force.
-  - Backup of the pre-rewrite state: `S:/ZX/Programming/AIUsageMonitor-art-backup-20261025/` (art, generated files and a git bundle). Delete it once satisfied.
+  - Backup of the pre-rewrite state: the sibling folder `AIUsageMonitor-art-backup-20261025/` next to the repo (art, generated files and a git bundle). Delete it once satisfied.
 - **Before each push:** scan the outgoing diff for personal paths, location, emails, keys and new art.
 - **Blockers:** tests are pending sprint end.
 - **Next:** hold-progress feedback (optional); a stable slot id per account from the service; flash-size gate; T-017, T-016, T-018 (audio visualizer plan, owner questions open) and T-019 (stock ticker idea).
