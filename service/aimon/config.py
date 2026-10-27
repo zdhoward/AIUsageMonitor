@@ -31,6 +31,13 @@ class Settings:
     # Data older than this is flagged stale on the display.
     limits_stale_s: float = 60 * 60
 
+    # Direct read-only Antigravity (Gemini) quota probe using the stored T3
+    # login. T3's antigravity cache only reports the Claude & GPT shared 3p
+    # allowance, so the direct source replaces it. Five-minute cadence.
+    antigravity_enabled: bool = True
+    antigravity_refresh_s: float = 300.0
+    antigravity_timeout_s: float = 8.0
+
     # Ignore T3 runs stuck in "running" for longer than this (crashed turns).
     max_run_age_s: float = 6 * 3600
 

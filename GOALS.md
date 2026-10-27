@@ -1,9 +1,15 @@
 # Accepted display decisions
 
+## Idle delay (2026-10-27)
+
+- Default-profile Console and Details wait 60 seconds before automatic saving, doubled from 30 seconds at the owner's request.
+
 ## Compact home (2026-10-26)
 
 - Keep the existing three-row Console and add a profile/Studio Rows or Grid setting. Owner's Default uses Grid.
-- Grid fits six cells (3x2 landscape) with Session/5h on the larger outer ring and Weekly inside, percentages and reset countdowns. The outer ring gives the short window more detail (owner refinement). Current owner setup is two Claude accounts, Codex and Gemini/Antigravity, collected from local T3 caches. Future providers need a compatible collector source; the grid itself uses service account names.
+- Grid fits six cells (3x2 landscape) with Session/5h on the larger outer ring and Weekly inside, percentages and reset countdowns. The outer ring gives the short window more detail (owner refinement).
+- Landscape cells are pinned once the named set exists: A top left, Codex top centre, Antigrav top right; B bottom left, bottom centre reserved and entirely empty, Argon bottom right. Portrait and unnamed setups keep the generic first-six service order.
+- Antigravity shows Gemini quota from a direct read-only probe using T3's stored login. T3's `antigravity` cache entry is the Claude & GPT shared 3p allowance and is suppressed. Argon (`gemini-4-argon`) has no independent source in the current token, so it stays unknown with an honest reason rather than borrowing family/3p numbers.
 
 ## Due quota visibility (2026-10-25)
 

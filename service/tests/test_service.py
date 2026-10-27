@@ -8,12 +8,13 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from aimon.config import Settings
 from aimon.models import Account, Activity, UsageRecord, Window
 from aimon.pricing import Pricing
-from aimon.snapshot import State, build_payload, short_model
-from aimon.sources import opencode_db, openrouter, t3_activity, t3_limits
+from aimon.snapshot import State, build_payload, select_accounts, short_model
+from aimon.sources import antigravity, opencode_db, openrouter, t3_activity, t3_limits
 from aimon.sources.session_logs import SessionLogScanner
 
 NOW = 1_792_600_000.0  # fixed clock
@@ -89,6 +90,120 @@ class T3LimitsTests(unittest.TestCase):
         self.write("codex.json", {"driver": "codex", "enabled": True, "usageLimits": {"checkedAt": iso(NOW), "windows": [], "unavailable": {"reason": "unsupported"}}})
         [acct] = t3_limits.read_accounts(self.home)
         self.assertEqual(acct.unavailable, "unsupported")
+
+
+class AntigravityTests(unittest.TestCase):
+    """Retained fixtures for the direct Gemini quota reader (not executed in this lane)."""
+
+    def models(self):
+        return {
+            "gemini-2.5-pro": {
+                "modelProvider": "MODEL_PROVIDER_GOOGLE",
+                "quotaInfo": {"remainingFraction": 0.75, "resetTime": iso(NOW + 3600)},
+                "weeklyQuotaInfo": {"remainingFraction": 0.5, "resetTime": iso(NOW + 86400)},
+            },
+            "gemini-3-flash": {
+                "modelProvider": "MODEL_PROVIDER_GOOGLE",
+                "quotaInfo": {"remainingFraction": 0.9, "resetTime": iso(NOW + 7200)},
+            },
+            "claude-opus-5-5-high": {
+                "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+                "quotaInfo": {"remainingFraction": 0.0, "resetTime": iso(NOW + 3600)},
+            },
+        }
+
+    def test_fraction_is_remaining_and_aggregates_gemini_only(self):
+        self.assertAlmostEqual(antigravity.fraction_to_used(0.92816395), 7.183605, places=4)
+        self.assertEqual(antigravity.fraction_to_used(1), 0)
+        self.assertEqual(antigravity.fraction_to_used(0), 100)
+        self.assertEqual(antigravity.fraction_to_used(-0.5), 100)  # clamped, never negative
+        self.assertEqual(antigravity.fraction_to_used(1.5), 0)
+        for bad in (None, True, "0.5", float("nan")):
+            self.assertIsNone(antigravity.fraction_to_used(bad))
+
+        antigrav, argon = antigravity.accounts_from_models(self.models(), NOW)
+        self.assertEqual(antigrav.name, "Antigrav")
+        self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
+                         [("5h", 25.0), ("7d", 50.0)])
+        self.assertEqual(antigrav.checked_at, NOW)
+        # Claude's exhausted model must never become the Gemini number.
+        self.assertNotIn(100.0, [w.used_percent for w in antigrav.windows])
+
+    def test_argon_quota_does_not_replace_gemini_allowance(self):
+        models = self.models()
+        models[antigravity.ARGON_MODEL] = {
+            "modelProvider": "MODEL_PROVIDER_GOOGLE",
+            "quotaInfo": {"remainingFraction": 0.0, "resetTime": iso(NOW + 3600)},
+        }
+        antigrav, argon = antigravity.accounts_from_models(models, NOW)
+        self.assertEqual(antigrav.windows[0].used_percent, 25.0)
+        self.assertEqual(argon.windows[0].used_percent, 100.0)
+
+    def test_missing_argon_is_distinct_and_unknown(self):
+        antigrav, argon = antigravity.accounts_from_models(self.models(), NOW)
+        self.assertEqual(argon.name, "Argon")
+        self.assertEqual(argon.windows, [])
+        self.assertIsNone(argon.checked_at)
+        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
+        self.assertGreaterEqual(len(antigrav.windows), 1)
+
+    def test_optional_weekly_is_never_invented(self):
+        doc = {"gemini-3-flash": self.models()["gemini-3-flash"]}
+        antigrav, _argon = antigravity.accounts_from_models(doc, NOW)
+        self.assertEqual([w.label for w in antigrav.windows], ["5h"])
+        self.assertIsNotNone(antigrav.windows[0].resets_at)
+
+    def test_malformed_data_is_bounded_and_unavailable(self):
+        with self.assertRaises(antigravity.QuotaError):
+            antigravity.accounts_from_models(["not", "a", "map"], NOW)
+        antigrav, argon = antigravity.accounts_from_models(
+            {"gemini-3-flash": "junk", "gemini-2.5-pro": {"quotaInfo": {"remainingFraction": "x"}}}, NOW
+        )
+        self.assertEqual(antigrav.windows, [])
+        self.assertEqual(antigrav.unavailable, "no Gemini quota")
+        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
+
+    def test_failed_refresh_retains_last_good_checked_at(self):
+        with tempfile.TemporaryDirectory() as d:
+            reader = antigravity.AntigravityReader(Path(d), refresh_s=300, timeout_s=1)
+            good = antigravity.accounts_from_models(self.models(), NOW - 600)
+            reader._good = good
+            reader._next = 0.0
+            with mock.patch.object(antigravity, "discover_token",
+                                   return_value=antigravity.TokenChoice(None, None, "no stored login")):
+                accounts = reader.read(NOW)
+            antigrav = next(a for a in accounts if a.name == "Antigrav")
+            self.assertEqual(antigrav.checked_at, NOW - 600)  # original, not refreshed
+            self.assertEqual([w.label for w in antigrav.windows], ["5h", "7d"])
+            self.assertEqual(reader._next, NOW + 300)  # failure also waits the cadence
+
+    def test_success_is_cached_for_the_cadence(self):
+        with tempfile.TemporaryDirectory() as d:
+            reader = antigravity.AntigravityReader(Path(d), refresh_s=300, timeout_s=1)
+            reader._good = antigravity.accounts_from_models(self.models(), NOW)
+            reader._next = NOW + 300
+            with mock.patch.object(antigravity, "_post_json", side_effect=AssertionError("must not poll")):
+                accounts = reader.read(NOW + 10)
+            self.assertEqual(next(a for a in accounts if a.name == "Antigrav").checked_at, NOW)
+
+
+class AccountSelectionTests(unittest.TestCase):
+    def test_cap_keeps_pinned_providers_over_duplicate_caches(self):
+        def acct(iid, name, driver):
+            return Account(iid, name, driver, None, "888888")
+
+        accounts = [
+            acct("claudeAgent", "A", "claudeAgent"),
+            acct("claudeAgent_claude_2", "B", "claudeAgent"),
+            acct("codex", "Codex", "codex"),
+            acct("codex_dup", "Codex 2", "codex"),
+            acct("antigravity_direct", "Antigrav", "antigravity"),
+            acct("antigravity_argon", "Argon", "antigravity"),
+            acct("cursor", "Cursor", "cursor"),
+        ]
+        kept = [a.name for a in select_accounts(accounts)]
+        self.assertLessEqual(len(kept), 6)
+        self.assertEqual(set(kept), {"A", "B", "Codex", "Codex 2", "Antigrav", "Argon"})
 
 
 class TranscriptTests(unittest.TestCase):

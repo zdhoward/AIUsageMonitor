@@ -13,7 +13,7 @@ from . import log
 from .config import Settings
 from .models import Account, Activity, UsageRecord
 from .pricing import Pricing
-from .sources import opencode_db, openrouter, t3_activity, t3_limits
+from .sources import antigravity, opencode_db, openrouter, t3_activity, t3_limits
 from .sources.session_logs import SessionLogScanner, codex_windows
 
 PAYLOAD_VERSION = 1
@@ -65,6 +65,53 @@ def discover_transcript_roots(t3_home: Path) -> list[tuple[str, str, Path]]:
     return list(roots.values())
 
 
+def select_accounts(accounts: list[Account]) -> list[Account]:
+    """Keep six at most without letting duplicate caches displace the pinned set.
+
+    Order is otherwise untouched, so generic grids still show service order.
+    Only when the model cap is exceeded are the requested providers (two
+    Claude accounts, Codex, then Antigrav/Argon) ranked ahead of extras.
+    """
+    seen: dict[str, int] = {}
+    unique: list[Account] = []
+    for a in accounts:
+        key = a.instance_id or f"{a.driver}:{a.name}"
+        if key in seen:
+            unique[seen[key]] = a  # a fresh reading replaces a retained copy
+            continue
+        seen[key] = len(unique)
+        unique.append(a)
+    if len(unique) <= 6:
+        return unique
+
+    # Only the first two Claude instances and the first Codex instance keep a
+    # privileged rank. Duplicate Codex caches (or extra Claude logins) cannot
+    # jump ahead of Antigrav/Argon and displace a requested provider.
+    def priority(a: Account) -> int:
+        if a.driver == "claudeAgent":
+            return 0 if claude_seen[0] < 2 else 5
+        if a.driver == "codex":
+            return 1 if codex_seen[0] < 1 else 5
+        if a.name == antigravity.ANTIGRAV_NAME:
+            return 2
+        if a.name == antigravity.ARGON_NAME:
+            return 3
+        return 5
+
+    claude_seen, codex_seen = [0], [0]
+    ranks = []
+    for pos, a in enumerate(unique):
+        rank = priority(a)
+        ranks.append((rank, pos, a))
+        if a.driver == "claudeAgent":
+            claude_seen[0] += 1
+        elif a.driver == "codex":
+            codex_seen[0] += 1
+    ranked = sorted(ranks, key=lambda item: (item[0], item[1]))
+    keep = {id(item[2]) for item in ranked[:6]}
+    return [a for a in unique if id(a) in keep]
+
+
 class Collector:
     def __init__(self, settings: Settings):
         self.s = settings
@@ -77,6 +124,11 @@ class Collector:
         self._lock = threading.Lock()
         self._next_opencode = 0.0
         self._next_openrouter = 0.0
+        self.antigravity = antigravity.AntigravityReader(
+            settings.t3_home,
+            refresh_s=settings.antigravity_refresh_s,
+            timeout_s=settings.antigravity_timeout_s,
+        )
         for sc in self.scanners:
             log.event("collector.transcripts", account=sc.account, flavor=sc.flavor, root=sc.root)
 
@@ -98,7 +150,12 @@ class Collector:
                 log.warn("source.failed", src=name, err=type(e).__name__, detail=str(e)[:160])
 
         def limits():
-            st.accounts = t3_limits.read_accounts(self.s.t3_home)
+            accounts = t3_limits.read_accounts(self.s.t3_home)
+            if self.s.antigravity_enabled:
+                # The cache's antigravity entry is the Claude & GPT shared 3p
+                # allowance, not Gemini: suppress it rather than mislabel it.
+                accounts = [a for a in accounts if a.driver != "antigravity"]
+            st.accounts = select_accounts(accounts)
 
         def activity():
             st.activity = t3_activity.read_activity(
@@ -113,6 +170,11 @@ class Collector:
             st.records = recs
 
         guarded("t3_limits", limits)
+        if self.s.antigravity_enabled:
+            def antigravity_direct():
+                st.accounts = select_accounts(st.accounts + self.antigravity.read(now))
+
+            guarded("antigravity", antigravity_direct)
         guarded("t3_activity", activity)
         guarded("transcripts", transcripts)
         if "t3_activity" in st.errors:
