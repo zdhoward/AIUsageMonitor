@@ -1,4 +1,16 @@
-# Handoff — v1.11.1 Due quota keeps the dashboard awake (2026-10-25)
+# Handoff — compact quota grid (2026-10-26)
+
+## Current session: v1.12.0 compact home
+
+- Delivered on `main`: `3780f9a` adds the optional grid, preserves Rows, enables Default/Grid and includes Gemini/Antigravity T3 quota caches. Wrap-up commit versions this as v1.12.0. No open or thread-linked PRs. Public publication remains subject to the owner's approval rule in GOALS.md; no push in this session.
+- Owner refinement: Session/5h uses the larger outer ring for detail; Weekly stays yellow on the inner ring. Both percentages and reset countdowns remain visible. Current live setup is two Claude accounts (A/B), Codex and Antigravity. No local configuration or credentials were replaced.
+- Six-account capacity: 3x2 landscape, 2x3 portrait. Only the first six service accounts are stored; no paging. Future providers still need a compatible collector source. Grid uses service display names; stable account IDs remain future work.
+- Evidence: successful production builds and hash-verified flashes; `build/t013-final-build.log`, `build/t013-final-flash.log`, `build/console-grid.png`. Coordinator inspected the four-account framebuffer, including 100% next to multi-day captions; owner liked the layout. Final versioned build/flash evidence is `build/v1.12.0-build.log` and `build/v1.12.0-flash.log`.
+- Source review: free reviewer found unreachable paging and a calculated text-fit risk. Removed dead paging and corrected docs; actual framebuffer resolves text fit for the current 5h/7d windows. No second independent pass claimed. Automated tests remain deferred under sprint-end policy. Studio selector is wired but click/save/reload and portrait/Rows runtime checks remain pending.
+- Tracking: compact-grid ticket is now [T-021](.tickets/T-021.md); dispatch/scoreboard records historically used T-013, already allocated to profiles in the index. Earlier backlog below is retained.
+- Next: owner testing phase should cover Rows/Grid save/reload, portrait, six-account/unknown/stale cases and the existing due-quota saver trigger. Then consider explicit overflow handling and provider/account abbreviation configuration. Publication needs owner approval; do not bypass the public push guard. No release tests were implied by this wrap-up.
+
+## Previous handoff: v1.11.1 (2026-10-25)
 
 ## Settings review (2026-10-25)
 
