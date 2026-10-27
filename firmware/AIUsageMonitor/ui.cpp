@@ -370,13 +370,28 @@ static bool prefixNoCase(const char* s, const char* prefix) {
 }
 
 // Stable slot mapping: CL1, CL2, Codex keep their rows even when the service
-// reorders accounts. Names that match no row (T3 display names such as "A")
-// fill the free Claude rows in service order, which follows T3's cache files.
+// reorders accounts. `A`/`B` (T3 display names) and `Claude A`/`Claude B` are
+// compatible identities. Names belonging to other providers (Antigrav, Argon,
+// Gemini, GPT, ...) never fall into a Claude row.
+static bool isOtherProvider(const char* name) {
+  static const char* const names[] = {"antigrav", "argon", "gemini", "gpt", "opencode",
+                                      "openrouter", "cursor", "grok", "muse", "pi"};
+  for (const char* other : names)
+    if (eqNoCase(name, other)) return true;
+  // Variants such as "Antigravity" or a duplicate "Codex 2" are not Claude
+  // accounts either; these prefixes are distinctive enough to exclude safely.
+  static const char* const prefixes[] = {"antigrav", "argon", "gemini", "opencode", "openrouter", "codex "};
+  for (const char* prefix : prefixes)
+    if (prefixNoCase(name, prefix)) return true;
+  return false;
+}
+
 static int slotByName(const Model& m, int slot) {
-  static const char* const ids[3] = {"cl1", "cl2", "codex"};
+  static const char* const ids[3][2] = {{"cl1", "a"}, {"cl2", "b"}, {"codex", nullptr}};
   static const char* const longs[3] = {"claude a", "claude b", "codex"};
-  for (int i = 0; i < m.nacc; ++i)
-    if (eqNoCase(m.acc[i].p, ids[slot])) return i;
+  for (int n = 0; n < 2 && ids[slot][n]; ++n)
+    for (int i = 0; i < m.nacc; ++i)
+      if (eqNoCase(m.acc[i].p, ids[slot][n])) return i;
   for (int i = 0; i < m.nacc; ++i)
     if (prefixNoCase(m.acc[i].p, longs[slot])) return i;
   return -1;
@@ -385,15 +400,43 @@ static int slotByName(const Model& m, int slot) {
 static int slotIndex(const Model& m, int slot) {
   const int named = slotByName(m, slot);
   if (named >= 0 || slot == 2) return named;
-  int skip = 0;  // unnamed accounts to pass before this row's
+  int skip = 0;  // unnamed Claude accounts to pass before this row's
   for (int s = 0; s < slot; ++s)
     if (slotByName(m, s) < 0) skip++;
   for (int i = 0; i < m.nacc; ++i) {
     bool claimed = false;
     for (int s = 0; s < 3; ++s) claimed |= slotByName(m, s) == i;
-    if (!claimed && skip-- == 0) return i;
+    if (!claimed && !isOtherProvider(m.acc[i].p) && skip-- == 0) return i;
   }
   return -1;
+}
+
+// Explicit landscape identity: once the named five-account layout is present,
+// cells stay pinned by account identity. A missing/reserved cell stays blank
+// rather than being filled with an unrelated provider.
+static int accountByName(const Model& m, const char* name) {
+  for (int i = 0; i < m.nacc; ++i)
+    if (eqNoCase(m.acc[i].p, name)) return i;
+  return -1;
+}
+
+static bool namedGrid(const Model& m) {
+  return slotIndex(m, 0) >= 0 && slotIndex(m, 1) >= 0 && slotIndex(m, 2) >= 0 &&
+         accountByName(m, "antigrav") >= 0;
+}
+
+// A top left, Codex top centre, Antigrav top right; B bottom left, centre
+// bottom reserved (blank), Argon bottom right.
+static int namedGridIndex(const Model& m, int cell) {
+  switch (cell) {
+    case 0: return slotIndex(m, 0);
+    case 1: return slotIndex(m, 2);
+    case 2: return accountByName(m, "antigrav");
+    case 3: return slotIndex(m, 1);
+    case 4: return -1;  // reserved: always empty
+    case 5: return accountByName(m, "argon");
+    default: return -1;
+  }
 }
 
 static bool clientStale(const Model& m, const AccData& a, uint32_t now) {
@@ -597,9 +640,16 @@ static void drawConsoleGrid(const Model& m, uint32_t now) {
   const int cw = (W - 2 * pad - (cols - 1) * gap) / cols;
   const int ch = (bottom - top - (rows - 1) * gap) / rows;
   if (m.nacc == 0) text("No accounts", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+  // Only the landscape 3x2 console uses the pinned identity layout. Portrait
+  // and unnamed setups keep the generic first-six service order.
+  const bool named = !portrait && namedGrid(m);
   for (int k = 0; k < per; ++k) {
-    const int idx = k;
-    if (idx >= m.nacc) break;  // empty slots stay quiet
+    const int idx = named ? namedGridIndex(m, k) : k;
+    if (idx < 0) {
+      if (named) continue;  // reserved/missing cell stays entirely empty
+      break;                // empty slots stay quiet
+    }
+    if (idx >= m.nacc) continue;
     drawGridCell(m, now, idx, pad + (k % cols) * (cw + gap), top + (k / cols) * (ch + gap), cw, ch);
   }
   drawConsoleFooter(m, now, pad, fy);
