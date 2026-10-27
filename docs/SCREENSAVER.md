@@ -1,8 +1,8 @@
 # Idle screensaver
 
-Console and Details default to 30 seconds without usage changes, then show the
+Console and Details default to 60 seconds without usage changes, then show the
 configured saver target (MINT by default). Usage changes wake the original view
-for another 30 seconds. Face and Images remain awake. There is no saver page in
+for another 60 seconds. Face and Images remain awake. There is no saver page in
 the navigation cycle. A tap or `!NEXT` during saving wakes the original view;
 the next tap advances. See [UI.md](UI.md) for policy switches and comparison rules.
 
@@ -27,7 +27,7 @@ Run these on the production build, with service port ownership coordinated
 through the existing pause/resume API and screenshot helper. Keep physical
 panel acceptance separate from framebuffer evidence.
 
-- Feed an unchanged payload repeatedly for over 30 seconds: saver must activate.
+- Feed an unchanged payload repeatedly for over 60 seconds: saver must activate.
 - With a known due window at 0–99% used, remain on Console/Details beyond the
   timeout; also start from an active saver and confirm it wakes. Check deadline
   crossing without a new payload, and confirm unknown/100%-used windows do not

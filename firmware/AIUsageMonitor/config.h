@@ -179,7 +179,7 @@
 #define UI_SCREENSAVER_AUTO_ENABLED 1
 #endif
 #ifndef UI_SCREENSAVER_TIMEOUT_MS
-#define UI_SCREENSAVER_TIMEOUT_MS 30000UL
+#define UI_SCREENSAVER_TIMEOUT_MS 60000UL
 #endif
 
 // Per-view idle policy; Companion, Images and City are always exempt.
