@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-10-27: weekly reset countdown emphasis
+
+- Owner requested white text when a 7d reset is less than a day away. Grid countdown uses white for known future resets below 86400 seconds, computed from the same elapsed time as its caption; other countdown states remain muted. Ring/percentage colours are unchanged.
+- Antigrav weekly remains unknown because the corrected Gemini endpoint has no weeklyQuotaInfo; the removed weekly reading belonged to Claude/GPT shared quota. No substitute reading was introduced.
+- Default production build passed (584,055 bytes flash / 88,608 bytes static RAM). Automated tests remain deferred; current live weekly deadlines exceed a day, so the white state needs acceptance during the owner's testing phase.
+- COM6 flash hash verified; coordinator inspected the live framebuffer at `build/weekly-white-live.png` (normal countdown state, no deadlines below a day). Build/flash logs: `build/weekly-white-build.log`, `build/weekly-white-flash.log`.
+
 ## 2026-10-25: v1.11.1 due quota keeps dashboards awake
 
 - A known quota below 100% used with a passed reset deadline now prevents automatic saving and wakes an active saver, keeping available usage visible. Unknown values and exhausted quotas do not block saving.
