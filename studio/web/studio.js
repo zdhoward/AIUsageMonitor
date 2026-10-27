@@ -49,6 +49,8 @@ function render() {
   renderPages(); renderRotation(); renderSaver(); renderPlaylists();
   document.querySelectorAll("#remaining button").forEach((b) =>
     b.classList.toggle("on", +b.dataset.v === +profile.show_remaining));
+  document.querySelectorAll("#layout button").forEach((b) =>
+    b.classList.toggle("on", b.dataset.v === (profile.console_layout === "grid" ? "grid" : "rows")));
 }
 
 // Built-in pages plus every library scene ("scene:<id>") can be a tap page.
@@ -132,6 +134,9 @@ function renderRotation() {
 }
 document.querySelectorAll("#remaining button").forEach((b) =>
   (b.onclick = () => { profile.show_remaining = b.dataset.v === "1"; touch(); }));
+
+document.querySelectorAll("#layout button").forEach((b) =>
+  (b.onclick = () => { profile.console_layout = b.dataset.v; touch(); }));
 
 function renderSaver() {
   const s = profile.screensaver;

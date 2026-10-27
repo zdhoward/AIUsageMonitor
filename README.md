@@ -10,7 +10,7 @@ Built to sit beneath a monitor and answer a quick question: how much allowance i
 
 ## What it does
 
-- Three stable client rows: Claude A, Claude B and Codex, with separate Session and Weekly rings.
+- Selectable Console layout: the original Claude A / Claude B / Codex rows, or a compact six-account grid (Default) with concentric Session and Weekly rings.
 - Exact percent remaining, bright reset countdowns and a yellow weekly ring for quick recognition.
 - A whole-screen tap switches between the clean console and a detailed activity, token and cost dashboard.
 - Cached measurements remain visible when data is stale or disconnected; unknown is distinct from zero.
@@ -60,7 +60,7 @@ Copy-Item service/aimon.config.example.json service/aimon.config.json
 
 The example config keeps HTTP on localhost and disables optional OpenRouter access. Without it, code defaults enable that source. Local settings and Wi-Fi credentials are Git-ignored.
 
-For the default three console rows, use T3 display names `CL1`, `CL2` and `Codex`, or the supported Claude A / Claude B prefixes. Other account layouts require adapting the renderer. T3 must have populated its local provider cache; missing readings show as unknown. See [setup and customization](docs/SETUP.md).
+For the original three console rows, use T3 display names `CL1`, `CL2` and `Codex`, or the supported Claude A / Claude B prefixes. Select Grid in Studio's Console layout setting to show the first six collected accounts, including Gemini/Antigravity. T3 must have populated its local provider cache; missing readings show as unknown. See [UI configuration](docs/UI.md).
 
 ## Reading the display
 

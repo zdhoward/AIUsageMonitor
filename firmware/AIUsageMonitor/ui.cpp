@@ -14,9 +14,9 @@ static TFT_eSPI* tftp = nullptr;
 static TFT_eSprite* spr = nullptr;  // full-frame 8-bit buffer when memory allows
 static int W = 0, H = 0;
 static bool dim = false;            // legacy detail dimming; console stays bright
-static float eased[4][3] = {};
-static char easedAccount[4][9] = {};
-static char easedWindow[4][3][5] = {};
+static float eased[6][3] = {};
+static char easedAccount[6][9] = {};
+static char easedWindow[6][3][5] = {};
 static uint32_t animationMillis = 0;
 
 // ---------------------------------------------------------------- view registry
@@ -471,8 +471,146 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, UI_WEEKLY_COLOR, wReset);
 }
 
+static void drawConsoleFooter(const Model& m, uint32_t now, int pad, int fy) {
+  TFT_eSPI& g = G();
+  char b[28];
+  // Footer: newest provider reading age (not the serial push age) + link
+  // health. An idle account's reading ages on its own (T3 re-polls quota only
+  // every few minutes); its card carries the STALE label, not the footer.
+  int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+  int32_t newest = -1;
+  for (int i = 0; i < m.nacc; ++i)
+    if (m.acc[i].age >= 0) {
+      int32_t s = m.acc[i].age + elapsed;
+      if (newest < 0 || s < newest) newest = s;
+    }
+  char d[10];
+  if (newest < 0) strlcpy(b, "Updated --", sizeof b);
+  else {
+    if (newest < 60) snprintf(d, sizeof d, "%lds", (long)newest);
+    else fmtDur(d, sizeof d, newest);
+    snprintf(b, sizeof b, "Updated %s", d);
+  }
+  // Link health is a dot before the age: green ok, amber when no payload has
+  // arrived for DATA_TIMEOUT_MS, red source error. Reserve the page
+  // indicator's width (dots or the "n / m" counter).
+  const bool linkLost = now - m.rxMillis > DATA_TIMEOUT_MS;
+  const uint16_t sc = !m.ok ? C_RED : linkLost ? C_AMBER : C_GREEN;
+  g.fillCircle(pad + 4, fy + 7, 4, col(sc));
+  const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
+  text(b, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);
+}
+
+// Compact grid: first six accounts, concentric rings (Session outer,
+// Weekly inner) with a labelled percentage and reset line per window.
+static void drawGridArc(int cx, int cy, int r, int stroke, int used, int easedUsed, uint16_t fillColor) {
+  TFT_eSPI& g = G();
+  const int ir = max(r - stroke, 1);
+  g.drawArc(cx, cy, r, ir, 0, 360, C_FAINT, C_BG, false);
+  if (used < 0) {  // unknown: dashed, never an empty "0%" ring
+    for (int deg = 0; deg < 360; deg += 30) g.drawArc(cx, cy, r, ir, deg, deg + 10, C_MUTED, C_BG, false);
+    return;
+  }
+  const int easedLeft = 100 - min(easedUsed, 100);
+  if (easedLeft <= 0) return;
+  uint32_t endAngle = min<uint32_t>(360, (uint32_t)((easedLeft * 360L + 50) / 100));
+  const uint16_t c = fillColor ? fillColor : leftColor(100 - min(used, 100));
+  if (endAngle <= 180) g.drawArc(cx, cy, r, ir, 180, 180 + endAngle, c, C_BG, false);
+  else {
+    g.drawArc(cx, cy, r, ir, 180, 360, c, C_BG, false);
+    g.drawArc(cx, cy, r, ir, 0, endAngle - 180, c, C_BG, false);
+  }
+}
+
+// One labelled window line: "<window> <left%> <reset>". Unknown stays "--".
+static void drawGridLine(int x, int y, int w, const WinData* win, uint16_t labelColor, uint16_t fillColor,
+                         int32_t elapsed) {
+  if (!win) {
+    text("--", x + 5, y, 2, C_MUTED);
+    return;
+  }
+  text(win->l, x + 5, y + 5, 1, labelColor);
+  char pct[8];
+  uint16_t pc = C_MUTED;
+  if (win->u < 0) strlcpy(pct, "--", sizeof pct);
+  else {
+    const int left = 100 - min<int>(win->u, 100);
+    snprintf(pct, sizeof pct, "%d%%", left);
+    pc = fillColor ? fillColor : leftColor(left);
+  }
+  text(pct, x + 22, y, 2, pc);
+  char cap[12];
+  resetCaption(cap, sizeof cap, win, elapsed);
+  text(cap, x + w - 5, y + 5, 1, C_MUTED, TR_DATUM);
+}
+
+static void drawGridCell(const Model& m, uint32_t now, int idx, int x, int y, int w, int h) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 5, C_PANEL);
+  const AccData& a = m.acc[idx];
+  const int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
+
+  int nx = x + 6;
+  if (!strcmp(m.actS, "run") && eqNoCase(m.actP, a.p)) {  // only a measured running account
+    g.fillCircle(nx + 3, y + 10, 3, C_GREEN);
+    nx += 10;
+  }
+  const bool stale = clientStale(m, a, now);
+  text(a.p, nx, y + 2, 2, C_TEXT, TL_DATUM, x + w - 4 - (stale ? 34 : 0) - nx);
+  if (stale) text("STALE", x + w - 4, y + 6, 1, C_AMBER, TR_DATUM);
+
+  // Windows by service label; an account with neither 5h nor 7d (e.g. a daily
+  // quota) shows its own window names instead of inventing session/weekly.
+  int si = windowIndex(&a, "5h"), wi = windowIndex(&a, "7d");
+  if (si < 0 && wi < 0 && a.nw > 0) {
+    si = 0;
+    if (a.nw > 1) wi = 1;
+  }
+  const WinData* sw = si >= 0 ? &a.w[si] : nullptr;
+  const WinData* ww = wi >= 0 ? &a.w[wi] : nullptr;
+
+  const int top = y + 19, bottom = y + h - 33;
+  const int cx = x + w / 2, cy = (top + bottom) / 2;
+  const int r = min((bottom - top) / 2, 24);
+  const int sUsed = sw ? sw->u : -1, wUsed = ww ? ww->u : -1;
+  const int sEased = sw ? (int)(eased[idx][si] + 0.5f) : -1;
+  const int wEased = ww ? (int)(eased[idx][wi] + 0.5f) : -1;
+  drawGridArc(cx, cy, r, 4, sUsed, sEased, 0);
+  drawGridArc(cx, cy, r - 9, 4, wUsed, wEased, UI_WEEKLY_COLOR);
+
+  drawGridLine(x, y + h - 32, w, sw, C_TEXT, 0, elapsed);
+  drawGridLine(x, y + h - 17, w, ww, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, elapsed);
+}
+
+static void drawConsoleGrid(const Model& m, uint32_t now) {
+  TFT_eSPI& g = G();
+  const bool portrait = H > W;
+  const int pad = portrait ? 8 : 6, gap = 4;
+  const int cols = portrait ? 2 : 3, rows = portrait ? 3 : 2, per = cols * rows;
+
+  char b[28];
+  snprintf(b, sizeof b, "AI USAGE (%d)", m.nacc);
+  text(b, pad, 2, 2, C_TEXT);
+  g.drawFastHLine(pad, 20, W - 2 * pad, C_PANEL);
+
+  const int fy = H - 18, top = 22, bottom = fy - 2;
+  const int cw = (W - 2 * pad - (cols - 1) * gap) / cols;
+  const int ch = (bottom - top - (rows - 1) * gap) / rows;
+  if (m.nacc == 0) text("No accounts", W / 2, H / 2, 2, C_MUTED, MC_DATUM);
+  for (int k = 0; k < per; ++k) {
+    const int idx = k;
+    if (idx >= m.nacc) break;  // empty slots stay quiet
+    drawGridCell(m, now, idx, pad + (k % cols) * (cw + gap), top + (k / cols) * (ch + gap), cw, ch);
+  }
+  drawConsoleFooter(m, now, pad, fy);
+}
+
 static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
   TFT_eSPI& g = G();
+  if (UI_CONSOLE_LAYOUT == 1) {
+    drawConsoleGrid(m, now);
+    return;
+  }
   const int pad = W > H ? 10 : 8;
 
   int clients = 0;
@@ -499,31 +637,7 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
   for (int slot = 0; slot < 3; ++slot)
     drawClientCard(m, now, slot, pad, top + slot * (ch + gap), W - 2 * pad, ch);
 
-  // Footer: newest provider reading age (not the serial push age) + link
-  // health. An idle account's reading ages on its own (T3 re-polls quota only
-  // every few minutes); its card carries the STALE label, not the footer.
-  int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
-  int32_t newest = -1;
-  for (int i = 0; i < m.nacc; ++i)
-    if (m.acc[i].age >= 0) {
-      int32_t s = m.acc[i].age + elapsed;
-      if (newest < 0 || s < newest) newest = s;
-    }
-  char d[10];
-  if (newest < 0) strlcpy(b, "Updated --", sizeof b);
-  else {
-    if (newest < 60) snprintf(d, sizeof d, "%lds", (long)newest);
-    else fmtDur(d, sizeof d, newest);
-    snprintf(b, sizeof b, "Updated %s", d);
-  }
-  // Link health is a dot before the age: green ok, amber when no payload has
-  // arrived for DATA_TIMEOUT_MS, red source error. Reserve the page
-  // indicator's width (dots or the "n / m" counter).
-  const bool linkLost = now - m.rxMillis > DATA_TIMEOUT_MS;
-  const uint16_t sc = !m.ok ? C_RED : linkLost ? C_AMBER : C_GREEN;
-  g.fillCircle(pad + 4, fy + 7, 4, col(sc));
-  const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
-  text(b, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);
+  drawConsoleFooter(m, now, pad, fy);
 }
 
 // ---------------------------------------------------------------- detail sections

@@ -113,7 +113,7 @@ bool parsePayload(const char* json, size_t len, Model& out) {
 
   // Quota accounts: merge by account name, then windows by label.
   for (JsonObjectConst a : doc["acc"].as<JsonArrayConst>()) {
-    if (m.nacc >= 4) break;
+    if (m.nacc >= 6) break;
     AccData d = AccData();
     copyStr(d.p, sizeof d.p, a["p"]);
     const AccData* old = nullptr;
@@ -175,7 +175,7 @@ bool parsePayload(const char* json, size_t len, Model& out) {
 
   // Accounts missing from this payload stay visible as cached, with their
   // age and reset countdown advanced by the elapsed time.
-  for (int i = 0; i < out.nacc && m.nacc < 4; ++i) {
+  for (int i = 0; i < out.nacc && m.nacc < 6; ++i) {
     const AccData& oa = out.acc[i];
     bool seen = false;
     for (int j = 0; j < m.nacc; ++j)

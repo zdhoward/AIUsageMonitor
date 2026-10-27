@@ -218,3 +218,14 @@
 - **Profiles:** Default (Console → System → Parallax; Console sleeps to the Companion face; System and Parallax never sleep), Dev (every page and every original scene) and Dev (themes) (theme-shift playlist and every shift scene). They were generated from the library so the scene lists are exact. Details is no longer required; only Console is (the long-press home).
 - **Random weather:** playlists take `"weather": "random"`. Each scene turn picks clear, rain, snow or storm (rain plus lightning). The firmware replaces the scene's own weather effects and keeps its stars. The Studio playlist editor has a "Random weather" checkbox.
 - **Wording:** the owner calls the hardware "the display"; Studio strings were updated, and the rule is recorded in GOALS.md.
+
+## 2026-10-26 - T-013 compact quota grid
+
+- **Grid layout:** `console_layout: "grid"` in a profile (Studio: Console tab, Console layout Rows/Grid) emits `UI_CONSOLE_LAYOUT 1`. Omitted or "rows" keeps the three-row renderer. Default profile is Grid; others unchanged.
+- **Accounts:** the model keeps six accounts (was four). Grid shows service order, 3x2 landscape / 2x3 portrait. Six is the current model cap; the renderer's paging branch is unreachable. Windows carry the service label (5h, 7d, or a daily window); a missing window shows `--`.
+- **Gemini source:** the T3 cache for the `antigravity` driver carries `usageLimits` (5-hour and weekly), so the collector now includes it (default name Gemini). No new network access.
+- **Production evidence:** default-profile build succeeded (583,279 bytes with local scenes); flashed to the connected display and restarted the existing service without replacing local configuration. Coordinator inspected `build/console-grid.png`: all four live accounts, nested rings, percentages and countdowns fit without overlap. Source review is pending. No tests run (not authorized); portrait, Rows regression and Studio clicks remain deferred.
+
+## 2026-10-26
+- Grid ring refinement: owner requested greater 5h detail; Session/5h now uses the larger outer ring and Weekly the inner yellow ring. Rebuilt, flashed and inspected the live four-account framebuffer at build/console-grid.png; no overlap. Tests deferred.
+- Source review reconciled: removed unreachable paging code and corrected the six-account limit in docs. Live capture includes 100% beside multi-day reset captions without overlap, resolving the review's calculated text-fit risk for the current windows. Larger account sets and portrait remain follow-up acceptance.

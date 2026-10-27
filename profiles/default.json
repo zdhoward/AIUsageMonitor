@@ -2,6 +2,7 @@
   "name": "Default",
   "rotation": 1,
   "show_remaining": true,
+  "console_layout": "grid",
   "pages": [
     "console",
     "system",

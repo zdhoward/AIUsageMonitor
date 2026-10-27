@@ -13,9 +13,9 @@ from pathlib import Path
 from .. import log
 from ..models import Account, Window
 
-QUOTA_DRIVERS = {"claudeAgent", "codex"}
-DEFAULT_NAMES = {"claudeAgent": "Claude", "codex": "Codex"}
-DEFAULT_COLORS = {"claudeAgent": "d97757", "codex": "10a37f"}
+QUOTA_DRIVERS = {"claudeAgent", "codex", "antigravity"}
+DEFAULT_NAMES = {"claudeAgent": "Claude", "codex": "Codex", "antigravity": "Gemini"}
+DEFAULT_COLORS = {"claudeAgent": "d97757", "codex": "10a37f", "antigravity": "4285f4"}
 
 
 def parse_iso(value) -> float | None:
