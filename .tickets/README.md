@@ -26,4 +26,6 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-020 | Planned: settings-pass follow-ups from docs/SETTINGS_REVIEW.md (hide dead sky colours, labels, Studio service Settings tab; 4 items to decide). |
 | T-021 | Delivered: optional six-account Console grid, Studio Rows/Grid selector, Default/Grid, Gemini cache collection. Session/5h outside, Weekly inside. Four live accounts inspected; tests, portrait and Studio interaction acceptance deferred. Historical dispatch records used T-013. |
 
-Latest public release: `v1.11.1` / `c5d4858`. Local compact-grid milestone: `v1.12.0`, Default/Grid; publication status and installed build evidence are in [HANDOFF.md](../HANDOFF.md). Due-quota direct trigger acceptance remains pending.
+| T-022 | Installed: direct Gemini quota, pinned five-card landscape layout, 60-second Default idle delay. Argon card remains unknown: independent quota endpoint unavailable. Build/flash and framebuffer inspected; tests/timed idle acceptance deferred. |
+
+Latest public release: `v1.11.1` / `c5d4858`. Local compact-grid milestone: `v1.12.0`, Default/Grid; T-022 adds the quota correction without a release tag while exact Argon collection remains open. Publication status and earlier build evidence are in [HANDOFF.md](../HANDOFF.md). Due-quota direct trigger acceptance remains pending.
