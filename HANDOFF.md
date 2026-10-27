@@ -1,4 +1,17 @@
-# Handoff — compact quota grid (2026-10-26)
+# Handoff — quota correction and idle timing (2026-10-27)
+
+## Current session: T-022 installed, Argon collection still open
+
+- Main commits: `d28df0a` ticket, `0f76d89` 60-second default idle, `123cf9b` direct Gemini quota and pinned layout, `82d56bd` white weekly countdown below 24 hours. No open PRs (`gh pr list` returned none). No public push: GOALS requires owner publication approval. No new release tag/version; installed firmware still identifies as 1.12.0 while exact Argon work is incomplete.
+- Root cause: T3's Antigravity cache reports Claude/GPT shared 3p quota. Direct read-only Google fetchAvailableModels now supplies Gemini quota using the existing T3 login; no credential/state files modified. Five-minute polling, bounded requests, in-memory token, original measurement time retained on failures. No weeklyQuotaInfo is currently returned, so weekly is unknown rather than borrowing 3p data. See service/aimon/sources/antigravity.py and docs/DATA_SOURCES.md.
+- Display: A/Codex/Antigrav top, B/blank/Argon bottom. Argon is a real separate card but unknown: gemini-4-argon is absent from this token's model list. Do not substitute family quota or infer current quota from 429 logs. Exact agy gateway/quota source is the next research task; previous read-only cloudcode probes did not expose it.
+- Default Console/Details idle delay is now 60 seconds; firmware fallback also 60 seconds. Grid weekly reset countdown turns white only for a known future reset below 86400 seconds; at/above a day, unknown, and due remain muted. Weekly rings and percentages keep existing colours.
+- Production evidence: Default builds passed, COM6 flash hash verified, main service restarted and feeds five accounts. Coordinator inspected build/t022-console.png and build/weekly-white-live.png. Final build: 584055 bytes flash / 88608 bytes static RAM; logs build/weekly-white-build.log and build/weekly-white-flash.log. Live weekly deadlines exceed one day: highlighted state is not visually verified. Timed 60-second transition, portrait, Rows/Studio, and broader pending acceptance remain unverified. Automated tests NOT run: wrap-up does not declare sprint end under owner policy.
+- Source review: Beam PASS; HIGH-risk second free-review unavailable (ECONNREFUSED), not counted as a pass. Coordinator inspected critical logic and separated Argon from family aggregate, cleared retained readings on profile change, bounded cadence/timeouts. Shadow routing capture omitted; paid cost UNKNOWN. No promotion/savings claim.
+- Next concrete actions: locate exact agy Argon quota source without model requests; obtain Gemini weekly only if provider actually reports it; owner testing phase should run retained fixtures and verify <24h countdown colour, 60-second saver timing, missing-provider layout, Rows/portrait and existing due-quota saver behavior. Existing unrelated T-016 through T-020 backlog below remains open.
+- Efficiency next session: read this section and T-022 first; use narrow source ranges. Record routing shadow before dispatch, and use the existing verifier for source/review evidence; do not reconstruct a large session transcript or treat unavailable review as PASS.
+
+## Previous session (2026-10-26)
 
 ## Current session: v1.12.0 compact home
 
