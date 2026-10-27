@@ -2,6 +2,8 @@
 
 A quiet instrument panel below a monitor. Percent remaining and reset timing dominate; cached readings stay bright even when the link or a source ages.
 
+In the Console grid, a known `7d` reset countdown turns white when less than 24 hours remain. At 24 hours or more it keeps the muted colour; unknown and `due` captions also keep the muted colour. Weekly rings, labels and percentages retain their usual colours.
+
 ## Default navigation entries
 
 Tap and release anywhere to cycle. Hold anywhere for 0.7 seconds (`UI_HOLD_MS`) to jump home to `UI_HOME_PAGE`, the AI Usage console by default; this also leaves the screensaver or a `!SHOW` page. Serial `!NEXT` does the same. The registry in `ui.cpp` (`kStaticViews`) drives navigation and the dots; stable page IDs (`UI_PAGE_*`) do not shift when optional pages are compiled out.
