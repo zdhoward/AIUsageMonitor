@@ -11,15 +11,15 @@
   "screensaver": {
     "enabled": true,
     "page": "companion",
-    "timeout_s": 30,
+    "timeout_s": 60,
     "console": {
       "enabled": true,
-      "timeout_s": 30,
+      "timeout_s": 60,
       "wake_on_usage": true
     },
     "details": {
       "enabled": true,
-      "timeout_s": 30,
+      "timeout_s": 60,
       "wake_on_usage": true
     }
   },
