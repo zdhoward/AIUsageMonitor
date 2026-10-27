@@ -24,5 +24,6 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-018 | Planned: audio visualizer page (bars, spectrogram, scope, radial, VU), with PC-side loopback capture and FFT and a `{"t":"aud"}` serial line. Open owner questions inside. |
 | T-019 | Idea: stock ticker page or strip (PC fetches quotes, `{"t":"stk"}` line, no keys in the repo). Not scheduled. |
 | T-020 | Planned: settings-pass follow-ups from docs/SETTINGS_REVIEW.md (hide dead sky colours, labels, Studio service Settings tab; 4 items to decide). |
+| T-021 | Delivered: optional six-account Console grid, Studio Rows/Grid selector, Default/Grid, Gemini cache collection. Session/5h outside, Weekly inside. Four live accounts inspected; tests, portrait and Studio interaction acceptance deferred. Historical dispatch records used T-013. |
 
-Current installed and published firmware: `v1.11.1` / `c5d4858`, Default profile on COM6. Due quota below 100% used suppresses automatic saving. Build and flash passed; direct trigger acceptance remains pending. See [HANDOFF.md](../HANDOFF.md) for evidence and next steps.
+Latest public release: `v1.11.1` / `c5d4858`. Local compact-grid milestone: `v1.12.0`, Default/Grid; publication status and installed build evidence are in [HANDOFF.md](../HANDOFF.md). Due-quota direct trigger acceptance remains pending.

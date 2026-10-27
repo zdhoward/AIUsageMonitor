@@ -229,3 +229,4 @@
 ## 2026-10-26
 - Grid ring refinement: owner requested greater 5h detail; Session/5h now uses the larger outer ring and Weekly the inner yellow ring. Rebuilt, flashed and inspected the live four-account framebuffer at build/console-grid.png; no overlap. Tests deferred.
 - Source review reconciled: removed unreachable paging code and corrected the six-account limit in docs. Live capture includes 100% beside multi-day reset captions without overlap, resolving the review's calculated text-fit risk for the current windows. Larger account sets and portrait remain follow-up acceptance.
+- Wrap-up: v1.12.0 versions the delivered compact grid; handoff and ticket index reconciled, grid ticket renamed T-021 to avoid the existing T-013 profiles allocation. No open PRs. Tests remain deferred; public push awaits owner approval under GOALS.md. Retrospective logged with paid cost UNKNOWN and no lane promotion.
