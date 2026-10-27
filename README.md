@@ -60,7 +60,7 @@ Copy-Item service/aimon.config.example.json service/aimon.config.json
 
 The example config keeps HTTP on localhost and disables optional OpenRouter access. Without it, code defaults enable that source. Local settings and Wi-Fi credentials are Git-ignored.
 
-For the original three console rows, use T3 display names `CL1`, `CL2` and `Codex`, or the supported Claude A / Claude B prefixes. Select Grid in Studio's Console layout setting to show the first six collected accounts, including Gemini/Antigravity. T3 must have populated its local provider cache; missing readings show as unknown. See [UI configuration](docs/UI.md).
+For the original three console rows, use T3 display names `A`/`B`/`Codex`, `CL1`/`CL2`, or the supported Claude A / Claude B prefixes. Select Grid in Studio's Console layout setting for up to six accounts. The named landscape setup pins A/B left, Codex top centre, and Antigrav/Argon right, leaving bottom centre empty. Gemini uses a direct quota probe through the existing T3 login; its weekly quota and the independent Argon quota stay unknown when unavailable. See [data sources](docs/DATA_SOURCES.md) and [UI configuration](docs/UI.md).
 
 ## Reading the display
 

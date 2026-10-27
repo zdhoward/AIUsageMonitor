@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-27: session wrap-up
+
+- Reconciled current README, ticket and handoff with installed source/layout, 60-second idle and weekly countdown emphasis. Exact Argon collection, Gemini weekly availability and testing-phase acceptance remain open; no new release/version tag while that milestone is incomplete.
+- No open PRs to merge. Production build/flash/framebuffer evidence reused; automated tests remain deferred. Main changes committed locally; public push awaits owner approval per GOALS.md. See HANDOFF.md for continuation and review limitations.
+
 ## 2026-10-27: weekly reset countdown emphasis
 
 - Owner requested white text when a 7d reset is less than a day away. Grid countdown uses white for known future resets below 86400 seconds, computed from the same elapsed time as its caption; other countdown states remain muted. Ring/percentage colours are unchanged.
