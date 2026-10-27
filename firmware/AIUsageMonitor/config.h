@@ -84,6 +84,12 @@
 #define CLIENT_STALE_S 3600
 #endif
 
+// Console home layout: 0 = three account rows, 1 = compact grid of up to six
+// accounts (paired Session/Weekly rings). Set per profile (console_layout).
+#ifndef UI_CONSOLE_LAYOUT
+#define UI_CONSOLE_LAYOUT 0
+#endif
+
 // Screen refresh period (countdowns and the activity pulse).
 #define REDRAW_MS 50UL
 

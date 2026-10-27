@@ -1,5 +1,10 @@
 # Accepted display decisions
 
+## Compact home (2026-10-26)
+
+- Keep the existing three-row Console and add a profile/Studio Rows or Grid setting. Owner's Default uses Grid.
+- Grid fits six cells (3x2 landscape) with Session/5h on the larger outer ring and Weekly inside, percentages and reset countdowns. The outer ring gives the short window more detail (owner refinement). Current owner setup is two Claude accounts, Codex and Gemini/Antigravity, collected from local T3 caches. Future providers need a compatible collector source; the grid itself uses service account names.
+
 ## Due quota visibility (2026-10-25)
 
 - Keep Console/Details awake, and leave an active automatic saver, whenever any reported quota window is due and its known usage is below 100% used. Unknown values and fully used quotas do not block saving. Delivered in v1.11.1; direct trigger acceptance remains pending.

@@ -48,7 +48,7 @@ struct Model {
   char hiP[9] = "";
   char hiW[5] = "";
 
-  AccData acc[4];
+  AccData acc[6];
   uint8_t nacc = 0;
 
   // subscription usage today (API-equivalent estimate, cents)

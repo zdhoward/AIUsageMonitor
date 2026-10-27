@@ -76,6 +76,8 @@ def validate(p: dict) -> list[str]:
         errs.append("a page is listed twice")
     if "console" not in pages:  # home page for the long-press gesture
         errs.append("console page is required")
+    if p.get("console_layout", "rows") not in ("rows", "grid"):
+        errs.append("console_layout must be rows or grid")
     if p.get("rotation") not in (0, 1, 2, 3):
         errs.append("rotation must be 0-3")
     s = p.get("screensaver", {})
@@ -107,6 +109,7 @@ def header(p: dict) -> str:
              "#pragma once",
              f"#define DISPLAY_ROTATION {p['rotation']}",
              f"#define SHOW_REMAINING {int(p.get('show_remaining', True))}"]
+    lines.append(f"#define UI_CONSOLE_LAYOUT {int(p.get('console_layout', 'rows') == 'grid')}")  # 0 rows, 1 grid
     index = scene_index(p.get("id"))
     for name, (_, enable) in PAGES.items():
         if enable:
