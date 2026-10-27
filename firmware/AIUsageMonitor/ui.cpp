@@ -584,7 +584,9 @@ static void drawGridLine(int x, int y, int w, const WinData* win, uint16_t label
   text(pct, x + 22, y, 2, pc);
   char cap[12];
   resetCaption(cap, sizeof cap, win, elapsed);
-  text(cap, x + w - 5, y + 5, 1, C_MUTED, TR_DATUM);
+  const bool weeklySoon = eqNoCase(win->l, "7d") && win->r >= 0 &&
+                          win->r > elapsed && win->r - elapsed < 86400;
+  text(cap, x + w - 5, y + 5, 1, weeklySoon ? TFT_WHITE : C_MUTED, TR_DATUM);
 }
 
 static void drawGridCell(const Model& m, uint32_t now, int idx, int x, int y, int w, int h) {
