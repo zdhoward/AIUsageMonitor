@@ -6,7 +6,7 @@ Artwork is converted on the PC and compiled into the firmware. The ESP32 only pl
 
 ```text
 assets/<gif|png|aseprite>  --(assets/manifest.json)-->  scripts/asset_convert.py
-   --> firmware/AIUsageMonitor/assets_gen.{h,cpp}  (RLE RGB332, committed)
+   --> firmware/AIUsageMonitor/assets_gen.{h,cpp}  (RLE RGB332, generated, git-ignored)
    --> anim.cpp player  --> Images page / City page
 ```
 
@@ -76,7 +76,7 @@ Any library entry with `"kind": "scene"` becomes part of the **Scene playlist** 
 - `theme` plus `variants`: palette remaps applied on the device (vapor, toxic, dusk, ice, matrix, amber, noir, night, sunset). Variants reuse the same art, so each one costs 256 bytes.
 - Soft alpha (glows) is blended over the sky gradient during conversion.
 
-Current scenes: Miami Drive, Neon Skyline and Rainy Street, all CC0 by Ansimuz, plus their theme variants. Together they take about 113 KB; the firmware is 562 KB, 42% of the partition. Measured 56-66 ms per frame on the board.
+Current scenes: Miami Drive, Neon Skyline and Rainy Street, with independently verified CC0-1.0 asset packs by Luis Zuno (Ansimuz), plus their theme variants. Together they take about 113 KB; the firmware is 562 KB, 42% of the partition. Measured 56-66 ms per frame on the board.
 
 Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even one not in the tap rotation; `!SCENES` lists compiled scene ids. Every page is now compiled in, and the profile's page list only sets the tap rotation.
 
@@ -84,7 +84,9 @@ Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even
 
 - **Library → click any card** to open the viewer. Pages and scenes have **Show on display**. Scenes play a live preview in device colours and can be edited: themes and playlist variants, layer speeds, effects, sky. **Save scene**, then **Send to display**.
 - **Import art**: drop PNG/GIF/JPG/Aseprite files, ordered back to front. Several files, or one Aseprite file with layers, become a parallax scene with depth-based speeds from 4 to 60 px/s and a sky sampled from the back layer. A single image becomes a still scene.
-- Imported art is copied to `assets/library/<id>/src/` and committed with the library. **The repo is public**: import only art whose license allows redistribution, and record it in the License field.
+- **Local-only artwork storage**: Imported art is copied to `assets/library/<id>/src/` and remains **strictly local and git-ignored** (see `.gitignore`). Raw art files are **never committed** to the public repository.
+- **Licensing and Redistribution**: Distinguish personal use permission from redistribution permission. Having personal permission or download access to an asset does not grant the right to publish it. Do not treat a `"CC0"` string in local metadata as verification without primary upstream evidence (such as a storefront license badge or bundled legal declaration). Never commit nonredistributable or proprietary artwork.
+- **Optional content workflow**: No automatic paid downloads, terms acceptance or logins are required. Neon Pulse 8 is no longer tracked; existing local copies remain ignored. Earlier tags/history are unchanged. A separately distributed CC0 scene pack includes only approved layers and original license PDFs. See [third-party setup](THIRD_PARTY.md).
 
 ### Generators and per-card settings
 
@@ -100,8 +102,9 @@ Serial: `!SHOW <page|scene-id>` shows any page or scene until the next tap, even
 ### Theme cycles and Lospec palettes
 
 - **Smooth theme cycle**: in a scene's Theme section, switch "Ticked themes" to *smooth cycle*. The scene then holds each ticked theme for `hold` seconds and cross-fades to the next over `fade` seconds (`"cycle": {"themes": [...], "hold": 20, "fade": 4}` in the scene). On the device, the two palette maps are blended each frame (256 entries). Fades step through RGB332's 8 red, 8 green and 4 blue levels, so they are smooth but slightly stepped. *Playlist copies* mode keeps the old behaviour: each ticked theme becomes its own playlist entry.
-- **Lospec palettes**: "Browse Lospec palettes" searches [lospec.com](https://lospec.com/palette-list) by tag (through `/api/lospec`), or takes a pasted palette link. Added palettes are saved to `assets/themes/<slug>.json` with name, author and link, and become themes that map colours by brightness onto the palette's own colours. Neon Pulse 8 (by pablokld) is included.
-- Demo: Neon Skyline cycles original, Neon Pulse 8 and dusk (10 s hold, 4 s fade). Captured on COM6.
+- **Lospec palettes**: "Browse Lospec palettes" searches [lospec.com](https://lospec.com/palette-list) by tag (through `/api/lospec`), or takes a pasted palette link. Added palettes are saved to `assets/themes/<slug>.json` with name, author and link, and become themes that map colours by brightness onto the palette's own colours.
+- **User-Initiated Palette Acquisition**: Palettes can also be acquired on the command line via `python scripts/third_party.py fetch --palette <slug> --ack-source-terms`, which downloads only verified hex colors directly into `assets/themes/<slug>.json` (git-ignored via `/assets/themes/*.json`) with an audit receipt. Note that acknowledging Lospec terms ([https://lospec.com/terms-and-conditions](https://lospec.com/terms-and-conditions)) records personal access compliance and does not create rights, grant personal-use permissions, or grant redistribution rights.
+- Demo: Neon Skyline cycles original, Neon Pulse 8 and dusk (10 s hold, 4 s fade). Captured on COM6. Demonstrations are distribution of visual content and require distribution permission (rendered != exempt); known Ansimuz CC0-1.0 supports GIF demonstrations for those scenes.
 
 ### Native preview, live device tuning and simulation effects (2026-10-25)
 

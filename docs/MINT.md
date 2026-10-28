@@ -17,6 +17,7 @@ saver behavior remains outside this feature.
 
 Source: [tanmaywankar/Grobot_Animations](https://github.com/tanmaywankar/Grobot_Animations),
 commit **858d8da648c9e71ff9b9f5e6f558ba85293a70fb** (MIT, Tanmay Wankar).
+Primary raw upstream license: [Raw LICENSE](https://raw.githubusercontent.com/tanmaywankar/Grobot_Animations/858d8da648c9e71ff9b9f5e6f558ba85293a70fb/LICENSE).
 Inspected `src/Grobot_Animations.h`, `src/Grobot_Animations .cpp`, `src/Moods.h`,
 `src/Animation_config.h`, both BasicEyes and CustomEyes examples, and LICENSE.
 To reproduce the source, clone the repository and `git checkout` that full SHA.
@@ -25,7 +26,12 @@ The upstream C++ filename contains a space before `.cpp`.
 `firmware/AIUsageMonitor/grobot/GrobotEyes.h` is the small vendored adaptation;
 the adjacent `LICENSE.txt` retains upstream's MIT notice. It retains Grobot's
 MoodData fields, circular eye/pupil rendering, rectangular and triangular lid
-masks, mirrored tilt and Hooke spring integration. There is no GPL code.
+masks, mirrored tilt and Hooke spring integration. This adaptation is MIT;
+other linked components keep their own licenses (see [notices](../THIRD_PARTY_NOTICES.md)).
+This is copied/vendored source code, distinct from external build dependencies
+(ESP32 Arduino core, TFT_eSPI, ArduinoJson) which are installed via package managers.
+See [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) and [docs/THIRD_PARTY.md](THIRD_PARTY.md)
+for the full third-party inventory and binary distribution checklist.
 
 Adapter changes: explicit caller-owned canvas and dimensions, no sprite
 allocation/push or HUD, no implicit micros/millis clocks, clamped geometry,

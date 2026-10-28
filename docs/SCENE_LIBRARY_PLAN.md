@@ -78,7 +78,7 @@ The Studio has to share the COM port with the running aimon service the same way
 ## Status 2026-10-24 (later)
 
 - T-012 scene engine: delivered (parallax, themes and variants, playlist, `!SHOW`, Studio viewer/editor/import).
-- Generators delivered: **patterns** (PixelPatterns tiles, CC0), **plasma**, **warp** starfield. Per-card gear settings: layer frame time, gap, fit modes (original, pixel, contain, cover, stretch), generator parameters, quota ring colours per profile.
+- Generators delivered: **patterns** (local PixelPatterns tiles; redistribution license unverified), **plasma**, **warp** starfield. Per-card gear settings: layer frame time, gap, fit modes (original, pixel, contain, cover, stretch), generator parameters, quota ring colours per profile.
 
 ## T-016 Classic screensavers (planned)
 
