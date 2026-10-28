@@ -24,9 +24,23 @@ class Settings:
     mint_metrics_enabled: bool = False
 
     # Refresh cadence per source (seconds).
+    # quota_refresh_s is the lightweight pass (quota caches, activity, codex
+    # rate limits); refresh_s is the heavy pass (transcript discovery and
+    # aggregation, OpenCode history). Both are clamped away from zero so a bad
+    # value cannot spin the loop.
+    quota_refresh_s: float = 2.0
     refresh_s: float = 10.0
     opencode_refresh_s: float = 30.0
     openrouter_refresh_s: float = 600.0
+    # How long a transcript directory listing is reused before walking again.
+    transcript_discovery_s: float = 30.0
+
+    # Keep dashboards awake while a known window with remaining quota resets
+    # within this interval. 0 disables the advanced warning (due windows only).
+    reset_warning_s: int = 3600
+
+    # Bounded local quota transition log (logs/quota_history.jsonl, ignored).
+    quota_history_entries: int = 400
 
     # Data older than this is flagged stale on the display.
     limits_stale_s: float = 60 * 60

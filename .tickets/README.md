@@ -1,5 +1,7 @@
 # Session tickets
 
+T-023: v1.13.0 installed locally: lightweight quota refresh, cached usage aggregates, bounded quota history and one-hour advance reset wake. Build/flash and live dashboard verified; automated tests and timed warning acceptance deferred. Public push pending owner approval.
+
 Tickets T-002 through T-007 are complete in the main checkout. Worker checkout status is not delivery status.
 
 | Ticket | Final outcome |

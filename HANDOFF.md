@@ -1,4 +1,14 @@
-# Handoff — quota correction and idle timing (2026-10-27)
+# Handoff — quota refresh and advance warning (2026-10-28)
+
+## T-023: v1.13.0 installed locally
+
+- Two-second lightweight local quota/activity reads, ten-second transcript processing, thirty-second directory discovery; aggregate cache avoids recomputation on heartbeats. Changed quotas/deadlines/activity request immediate coalesced serial pushes; network source cadences unchanged.
+- `reset_warning_s` defaults to 3600: automatic Console/Details saver wakes/stays off while known available quota resets within one hour. Actual countdown stays unchanged; manual scenes/System are unaffected. Timed trigger acceptance remains pending.
+- Local rotating history: `logs/quota_history.jsonl` and `.1`, only changed quota/deadline measurements; early drops flagged. No credentials/transcripts. Failed writes back off sixty seconds. Initial unseen baseline is not recorded.
+- Default build and COM6 hash-verified flash passed; service restarted and reports ok=1/warn=3600/five accounts, firmware 1.13.0 and serial ACKs. Coordinator inspected `build/t023-live.png`; normal five-card dashboard. Build/flash logs: `build/t023-installed-build.log`, `build/t023-flash.log`.
+- DeepSeek implementation, Beam + Gemini Flash reviews; coordinator corrected review regressions. Syntax/scope checks passed. Automated tests deferred under sprint-end policy. Cost UNKNOWN; shadow local-jev timed out/Laya abstained. No public push: GOALS requires owner publication approval. Remaining earlier backlog retained below.
+
+## Previous handoff
 
 ## Current session: T-022 installed, Argon collection still open
 

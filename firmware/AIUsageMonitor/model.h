@@ -79,6 +79,11 @@ struct Model {
   uint8_t bl = 0;        // last accepted duty 0..255
   bool hasBl = false;    // any valid bl received since boot
   uint32_t blMs = BACKLIGHT_SMOOTHING_MS; // duration for the next target, 0 = instant
+
+  // Service-provided warning interval (seconds before a reset). Absent or
+  // negative keeps the original due-only behaviour. The real reset countdown
+  // in WinData::r is never adjusted by this.
+  int32_t warnS = -1;
 };
 
 bool parsePayload(const char* json, size_t len, Model& out);

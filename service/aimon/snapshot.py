@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import math
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from . import log
 from .config import Settings
 from .models import Account, Activity, UsageRecord
 from .pricing import Pricing
+from .quota_history import QuotaHistory
 from .sources import antigravity, opencode_db, openrouter, t3_activity, t3_limits
 from .sources.session_logs import SessionLogScanner, codex_windows
 
@@ -31,6 +33,17 @@ class State:
 
 
 # ---------------------------------------------------------------- collection
+
+
+def _cadence(value, default: float) -> float:
+    """Configured interval clamped to a usable positive value."""
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return default
+    if value != value:  # NaN
+        return default
+    return max(value, 1.0)
 
 
 def discover_transcript_roots(t3_home: Path) -> list[tuple[str, str, Path]]:
@@ -117,13 +130,14 @@ class Collector:
         self.s = settings
         self.pricing = Pricing.load(settings.t3_home / "userdata" / "usage-model-rates.json")
         self.scanners = [
-            SessionLogScanner(root, iid, flavor, settings.history_days)
+            SessionLogScanner(root, iid, flavor, settings.history_days, settings.transcript_discovery_s)
             for iid, flavor, root in discover_transcript_roots(settings.t3_home)
         ]
         self.state = State()
         self._lock = threading.Lock()
         self._next_opencode = 0.0
         self._next_openrouter = 0.0
+        self.quota = QuotaHistory(settings.log_dir / "quota_history.jsonl", settings.quota_history_entries)
         self.antigravity = antigravity.AntigravityReader(
             settings.t3_home,
             refresh_s=settings.antigravity_refresh_s,
@@ -136,11 +150,20 @@ class Collector:
         with self._lock:
             return self.state
 
-    def refresh(self, now: float | None = None) -> State:
+    def refresh(self, now: float | None = None, heavy: bool = True) -> State:
+        """Refresh sources and publish a new State.
+
+        ``heavy=False`` is the lightweight pass: it rereads the local quota
+        caches, activity and the already-parsed Codex rate limits, while every
+        heavy metric (transcripts, OpenCode history, OpenRouter status) is
+        carried over from the previous snapshot. A fast lightweight cadence
+        therefore never recomputes transcript aggregates.
+        """
         now = now or time.time()
         prev = self.state
-        st = State(accounts=prev.accounts, records=prev.records,
-                   openrouter=prev.openrouter, free_records=prev.free_records, refreshed_at=now)
+        st = State(accounts=list(prev.accounts), records=prev.records,
+                   activity=prev.activity, openrouter=prev.openrouter,
+                   free_records=prev.free_records, errors=dict(prev.errors), refreshed_at=now)
 
         def guarded(name, fn):
             try:
@@ -148,6 +171,8 @@ class Collector:
             except Exception as e:  # one broken source must not blank the others
                 st.errors[name] = type(e).__name__
                 log.warn("source.failed", src=name, err=type(e).__name__, detail=str(e)[:160])
+            else:
+                st.errors.pop(name, None)
 
         def limits():
             accounts = t3_limits.read_accounts(self.s.t3_home)
@@ -167,6 +192,10 @@ class Collector:
             for sc in self.scanners:
                 sc.refresh(now)
                 recs.extend(sc.records().values())
+            # Reuse the previous list when nothing changed, so the payload
+            # aggregate cache survives an unchanged heavy pass too.
+            if len(recs) == len(prev.records) and all(a is b for a, b in zip(recs, prev.records)):
+                return
             st.records = recs
 
         guarded("t3_limits", limits)
@@ -176,28 +205,32 @@ class Collector:
 
             guarded("antigravity", antigravity_direct)
         guarded("t3_activity", activity)
-        guarded("transcripts", transcripts)
-        if "t3_activity" in st.errors:
-            st.activity = prev.activity
+        if heavy:
+            guarded("transcripts", transcripts)
         self._merge_codex_log_limits(st)
 
-        if now >= self._next_opencode:
-            self._next_opencode = now + self.s.opencode_refresh_s
+        if heavy:
+            if now >= self._next_opencode:
+                self._next_opencode = now + _cadence(self.s.opencode_refresh_s, 30.0)
 
-            def oc():
-                st.free_records = opencode_db.read_records(self.s.opencode_db, now - self.s.history_days * 86400)
+                def oc():
+                    st.free_records = opencode_db.read_records(self.s.opencode_db, now - self.s.history_days * 86400)
 
-            guarded("opencode", oc)
-        if self.s.openrouter_enabled and now >= self._next_openrouter:
-            self._next_openrouter = now + self.s.openrouter_refresh_s
-            st.openrouter = openrouter.fetch(now)
-            if st.openrouter.error:
-                log.warn("source.failed", src="openrouter", err=st.openrouter.error)
+                guarded("opencode", oc)
+            if self.s.openrouter_enabled and now >= self._next_openrouter:
+                self._next_openrouter = now + _cadence(self.s.openrouter_refresh_s, 600.0)
+                st.openrouter = openrouter.fetch(now)
+                if st.openrouter.error:
+                    log.warn("source.failed", src="openrouter", err=st.openrouter.error)
+
+        # Local transition history: bounded, best-effort, never fatal.
+        self.quota.observe(st.accounts, now)
 
         with self._lock:
             self.state = st
         log.debug(
             "collector.refreshed",
+            heavy=int(heavy),
             accounts=len(st.accounts),
             records=len(st.records),
             free=len(st.free_records),
@@ -207,7 +240,11 @@ class Collector:
         return st
 
     def _merge_codex_log_limits(self, st: State) -> None:
-        """Codex logs carry rate limits on every token event; prefer them when newer."""
+        """Codex logs carry rate limits on every token event; prefer them when newer.
+
+        A published Account object is never mutated: the newer reading replaces
+        the entry with a fresh copy so an earlier snapshot keeps its values.
+        """
         for sc in self.scanners:
             if sc.flavor != "codex":
                 continue
@@ -215,11 +252,13 @@ class Collector:
             if not latest:
                 continue
             ts, payload = latest
-            for acct in st.accounts:
+            for pos, acct in enumerate(st.accounts):
                 if acct.instance_id == sc.account and (acct.checked_at or 0) < ts:
                     windows = codex_windows(payload)
                     if windows:
-                        acct.windows, acct.checked_at, acct.source, acct.unavailable = windows, ts, "codex_log", None
+                        st.accounts[pos] = replace(
+                            acct, windows=windows, checked_at=ts, source="codex_log", unavailable=None
+                        )
 
 
 # ---------------------------------------------------------------- device payload
@@ -246,6 +285,94 @@ def _cents(usd: float) -> int:
     return int(round(usd * 100))
 
 
+def _used_percent(window) -> int:
+    """Rounded used percentage that never hides known fractional availability."""
+    if window.used_percent is None or not math.isfinite(window.used_percent):
+        return -1
+    value = int(round(window.used_percent))
+    if window.used_percent < 100 and value >= 100:
+        return 99  # 99.6% used still has quota left; 100 means exhausted
+    return value
+
+
+class _UsageCache:
+    """Last usage aggregate, keyed by snapshot identity and hour/day bounds.
+
+    The records lists are held so their ids cannot be reused by another object
+    while the cached aggregate is still valid.
+    """
+
+    def __init__(self):
+        self.key = None
+        self.value: dict | None = None
+        self.held: tuple = ()
+
+    def get(self, st: State, now: float, pricing: Pricing, settings: Settings,
+            day0: float, hour0: float) -> dict:
+        key = (
+            id(st.records), id(st.free_records), id(pricing),
+            day0, hour0, tuple(settings.extra_free_providers),
+        )
+        if key == self.key and len(self.held) == 2 and self.held[0] is st.records and self.held[1] is st.free_records:
+            return self.value
+        value = _aggregate_usage(st, now, pricing, settings, day0, hour0)
+        self.key, self.value, self.held = key, value, (st.records, st.free_records)
+        return value
+
+
+_USAGE_CACHE = _UsageCache()
+_USAGE_LOCK = threading.Lock()
+
+
+def _aggregate_usage(st: State, now: float, pricing: Pricing, settings: Settings,
+                     day0: float, hour0: float) -> dict:
+    """Cost/token/free-provider aggregates for one immutable snapshot."""
+    hourly = [0.0] * 24
+    by_acct: dict[str, float] = {}
+    c1 = c7 = 0.0
+    i1 = cr1 = o1 = unpriced = 0
+    for r in st.records:
+        cost = pricing.cost(r.model, r.uncached_in, r.cache_read, r.cache_write, r.out)
+        if r.ts >= now - 7 * 86400:
+            c7 += cost or 0.0
+        if r.ts >= day0:
+            c1 += cost or 0.0
+            i1 += r.uncached_in + r.cache_write
+            cr1 += r.cache_read
+            o1 += r.out
+            by_acct[r.account] = by_acct.get(r.account, 0.0) + (cost or 0.0)
+            if cost is None:
+                unpriced += r.uncached_in + r.out
+        idx = 23 - int((hour0 - (r.ts - r.ts % 3600)) // 3600)
+        if 0 <= idx < 24:
+            hourly[idx] += cost or 0.0
+
+    free_today = [r for r in st.free_records if r.ts >= day0 and opencode_db.is_free(r, settings.extra_free_providers)]
+    models: dict[str, int] = {}
+    for r in free_today:
+        models[r.model] = models.get(r.model, 0) + 1
+    free = {"n": len(free_today), "t": sum(r.uncached_in + r.cache_read + r.out for r in free_today)}
+    if models:
+        free["m"] = short_model(max(models.items(), key=lambda kv: kv[1])[0])
+
+    return {
+        "use": {
+            "c1": _cents(c1),
+            "c7": _cents(c7),
+            "i1": i1,
+            "cr1": cr1,
+            "o1": o1,
+            "unp": 1 if unpriced else 0,
+            "h": [_cents(x) for x in hourly],
+        },
+        "byp": [
+            {"p": r, "c1": _cents(v)} for r, v in sorted(by_acct.items(), key=lambda kv: -kv[1])
+        ][:4],
+        "free": free,
+        "nim": {"n": sum(1 for r in free_today if r.account == "opencode:nvidia")},
+    }
+
+
 def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, seq: int = 0) -> dict:
     names = {a.instance_id: a.name for a in st.accounts}
     day0 = local_midnight(now)
@@ -258,6 +385,13 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
     }
     if st.errors:
         payload["err"] = ",".join(sorted(st.errors))[:40]
+    # How long before a reset available quota should keep the dashboards awake.
+    # The actual reset countdown is unchanged; absent/negative means due-only.
+    warning = getattr(settings, "reset_warning_s", 0)
+    try:
+        payload["warn"] = min(max(int(warning), 0), 2147483647)
+    except (TypeError, ValueError, OverflowError):
+        payload["warn"] = 0
 
     # Activity
     a = st.activity
@@ -290,8 +424,8 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
             entry["rc"] = acct.reset_credits
         ws = []
         for w in acct.windows[:3]:
-            used = -1 if w.used_percent is None else int(round(w.used_percent))
-            if w.resets_at is None:
+            used = _used_percent(w)
+            if w.resets_at is None or not math.isfinite(w.resets_at):
                 remain = -1
             elif w.resets_at <= now:
                 remain = 0  # retain the last measured usage until a new reading arrives
@@ -306,49 +440,14 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
     if best:
         payload["hi"] = {"u": best[0], "p": best[1][:8], "w": best[2]}
 
-    # Subscription-account token usage and API-equivalent estimate
-    hourly = [0.0] * 24
-    by_acct: dict[str, float] = {}
-    c1 = c7 = 0.0
-    i1 = cr1 = o1 = unpriced = 0
-    for r in st.records:
-        cost = pricing.cost(r.model, r.uncached_in, r.cache_read, r.cache_write, r.out)
-        if r.ts >= now - 7 * 86400:
-            c7 += cost or 0.0
-        if r.ts >= day0:
-            c1 += cost or 0.0
-            i1 += r.uncached_in + r.cache_write
-            cr1 += r.cache_read
-            o1 += r.out
-            by_acct[r.account] = by_acct.get(r.account, 0.0) + (cost or 0.0)
-            if cost is None:
-                unpriced += r.uncached_in + r.out
-        idx = 23 - int((hour0 - (r.ts - r.ts % 3600)) // 3600)
-        if 0 <= idx < 24:
-            hourly[idx] += cost or 0.0
-    payload["use"] = {
-        "c1": _cents(c1),
-        "c7": _cents(c7),
-        "i1": i1,
-        "cr1": cr1,
-        "o1": o1,
-        "unp": 1 if unpriced else 0,
-        "h": [_cents(x) for x in hourly],
-    }
-    payload["byp"] = [
-        {"p": names.get(k, k)[:8], "c1": _cents(v)} for k, v in sorted(by_acct.items(), key=lambda kv: -kv[1])
-    ][:4]
-
-    # Free / other providers (OpenCode history), today
-    free_today = [r for r in st.free_records if r.ts >= day0 and opencode_db.is_free(r, settings.extra_free_providers)]
-    models: dict[str, int] = {}
-    for r in free_today:
-        models[r.model] = models.get(r.model, 0) + 1
-    free = {"n": len(free_today), "t": sum(r.uncached_in + r.cache_read + r.out for r in free_today)}
-    if models:
-        free["m"] = short_model(max(models.items(), key=lambda kv: kv[1])[0])
-    payload["free"] = free
-    payload["nim"] = {"n": sum(1 for r in free_today if r.account == "opencode:nvidia")}
+    # Subscription-account token usage and API-equivalent estimate. The heavy
+    # aggregate is cached: heartbeats and countdown-only payloads reuse it.
+    with _USAGE_LOCK:
+        agg = _USAGE_CACHE.get(st, now, pricing, settings, day0, hour0)
+    payload["use"] = agg["use"]
+    payload["byp"] = [{"p": names.get(e["p"], e["p"])[:8], "c1": e["c1"]} for e in agg["byp"]]
+    payload["free"] = dict(agg["free"])
+    payload["nim"] = agg["nim"]
 
     # OpenRouter key status
     o = st.openrouter

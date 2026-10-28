@@ -11,6 +11,17 @@ If any reported quota window is `due` and its known used percentage is below
 quota stays visible. Unknown usage/reset times and 100%-used windows do not
 block saving. This also applies when usage-change waking is disabled.
 
+The service also sends a compact `warn` interval (`reset_warning_s`, default
+3600 seconds, never negative). Firmware applies the same rule to any known
+window with remaining quota whose reset is within that interval, including one
+that is already due. The actual reset countdown shown on screen is unchanged.
+Unknown percentages, unknown deadlines and 100%-used windows are excluded, and
+the service rounds used percentages so known fractional availability near 100%
+stays below 100 rather than looking exhausted. A payload without the `warn`
+field keeps the previous behaviour: only due windows block saving. The warning
+only suppresses automatic saving and automatic usage waking; it does not wake a
+manually selected System or scene page, and a forced `!SHOW` page still wins.
+
 ## Device evidence (2026-10-23)
 
 Production build flashed to COM6 with hash verification. With the service
