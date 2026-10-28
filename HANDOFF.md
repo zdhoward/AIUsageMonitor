@@ -1,5 +1,9 @@
 # Handoff — quota refresh and advance warning (2026-10-28)
 
+## Next feature plan: T-026
+
+Weather page plus optional local weather/daylight parallax synchronization is recorded in .tickets/T-026.md. Planning only. Reuse private location and solar cache, separate daylight from backlight, preserve authored/random/manual modes, and isolate network work from quota refresh/serial. Provider/deployment rights, shared-location migration and final page fields are gates before implementation. Open-Meteo is only a candidate (free endpoint currently noncommercial). Future work stays on the docket; installed behavior unchanged.
+
 ## T-025: v1.14.1 licensing/docs published
 
 - Source notices/inventory, safe optional palette workflow and curated CC0 scene-pack builder added. Neon Pulse 8 untracked but retained locally; Git history unchanged. PixelPatterns provenance and full binary dependency/relinking review remain open.

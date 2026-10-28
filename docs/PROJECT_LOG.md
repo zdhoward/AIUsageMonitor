@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-28: weather and daylight roadmap
+
+- Owner requested a real Weather view and optional local-weather/daylight synchronization for parallax scenes. Recorded T-026 as planning only: shared private location, provider-neutral cached conditions, independent scene weather/daylight/backlight controls and staged implementation.
+- Open-Meteo is a candidate, not selected; current free-endpoint noncommercial and attribution terms require deployment review. Reuse the existing solar cache, keep slow weather requests off quota/serial paths, preserve manual/random modes and honest offline status. No API enabled, subscription accepted, code changed or tests needed for the plan.
+
 ## 2026-10-28: v1.14.1 third-party notices and animated showcase
 
 - Audited vendored code, declared dependencies and scene sources. Preserved Grobot MIT and pinned MIT snapshots for termflix/sysc-Go/matrix. Confirmed Ansimuz Miami/Cyberpunk CC0 using downloaded license PDFs and official storefront evidence. PixelPatterns remains unverified; no blanket source/binary clearance claimed.
