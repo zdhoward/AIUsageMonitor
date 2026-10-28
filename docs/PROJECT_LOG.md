@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-10-28: v1.14.0 Studio and public release
+
+- Implemented T-020 items 1–3: dedicated service Settings, generator sky-control suppression, clearer section titles. Settings writes preserve private/unknown keys atomically. All Studio POST routes enforce JSON and matching loopback origin/port; errors omit filesystem paths. Corrected brightness units/ranges during review.
+- Owner accepts wake/reset behavior and display appearance; Argon exhaustion is owner-reported, not measured by the app. Future features remain on backlog. Owner authorized release tests and public publication.
+- 49 service and 20 Studio tests pass. Browser save/reload, revert/navigation and sky-control visibility pass; desktop/narrow layouts inspected. One old Windows epoch fixture corrected. Production Default build uses 583,987 bytes flash / 88,616 bytes static RAM; COM6 hash-verified v1.14.0 flash and live ACKs confirmed.
+- New public Studio/procedural and four live display screenshots reviewed; Settings uses isolated public defaults. README, Studio guide, protocol/test report and release notes updated. Gemini Flash implemented/spec-reviewed; independent free-review fallback PASS after Beam quota exhaustion. Cost UNKNOWN; T-024 routing shadow omitted, no savings claim. Publication follows guard scan.
+
 ## 2026-10-28: faster quota refresh and advance reset warnings
 
 - Split collection into a 2-second lightweight quota/activity pass and the existing 10-second heavy transcript/OpenCode pass. Heavy metrics are carried over between heavy passes, transcript directory discovery is cached for 30 seconds (first walk immediate, appends still read at once, removals/truncation safe), and usage/cost aggregates are cached by snapshot identity and local hour/day boundary so serial heartbeats no longer rebuild them. Intervals are clamped away from zero; Antigravity and OpenRouter keep their own cadences.

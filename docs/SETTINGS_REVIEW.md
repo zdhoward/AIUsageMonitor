@@ -46,9 +46,15 @@ This review covers the settings of every library scene and of the app, so that n
 | C | Advanced generator numbers have no units or ranges shown | 💡 add min/max and a one-line hint per field |
 | D | Everything else (profiles, playlists, screensaver, display) | ✅ already covered by the v1.10.0 UX pass |
 
-## Suggested action list
+## Action list and status
 
-1. ✅ Hide sky colours for generator scenes (#1).
-2. ✅ Per-type titles and clearer labels (#5).
-3. ✅ Studio Settings tab for the service config (A).
-4. 💡 Then decide: speed multiplier (#3), colour-stop gradient bar (#4), field ranges and hints (C), "add your art" card (B).
+### Implemented (T-024)
+1. ✅ **Hide sky colours for generator scenes (#1)**: Scene editor hides sky top/bottom colour pickers when scene has a generator, eliminating dead controls. Image scenes retain sky gradient pickers.
+2. ✅ **Per-type titles and clearer labels (#5)**: Scene editor displays human-readable type titles (e.g. "Plasma settings", "Digital Rain settings"), section header "Weather & sky effects", and clear labels with physical units (px, px/s, %, s).
+3. ✅ **Studio Settings tab for service config (A)**: Dedicated Settings tab exposing allowlisted non-secret fields (`serial_port`, `auto_brightness_*`, `quota_refresh_s`, `refresh_s`, `limits_stale_s`, `reset_warning_s`). Validated against bounds/types/timezones, merged preserving private keys, written atomically to `service/aimon.config.json` with cross-origin write protection.
+
+### Optional backlog (owner to decide)
+4. 💡 **Speed multiplier (#3)**: Global per-scene speed multiplier scaling layers, effects, and generators (requires tune format & firmware updates).
+5. 💡 **Colour-stop gradient bar (#4)**: Gradient preview bar beside generator colour stops.
+6. 💡 **Field ranges and short hints on numeric fields (C)**: Min/max helper hints per numeric field.
+7. 💡 **"Add your own art" card in Library (B)**: Hint card linking to the import flow on empty library.

@@ -17,6 +17,7 @@ const TABS = {
   playlists: ["Playlists", "Build your own rotations. Each can be a tap page or the screensaver."],
   library: ["Library", "Everything worth keeping. Captures remember the profile and code version that made them."],
   device: ["Display", "See what the display shows right now, and step through its pages."],
+  settings: ["Service Settings", "Hardware serial link, auto-brightness and background refresh cadence."],
 };
 
 let state = { profiles: {}, library: [] };
@@ -346,13 +347,20 @@ $("#saveLib").onclick = async () => {
 
 // ---------------------------------------------------------------- tabs
 document.querySelectorAll(".nav").forEach((b) => (b.onclick = () => {
+  if (b.dataset.tab !== "settings" && window.hasUnsavedSettings && window.hasUnsavedSettings()) {
+    if (!confirm("You have unsaved service settings changes. Discard them?")) return;
+    if (window.revertServiceSettings) window.revertServiceSettings();
+  }
   document.querySelectorAll(".nav").forEach((x) => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === `tab-${b.dataset.tab}`));
   [$("#title").textContent, $("#subtitle").textContent] = TABS[b.dataset.tab];
+  const topActions = $(".top .actions");
+  if (topActions) topActions.style.display = b.dataset.tab === "settings" ? "none" : "";
   // The Display tab is empty until a capture; take the first one on arrival.
   if (b.dataset.tab === "device" && !$("#screen img")) capture();
+  if (b.dataset.tab === "settings" && window.loadServiceSettings) window.loadServiceSettings();
 }));
-window.onbeforeunload = () => (dirty ? true : undefined);
+window.onbeforeunload = () => (dirty || (window.hasUnsavedSettings && window.hasUnsavedSettings()) ? true : undefined);
 
 async function load() {
   state = await api("/api/state");

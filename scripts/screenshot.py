@@ -79,6 +79,7 @@ def main() -> None:
     ap.add_argument("--feed", action="store_true")
     ap.add_argument("--payload", help="JSON file to send before capturing")
     ap.add_argument("--next", type=int, default=0, help="advance this many views before capturing")
+    ap.add_argument("--show", choices=("console", "details", "system", "companion"), help="show a built-in page before capturing")
     ap.add_argument("--wait", type=float, default=0, help="seconds to wait after feeding (max 40)")
     args = ap.parse_args()
 
@@ -107,6 +108,9 @@ def main() -> None:
         for _ in range(args.next):
             s.write(b"!NEXT\n")
             time.sleep(0.1)
+        if args.show:
+            s.write(f"!SHOW {args.show}\n".encode())
+            time.sleep(0.5)
         time.sleep(max(0, min(args.wait, 40)))
         s.reset_input_buffer()
         s.write(b"!SHOT\n")
