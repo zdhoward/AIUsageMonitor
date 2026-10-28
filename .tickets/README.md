@@ -1,5 +1,7 @@
 # Session tickets
 
+T-025: v1.14.1 licensing/docs published (`0e71e0e`): retained third-party notices, scoped inventory/optional fetch, untracked local palette, five-scene animated README demo and optional CC0 parallax pack. PixelPatterns/historical source provenance and full binary obligations remain open; no prebuilt firmware released.
+
 T-024: v1.14.0 Studio Settings/scene controls and public release hardening complete. T-020 recommended items 1–3 delivered; optional items remain. 49 service +20 Studio tests, browser acceptance, build/flash and new screenshots verified. Owner accepts wake/reset behavior; independent reviews completed.
 
 T-023: v1.13.0 installed locally: lightweight quota refresh, cached usage aggregates, bounded quota history and one-hour advance reset wake. Build/flash and live dashboard verified; automated tests and timed warning acceptance deferred. Public push pending owner approval.

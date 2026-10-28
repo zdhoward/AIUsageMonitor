@@ -1,10 +1,11 @@
 # Handoff — quota refresh and advance warning (2026-10-28)
 
-## T-025: v1.14.1 licensing/docs candidate
+## T-025: v1.14.1 licensing/docs published
 
 - Source notices/inventory, safe optional palette workflow and curated CC0 scene-pack builder added. Neon Pulse 8 untracked but retained locally; Git history unchanged. PixelPatterns provenance and full binary dependency/relinking review remain open.
 - Five-scene README GIF uses verified CC0 layers/original Plasma/Warp and is labelled native preview. Optional archive has 16 PNGs +3 original license PDFs +README; SHA and install steps in docs/RELEASE_1.14.1.md. No firmware binary; installed firmware remains v1.14.0.
-- Gemini Flash audit required correction of unsupported claims; coordinator verified correct MIT upstream sources and retained notices, fixed Git-index checking and fetch path confinement. Independent review PASS; compile/inventory/production render/archive inspection passed. Tests deferred; cost UNKNOWN. Ready for guarded publication.
+- Gemini Flash audit required correction of unsupported claims; coordinator verified correct MIT upstream sources and retained notices, fixed Git-index checking and fetch path confinement. Independent review PASS; compile/inventory/production render/archive inspection passed. Tests deferred; cost UNKNOWN.
+- Published commit `0e71e0e`, tag/release [v1.14.1](https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.14.1), optional `cc0-scenes.zip` uploaded (2,539,834 bytes); public guard passed. Users extract the pack at source root and Send to display. Existing local artwork/palette/settings untouched; earlier tags retain the former palette. Firmware remains v1.14.0. Next: verify PixelPatterns at its actual source and complete binary obligations before offering prebuilt firmware/installers.
 
 ## T-024: v1.14.0 published
 
