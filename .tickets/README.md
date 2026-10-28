@@ -1,5 +1,7 @@
 # Session tickets
 
+T-026: Planned at owner request: API-backed Weather page, local-weather effects for parallax and independent local daylight scene lighting. Shared private location/solar cache, manual overrides, offline freshness, provider terms/attribution and phased acceptance are in [T-026](T-026.md). Not implemented or activated.
+
 T-025: v1.14.1 licensing/docs published (`0e71e0e`): retained third-party notices, scoped inventory/optional fetch, untracked local palette, five-scene animated README demo and optional CC0 parallax pack. PixelPatterns/historical source provenance and full binary obligations remain open; no prebuilt firmware released.
 
 T-024: v1.14.0 Studio Settings/scene controls and public release hardening complete. T-020 recommended items 1–3 delivered; optional items remain. 49 service +20 Studio tests, browser acceptance, build/flash and new screenshots verified. Owner accepts wake/reset behavior; independent reviews completed.
