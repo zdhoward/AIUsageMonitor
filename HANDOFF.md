@@ -2,6 +2,9 @@
 
 ## T-023: v1.13.0 installed locally
 
+- Wrap-up: main commit `f067c9f`, local tag `v1.13.0`; no open PRs and no public push. Next: owner testing phase runs retained service tests and times near-reset saver/wake; investigate provider-side early Codex weekly reset only if it recurs using the new history. Existing Argon and T-016–T-020 backlog remains open.
+- Efficiency next session: use Gemini Flash first per updated owner preference. Syntax/build checks missed two runtime regressions; keep the production payload check with nonempty cost records before flashing. Capture bounded output to local logs. Retro cost is UNKNOWN; no promotion or savings claim.
+
 - Two-second lightweight local quota/activity reads, ten-second transcript processing, thirty-second directory discovery; aggregate cache avoids recomputation on heartbeats. Changed quotas/deadlines/activity request immediate coalesced serial pushes; network source cadences unchanged.
 - `reset_warning_s` defaults to 3600: automatic Console/Details saver wakes/stays off while known available quota resets within one hour. Actual countdown stays unchanged; manual scenes/System are unaffected. Timed trigger acceptance remains pending.
 - Local rotating history: `logs/quota_history.jsonl` and `.1`, only changed quota/deadline measurements; early drops flagged. No credentials/transcripts. Failed writes back off sixty seconds. Initial unseen baseline is not recorded.

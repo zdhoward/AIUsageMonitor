@@ -30,4 +30,4 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 
 | T-022 | Installed: direct Gemini quota, pinned five-card landscape layout, 60-second Default idle delay. Argon card remains unknown: independent quota endpoint unavailable. Build/flash and framebuffer inspected; tests/timed idle acceptance deferred. |
 
-Latest public release: `v1.11.1` / `c5d4858`. Local compact-grid milestone: `v1.12.0`, Default/Grid; T-022 adds the quota correction without a release tag while exact Argon collection remains open. Publication status and earlier build evidence are in [HANDOFF.md](../HANDOFF.md). Due-quota direct trigger acceptance remains pending.
+Latest public release: `v1.11.1` / `c5d4858`. Latest installed local milestone: `v1.13.0` / `f067c9f` (T-023), including the T-022 quota correction. Argon collection, automated tests and timed warning acceptance remain open. Publication status and earlier build evidence are in [HANDOFF.md](../HANDOFF.md).
