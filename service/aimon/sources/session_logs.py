@@ -112,32 +112,61 @@ def codex_windows(rate_limits: dict) -> list[Window]:
 class SessionLogScanner:
     """Keeps parsed records for one transcript root (one account)."""
 
-    def __init__(self, root: Path, account: str, flavor: str, history_days: int):
+    def __init__(self, root: Path, account: str, flavor: str, history_days: int,
+                 discovery_s: float = 30.0):
         self.root = root
         self.account = account
         self.flavor = flavor  # "claude" | "codex"
         self.history_s = history_days * 86400
+        self.discovery_s = max(float(discovery_s), 0.0)
         self._files: dict[str, _FileState] = {}
+        self._dirs: list[str] | None = None  # None: first pass walks immediately
+        self._dirs_at = 0.0
+
+    def _discover(self, now: float) -> list[str]:
+        """Reuse the directory listing for a bounded interval.
+
+        A cached directory that has since disappeared fails to list and simply
+        contributes no files, so removals are handled on the next pass.
+        """
+        if self._dirs is not None and now - self._dirs_at < self.discovery_s:
+            return self._dirs
+        dirs: list[str] = []
+        try:
+            for dirpath, _dirs, _names in os.walk(self.root):
+                dirs.append(dirpath)
+        except OSError as e:  # an unreadable root just yields nothing
+            log.warn("session_logs.discovery_failed", account=self.account, err=type(e).__name__)
+        self._dirs, self._dirs_at = dirs, now
+        return dirs
 
     def refresh(self, now: float | None = None) -> None:
         now = now or time.time()
         cutoff = now - self.history_s
         seen = set()
         if not self.root.exists():
+            # The root is gone: drop cached records and rediscover on return.
+            self._files.clear()
+            self._dirs = None
             return
-        for dirpath, _dirs, names in os.walk(self.root):
-            for name in names:
-                if not name.endswith(".jsonl"):
+        for dirpath in self._discover(now):
+            try:
+                entries = list(os.scandir(dirpath))
+            except OSError:  # removed since discovery; its files drop out below
+                continue
+            for entry in entries:
+                if not entry.name.endswith(".jsonl"):
                     continue
-                path = os.path.join(dirpath, name)
                 try:
-                    st = os.stat(path)
+                    if not entry.is_file():
+                        continue
+                    st = entry.stat()
                 except OSError:
                     continue
                 if st.st_mtime < cutoff:
                     continue
-                seen.add(path)
-                self._read_file(path, st.st_size)
+                seen.add(entry.path)
+                self._read_file(entry.path, st.st_size)
         for gone in set(self._files) - seen:
             del self._files[gone]
         for fs in self._files.values():

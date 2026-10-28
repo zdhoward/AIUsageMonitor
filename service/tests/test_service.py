@@ -13,7 +13,8 @@ from unittest import mock
 from aimon.config import Settings
 from aimon.models import Account, Activity, UsageRecord, Window
 from aimon.pricing import Pricing
-from aimon.snapshot import State, build_payload, select_accounts, short_model
+from aimon import quota_history, snapshot
+from aimon.snapshot import Collector, State, build_payload, select_accounts, short_model
 from aimon.sources import antigravity, opencode_db, openrouter, t3_activity, t3_limits
 from aimon.sources.session_logs import SessionLogScanner
 
@@ -383,6 +384,195 @@ class PayloadTests(unittest.TestCase):
     def test_short_model(self):
         self.assertEqual(short_model("claude-opus-5-5"), "opus-5-5")
         self.assertEqual(short_model("openrouter/google/gemma:free"), "gemma")
+
+
+class RefreshCadenceTests(unittest.TestCase):
+    """Retained regression cases for the split refresh (not executed in this lane)."""
+
+    def make_collector(self, tmp: Path):
+        settings = Settings(
+            t3_home=tmp,
+            log_dir=tmp / "logs",
+            antigravity_enabled=False,
+            openrouter_enabled=False,
+            serial_enabled=False,
+        )
+        with mock.patch.object(snapshot, "discover_transcript_roots", return_value=[]):
+            return Collector(settings)
+
+    def test_lightweight_pass_skips_heavy_aggregation(self):
+        account = Account("codex", "Codex", "codex", "Plus", "888888",
+                          [Window("primary", "session", "5h", 12, NOW + 3600, 300)], checked_at=NOW - 60)
+        records = [UsageRecord(NOW - 60, "codex", "m-priced", 10, 0, 0, 5)]
+        with tempfile.TemporaryDirectory() as d:
+            collector = self.make_collector(Path(d))
+            collector.state = State(accounts=[account], records=records,
+                                    free_records=records, activity=Activity("idle", "codex"))
+            with mock.patch.object(t3_limits, "read_accounts", return_value=[account]), \
+                 mock.patch.object(t3_activity, "read_activity", return_value=Activity("idle", "codex")), \
+                 mock.patch.object(opencode_db, "read_records") as read_records, \
+                 mock.patch.object(openrouter, "fetch") as fetch:
+                read_records.return_value = []
+                st = collector.refresh(NOW + 2, heavy=False)
+                read_records.assert_not_called()
+                fetch.assert_not_called()
+                # Heavy metrics are carried over untouched between light passes.
+                self.assertIs(st.records, records)
+                self.assertIs(st.free_records, records)
+                self.assertEqual(st.activity.state, "idle")
+
+                collector.refresh(NOW + 10, heavy=True)
+                read_records.assert_called_once()  # first heavy pass runs the source
+                collector.refresh(NOW + 20, heavy=True)
+                read_records.assert_called_once()  # its own 30 s cadence has not elapsed
+                collector.refresh(NOW + 45, heavy=True)
+                self.assertEqual(read_records.call_count, 2)
+
+    def test_codex_merge_publishes_fresh_account_copies(self):
+        published = Account("codex", "Codex", "codex", "Plus", "888888",
+                            [Window("primary", "session", "5h", 40, NOW + 600, 300)], checked_at=NOW - 120)
+        rate_limits = {"primary": {"used_percent": 12.0, "window_minutes": 300, "resets_at": NOW + 900}}
+        scanner = mock.Mock(flavor="codex", account="codex")
+        scanner.latest_rate_limits.return_value = (NOW - 30, rate_limits)
+        with tempfile.TemporaryDirectory() as d:
+            collector = self.make_collector(Path(d))
+            collector.scanners = [scanner]
+            collector.state = State(accounts=[published], activity=Activity("idle", "codex"))
+            with mock.patch.object(t3_limits, "read_accounts", return_value=[published]), \
+                 mock.patch.object(t3_activity, "read_activity", return_value=Activity("idle", "codex")):
+                st = collector.refresh(NOW, heavy=False)
+        merged = st.accounts[0]
+        self.assertIsNot(merged, published)
+        self.assertEqual(merged.checked_at, NOW - 30)
+        self.assertEqual(merged.source, "codex_log")
+        # The previously published object keeps its own values.
+        self.assertEqual(published.checked_at, NOW - 120)
+        self.assertEqual(published.windows[0].used_percent, 40)
+
+
+class QuotaHistoryTests(unittest.TestCase):
+    def make(self, d: str) -> quota_history.QuotaHistory:
+        return quota_history.QuotaHistory(Path(d) / "logs" / "quota_history.jsonl", max_entries=20)
+
+    @staticmethod
+    def acct(used, resets_at, checked_at=NOW):
+        return Account("claudeAgent", "CL1", "claudeAgent", "Pro", "eb4325",
+                       [Window("five_hour", "session", "5h", used, resets_at, 300)], checked_at=checked_at)
+
+    def entries(self, history) -> list[dict]:
+        return [json.loads(line) for line in history.path.read_text(encoding="utf-8").splitlines()]
+
+    def test_unchanged_reads_and_check_times_stay_silent(self):
+        with tempfile.TemporaryDirectory() as d:
+            history = self.make(d)
+            self.assertEqual(history.observe([self.acct(20, NOW + 3600)], NOW), [])
+            history.observe([self.acct(20, NOW + 3600, checked_at=NOW + 60)], NOW + 60)
+            self.assertFalse(history.path.exists())
+
+    def test_drop_before_old_deadline_is_unexpected(self):
+        with tempfile.TemporaryDirectory() as d:
+            history = self.make(d)
+            history.observe([self.acct(40, NOW + 3600)], NOW)
+            written = history.observe([self.acct(10, NOW + 3600)], NOW + 5)
+            self.assertEqual(len(written), 1)
+            self.assertEqual(written[0]["x"], quota_history.UNEXPECTED)
+            [entry] = self.entries(history)
+            # Identity only: no display name, path or credential reaches the log.
+            self.assertEqual((entry["i"], entry["s"], entry["w"], entry["u"]), ("claudeAgent", "t3_cache", "five_hour", 10.0))
+            self.assertNotIn("CL1", json.dumps(entry))
+
+    def test_drop_after_deadline_is_not_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            history = self.make(d)
+            history.observe([self.acct(40, NOW + 60)], NOW)
+            written = history.observe([self.acct(0, NOW + 6 * 3600)], NOW + 120)
+            self.assertEqual(len(written), 1)
+            self.assertNotIn("x", written[0])
+
+    def test_file_stays_within_its_entry_bound(self):
+        with tempfile.TemporaryDirectory() as d:
+            history = self.make(d)
+            for step in range(30):
+                history.observe([self.acct(step % 90, NOW + 6 * 3600)], NOW + step)
+            lines = history.path.read_text(encoding="utf-8").splitlines()
+            self.assertLessEqual(len(lines), 20)
+            self.assertTrue(history.backup.exists())
+
+
+class WarningPayloadTests(unittest.TestCase):
+    def state(self):
+        return State(accounts=[Account("claudeAgent", "CL1", "claudeAgent", "Pro", "eb4325", [
+            Window("five_hour", "session", "5h", 37, NOW + 3600, 300),
+            Window("seven_day", "weekly", "7d", 91, NOW + 86400, 10080),
+        ], checked_at=NOW - 60)])
+
+    def test_warning_interval_defaults_and_bounds(self):
+        self.assertEqual(build_payload(self.state(), NOW, PRICING, Settings())["warn"], 3600)
+        self.assertEqual(build_payload(self.state(), NOW, PRICING, Settings(reset_warning_s=0))["warn"], 0)
+        self.assertEqual(build_payload(self.state(), NOW, PRICING, Settings(reset_warning_s=-5))["warn"], 0)
+        # The real countdown is unchanged by the warning setting.
+        p = build_payload(self.state(), NOW, PRICING, Settings(reset_warning_s=60))
+        self.assertEqual(p["acc"][0]["w"][0]["r"], 3600)
+
+    def test_fractional_availability_near_exhaustion_is_not_one_hundred(self):
+        st = self.state()
+        st.accounts[0].windows[0].used_percent = 99.6
+        st.accounts[0].windows[1].used_percent = 100.0
+        p = build_payload(st, NOW, PRICING, Settings())
+        self.assertEqual([w["u"] for w in p["acc"][0]["w"]], [99, 100])
+
+    def test_usage_aggregate_is_reused_for_an_unchanged_snapshot(self):
+        st = self.state()
+        st.records = [UsageRecord(NOW - 60, "claudeAgent", "m-priced", 1000, 0, 0, 100)]
+        p1 = build_payload(st, NOW, PRICING, Settings())
+        p2 = build_payload(st, NOW + 1, PRICING, Settings())
+        self.assertIs(p1["use"], p2["use"])
+        self.assertEqual(p1["use"], p2["use"])
+        st.records = list(st.records) + [UsageRecord(NOW - 30, "claudeAgent", "m-priced", 10, 0, 0, 1)]
+        p3 = build_payload(st, NOW + 2, PRICING, Settings())
+        self.assertIsNot(p3["use"], p1["use"])
+        self.assertGreater(p3["use"]["o1"], p1["use"]["o1"])
+
+
+class DiscoveryCadenceTests(unittest.TestCase):
+    def test_appends_are_read_at_once_and_new_directories_wait_for_rediscovery(self):
+        line = lambda mid: json.dumps(
+            {"type": "assistant", "timestamp": iso(time.time()), "requestId": "r" + mid,
+             "message": {"id": mid, "model": "m", "usage": {"output_tokens": 1}}}
+        ) + "\n"
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            first = root / "p" / "a.jsonl"
+            first.parent.mkdir()
+            first.write_text(line("a"), encoding="utf-8")
+            sc = SessionLogScanner(root, "claudeAgent", "claude", 7, discovery_s=30)
+            sc.refresh(NOW)
+            self.assertEqual(len(sc.records()), 1)
+
+            with first.open("a", encoding="utf-8") as fh:
+                fh.write(line("b"))
+            sc.refresh(NOW + 1)  # cached discovery still reads the same file
+            self.assertEqual(len(sc.records()), 2)
+
+            second = root / "q" / "b.jsonl"
+            second.parent.mkdir()
+            second.write_text(line("c"), encoding="utf-8")
+            sc.refresh(NOW + 5)
+            self.assertEqual(len(sc.records()), 2)  # directory listing is cached
+            sc.refresh(NOW + 31)
+            self.assertEqual(len(sc.records()), 3)
+
+            first.write_text("", encoding="utf-8")  # truncated: rescanned, not appended
+            sc.refresh(NOW + 32)
+            self.assertEqual(len(sc.records()), 1)
+            for gone in (root / "p", root / "q"):
+                for f in gone.iterdir():
+                    f.unlink()
+                gone.rmdir()
+            sc.refresh(NOW + 33)  # cached directories now fail to list
+            self.assertEqual(sc.records(), {})
+            sc.refresh(NOW + 64)
+            self.assertEqual(sc.records(), {})
 
 
 if __name__ == "__main__":

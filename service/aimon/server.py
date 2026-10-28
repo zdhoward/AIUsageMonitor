@@ -10,6 +10,7 @@ POST /v1/serial/resume
 from __future__ import annotations
 
 import json
+import math
 import ipaddress
 import threading
 import time
@@ -22,6 +23,20 @@ from .config import Settings
 from .companion import Companion, LocalMetrics
 from .serial_link import SerialLink
 from .snapshot import Collector, build_payload, build_status
+
+# Refresh and push delays are clamped so a zero, negative or tiny configured
+# value cannot spin the loop.
+MIN_REFRESH_S = 0.25
+
+
+def _interval(value, default: float) -> float:
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return default
+    if value != value:  # NaN
+        return default
+    return max(value, MIN_REFRESH_S)
 
 
 class App:
@@ -76,27 +91,55 @@ class App:
                 self.serial.request_push()
             self._behavior_wake.wait(0.25)
 
+    @staticmethod
+    def quota_signature(st) -> tuple:
+        """Explicit measurements only: age, countdown and check time excluded."""
+        return (
+            tuple(sorted(st.errors)),
+            st.activity.state, st.activity.instance_id, st.activity.model, st.activity.running,
+            tuple(
+                (a.instance_id, a.source, a.unavailable, a.reset_credits,
+                 tuple((w.id, w.kind,
+                        w.used_percent if w.used_percent is not None and math.isfinite(w.used_percent) else None,
+                        w.resets_at if w.resets_at is not None and math.isfinite(w.resets_at) else None)
+                       for w in a.windows))
+                for a in st.accounts
+            ),
+        )
+
     def refresh_loop(self) -> None:
+        heavy_s = _interval(self.s.refresh_s, 10.0)
+        light_s = min(_interval(self.s.quota_refresh_s, 2.0), heavy_s)
+        next_heavy = time.time() + heavy_s  # serve() already did the first heavy pass
+        signature = self.quota_signature(self.collector.snapshot())
         while not self._stop.is_set():
             t0 = time.time()
+            heavy = t0 >= next_heavy
             try:
-                self.collector.refresh()
+                st = self.collector.refresh(t0, heavy=heavy)
             except Exception as e:
                 log.warn("collector.crashed", err=type(e).__name__, detail=str(e)[:160])
-            log.debug("collector.timing", ms=int((time.time() - t0) * 1000))
+                st = self.collector.snapshot()
+            log.debug("collector.timing", ms=int((time.time() - t0) * 1000), heavy=int(heavy))
+            if heavy:
+                next_heavy = time.time() + heavy_s
+            # Push only when a quota measurement, reset deadline or activity
+            # state actually changed. request_push() is coalesced, so a burst
+            # still produces at most one write; the 5-second heartbeat remains.
+            current = self.quota_signature(st)
+            if current != signature:
+                signature = current
+                if self.serial:
+                    self.serial.request_push()
             # Wake at the next reset as well as the regular polling cadence.
             # Past deadlines use normal polling: an unchanged cache must not spin.
             now = time.time()
-            deadlines = [
-                w.resets_at
-                for a in self.collector.snapshot().accounts
-                for w in a.windows
-                if w.resets_at is not None and w.resets_at > now
-            ]
-            delay = self.s.refresh_s
-            if deadlines:
-                delay = min(delay, min(deadlines) - now)
-            self._stop.wait(delay)
+            delay = min(light_s, max(next_heavy - now, MIN_REFRESH_S))
+            for a in st.accounts:
+                for w in a.windows:
+                    if w.resets_at is not None and w.resets_at > now:
+                        delay = min(delay, w.resets_at - now)
+            self._stop.wait(max(delay, MIN_REFRESH_S))
 
     def health(self) -> dict:
         st = self.collector.snapshot()
