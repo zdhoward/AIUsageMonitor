@@ -1,4 +1,11 @@
-# Handoff — quota refresh and advance warning (2026-10-28)
+# Handoff — public releases, licensing and weather roadmap (2026-10-28)
+
+## Session closed
+
+- Public releases: v1.14.0 Studio/settings hardening, then v1.14.1 licensing/docs/GIF and optional CC0 scene pack. Main synchronized through weather-plan commit `5255f0f` before this closing documentation commit; no open PRs to merge. Installed firmware remains v1.14.0.
+- Validation already completed: 49 service +20 Studio tests, browser settings/scene checks, production build/hash-verified flash and framebuffer inspection. Later licensing tools: compilation, scoped inventory check, production GIF rendering and archive inspection; automated tests for these tools remain deferred. No validation rerun for this docs-only close.
+- Next concrete action when work resumes: select/scope T-026's provider and shared-location migration, then implement cached weather data/page before ambient weather/daylight synchronization. It is not enabled. Other open items: independent Argon quota source; PixelPatterns license provenance; exact historical procedural derivation; full binary redistribution obligations; portrait/Rows/logon/physical brightness/Wi-Fi acceptance. Optional T-020/feature ideas stay on backlog.
+- Retrospective: require an evidence table with actual upstream license text/revision before writing license conclusions or acquisition tools; do not invent authors or use generic CC0 text as pack evidence. Match UI units/ranges to runtime validators before delegation. Reuse saved scripts and bounded output; paid coordination/rework cost UNKNOWN, no model promotion/savings claim. These project instructions are applied; effectiveness awaits later work.
 
 ## Next feature plan: T-026
 
