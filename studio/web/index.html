@@ -18,6 +18,7 @@
     <button class="nav" data-tab="playlists"><svg viewBox="0 0 24 24"><path d="M4 6h11M4 12h11M4 18h7"/><path d="M17 15v6l4-3z"/></svg>Playlists</button>
     <button class="nav" data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Library</button>
     <button class="nav" data-tab="device"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Display</button>
+    <button class="nav" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
   </nav>
   <div class="side-foot">
     <label class="mini">Profile</label>
@@ -140,6 +141,121 @@
       </div>
     </div>
   </section>
+
+  <!-- Settings -->
+  <section class="tab" id="tab-settings">
+    <div class="card settings-head">
+      <div>
+        <h2>Service Configuration</h2>
+        <p class="hint">Hardware serial link, auto-brightness and background refresh cadence. Saved to aimon.config.json.</p>
+      </div>
+      <div class="settings-actions">
+        <span class="dirty" id="settingsDirty">Unsaved settings</span>
+        <button class="btn ghost" id="settingsRevert">Revert</button>
+        <button class="btn primary" id="settingsSave">Save settings</button>
+      </div>
+    </div>
+    <div id="settingsNotice" class="settings-notice" hidden></div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head">
+          <h2>Display &amp; Serial Link</h2>
+          <span class="hint">Hardware port</span>
+        </div>
+        <div class="form-row">
+          <label for="cfg_serial_port"><b>Serial port</b><small class="hint">USB serial device (e.g. "auto", "COM3", or "/dev/ttyUSB0")</small></label>
+          <input type="text" id="cfg_serial_port" maxlength="64" placeholder="auto">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Refresh &amp; Staleness</h2>
+          <span class="hint">Background poll cadence</span>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="cfg_quota_refresh_s"><b>Lightweight refresh</b><small class="hint">Quota caches &amp; activity (seconds)</small></label>
+            <input type="number" id="cfg_quota_refresh_s" min="0.5" max="86400" step="0.5">
+          </div>
+          <div class="form-row">
+            <label for="cfg_refresh_s"><b>Heavy refresh</b><small class="hint">Log aggregation &amp; transcripts (seconds)</small></label>
+            <input type="number" id="cfg_refresh_s" min="1" max="86400" step="1">
+          </div>
+          <div class="form-row">
+            <label for="cfg_limits_stale_s"><b>Stale threshold</b><small class="hint">Flag usage stale after (seconds)</small></label>
+            <input type="number" id="cfg_limits_stale_s" min="10" max="2592000" step="10">
+          </div>
+          <div class="form-row">
+            <label for="cfg_reset_warning_s"><b>Reset warning interval</b><small class="hint">Wake display before quota resets (seconds, 0 disables)</small></label>
+            <input type="number" id="cfg_reset_warning_s" min="0" max="604800" step="60">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Automatic Brightness</h2>
+        <span class="hint">Calculates solar elevation from location</span>
+      </div>
+      <div class="hero-toggle-sub">
+        <div>
+          <b>Enable automatic brightness</b>
+          <p class="hint">Calculates solar elevation from coordinates to scale display backlight.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="cfg_auto_brightness_enabled" aria-label="Enable automatic brightness"><i></i></label>
+      </div>
+
+      <div id="cfgBrightnessBody" class="pad">
+        <div class="grid3">
+          <div class="form-row">
+            <label for="cfg_auto_brightness_lat"><b>Latitude</b><small class="hint">-90° to +90°</small></label>
+            <input type="number" id="cfg_auto_brightness_lat" min="-90" max="90" step="0.0001">
+          </div>
+          <div class="form-row">
+            <label for="cfg_auto_brightness_lng"><b>Longitude</b><small class="hint">-180° to +180°</small></label>
+            <input type="number" id="cfg_auto_brightness_lng" min="-180" max="180" step="0.0001">
+          </div>
+          <div class="form-row">
+            <label for="cfg_auto_brightness_tz"><b>Timezone</b><small class="hint">e.g. "Europe/London" or "America/New_York"</small></label>
+            <input type="text" id="cfg_auto_brightness_tz" placeholder="Europe/London">
+          </div>
+        </div>
+
+        <div class="card-head pad">
+          <h2>Brightness Levels &amp; Dynamics</h2>
+          <span class="hint">PWM duty cycles (0–255) and timing</span>
+        </div>
+        <div class="grid3">
+          <div class="form-row">
+            <label for="cfg_auto_brightness_day_duty"><b>Day duty</b><small class="hint">Full daylight (0–255)</small></label>
+            <input type="number" id="cfg_auto_brightness_day_duty" min="0" max="255" step="1">
+          </div>
+          <div class="form-row">
+            <label for="cfg_auto_brightness_night_duty"><b>Night duty</b><small class="hint">Dark / nighttime (0–255)</small></label>
+            <input type="number" id="cfg_auto_brightness_night_duty" min="0" max="255" step="1">
+          </div>
+          <div class="form-row">
+            <label for="cfg_auto_brightness_startup_duty"><b>Startup duty</b><small class="hint">Initial boot level (0–255)</small></label>
+            <input type="number" id="cfg_auto_brightness_startup_duty" min="0" max="255" step="1">
+          </div>
+        </div>
+
+        <div class="grid2 pad">
+          <div class="form-row">
+            <label for="cfg_auto_brightness_transition_duration"><b>Transition duration</b><small class="hint">Sunrise/sunset fade span (minutes)</small></label>
+            <input type="number" id="cfg_auto_brightness_transition_duration" min="0" max="1440" step="1">
+          </div>
+          <div class="form-row">
+            <label for="cfg_auto_brightness_smoothing_duration"><b>Smoothing duration</b><small class="hint">PWM step interpolation (ms)</small></label>
+            <input type="number" id="cfg_auto_brightness_smoothing_duration" min="0" max="60000" step="50">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="drawer" id="drawer">
@@ -195,10 +311,14 @@
           <div id="eGen"></div>
           <div id="eLayersWrap"><h3>Layers <span class="hint">back to front</span></h3>
           <div id="eLayers"></div></div>
-          <h3>Effects</h3>
-          <div id="eFx"></div>
-          <h3>Sky</h3>
-          <div class="sky"><label>Top <input type="color" id="eTop"></label><label>Bottom <input type="color" id="eBottom"></label></div>
+          <div id="eFxWrap">
+            <h3 id="eFxTitle">Weather &amp; sky effects</h3>
+            <div id="eFx"></div>
+          </div>
+          <div id="eSkyWrap">
+            <h3 id="eSkyTitle">Sky gradient</h3>
+            <div class="sky"><label>Top <input type="color" id="eTop"></label><label>Bottom <input type="color" id="eBottom"></label></div>
+          </div>
           <div class="row-btns">
             <button class="btn ghost" id="eReset">Revert</button>
             <button class="btn primary" id="eSave">Save scene</button>
@@ -230,7 +350,7 @@
   <div class="sheet">
     <button class="icon-btn close" data-close>×</button>
     <h2 class="big">Lospec palettes</h2>
-    <p class="hint">Search <a href="https://lospec.com/palette-list" target="_blank">lospec.com</a> by tag, or paste a palette link.
+    <p class="hint">Search <a href="https://lospec.com/palette-list" target="_blank" rel="noopener noreferrer">lospec.com</a> by tag, or paste a palette link.
       Added palettes become themes: colours are mapped by brightness onto the palette.</p>
     <div class="ls-bar">
       <input id="lsTag" placeholder="Tag, e.g. cyberpunk, synthwave, gameboy" value="cyberpunk">
@@ -248,5 +368,6 @@
 <script src="studio.js"></script>
 <script src="scene.js"></script>
 <script src="playlists.js"></script>
+<script src="settings.js"></script>
 </body>
 </html>

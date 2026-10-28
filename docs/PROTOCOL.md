@@ -109,6 +109,8 @@ Commands are newline-terminated and begin with `!`:
 
 ## HTTP API
 
+Optional top-level payload field `warn` is the nonnegative advance reset warning in seconds (default service value 3600). Firmware suppresses the automatic Console/Details saver when a known window has remaining quota and its actual reset countdown is within this interval, including due windows. Reset countdowns are unchanged. Service Settings UI lives in Studio on port 8798: `GET /api/settings` returns allowlisted nonsecret persisted values/defaults; `POST /api/settings` validates and atomically merges those keys. Studio writes require JSON and a loopback Host with matching Origin/Referer scheme, host and port. See [Studio](STUDIO.md).
+
 Default base URL: `http://127.0.0.1:8797`. JSON responses use `Cache-Control: no-store`.
 
 | Method / path | Response / purpose |

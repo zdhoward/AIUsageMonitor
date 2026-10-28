@@ -1,5 +1,9 @@
 # Public release preparation
 
+## v1.14.0 refresh (2026-10-28)
+
+The owner authorized another public release, updated Studio/display screenshots and release tests. Current evidence: [v1.14.0](RELEASE_1.14.0.md). Public push guard installed; private configuration and personal art remain excluded. Images show the actual Studio (isolated public default settings), procedural preview and live USB framebuffers. Earlier sections below retain the original publication history.
+
 The owner selected the MIT license, then explicitly requested the completed repository be pushed and made public on 2026-10-22. GitHub now reports [zdhoward/AIUsageMonitor](https://github.com/zdhoward/AIUsageMonitor) as public.
 
 ## Prepared

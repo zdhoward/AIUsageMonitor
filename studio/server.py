@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import profile_gen  # noqa: E402
 import scenes  # noqa: E402
+from studio import service_settings  # noqa: E402
 from studio.native_host import LiveLink, NativeHost  # noqa: E402
 
 WEB = Path(__file__).with_name("web")
@@ -303,9 +304,61 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def body(self) -> dict:
-        n = int(self.headers.get("Content-Length", 0))
-        return json.loads(self.rfile.read(n) or b"{}")
+    def check_write_security(self) -> None:
+        """Protect against cross-origin and unauthorized browser writes."""
+        ct = self.headers.get("Content-Type", "")
+        media_type = ct.split(";")[0].strip().lower()
+        if media_type != "application/json":
+            raise ValueError("Content-Type must be application/json")
+
+        host_hdr = self.headers.get("Host", "")
+        if not host_hdr:
+            raise PermissionError("Forbidden: Host header required")
+        parsed_host = urllib.parse.urlsplit("//" + host_hdr)
+        host_name = (parsed_host.hostname or "").lower()
+        allowed_hosts = {"127.0.0.1", "localhost", "::1"}
+        if host_name not in allowed_hosts:
+            raise PermissionError("Forbidden: Host not permitted")
+
+        expected_port = getattr(getattr(self, "server", None), "server_port", PORT)
+        if (parsed_host.port or 80) != expected_port:
+            raise PermissionError("Forbidden: Host port not permitted")
+        origin_hdr = self.headers.get("Origin")
+        if origin_hdr:
+            parsed = urllib.parse.urlsplit(origin_hdr)
+            orig_host = (parsed.hostname or "").lower()
+            if (orig_host != host_name or parsed.scheme != "http"
+                    or (parsed.port or 80) != expected_port):
+                raise PermissionError("Forbidden: Cross-origin request not permitted")
+
+        referer_hdr = self.headers.get("Referer")
+        if referer_hdr and not origin_hdr:
+            parsed = urllib.parse.urlsplit(referer_hdr)
+            ref_host = (parsed.hostname or "").lower()
+            if (ref_host != host_name or parsed.scheme != "http"
+                    or (parsed.port or 80) != expected_port):
+                raise PermissionError("Forbidden: Cross-origin referer not permitted")
+
+    def body(self, max_size: int = 15 * 1024 * 1024) -> dict:
+        cl = self.headers.get("Content-Length")
+        if cl is None:
+            raise ValueError("Missing Content-Length header")
+        try:
+            n = int(cl)
+        except ValueError:
+            raise ValueError("Invalid Content-Length header")
+        if n < 0:
+            raise ValueError("Negative Content-Length header")
+        if n > max_size:
+            raise ValueError("Request body too large")
+        raw = self.rfile.read(n) if n > 0 else b"{}"
+        try:
+            parsed = json.loads(raw or b"{}")
+        except Exception:
+            raise ValueError("Malformed JSON body") from None
+        if not isinstance(parsed, dict):
+            raise ValueError("JSON body must be an object")
+        return parsed
 
     def do_GET(self):
         path = self.path.split("?")[0]
@@ -314,6 +367,11 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json({"profiles": profiles, "library": library(), "commit": git_commit(),
                                    "scenes": scenes.scene_list(), "native": native.ids,
                                    "native_building": native.building})
+        if path == "/api/settings":
+            try:
+                return self.send_json(service_settings.get_service_settings())
+            except ValueError as e:
+                return self.send_json({"error": str(e)}, 400)
         if path == "/api/native":
             return self.send_json({"ids": native.ids, "building": native.building, "error": native.last_error,
                                    "live": live.last_reply})
@@ -344,6 +402,15 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         path = self.path.split("?")[0]
         try:
+            self.check_write_security()
+            if path == "/api/settings":
+                b = self.body(max_size=64 * 1024)
+                saved = service_settings.save_service_settings(b)
+                return self.send_json({
+                    "ok": True,
+                    "settings": saved,
+                    "message": "Settings saved. Restart the AI Usage Monitor service to apply changes."
+                })
             b = self.body()
             if path.startswith("/api/profiles/"):
                 pid = path.rsplit("/", 1)[1]
@@ -419,11 +486,13 @@ class Handler(SimpleHTTPRequestHandler):
                     shutil.rmtree(LIBRARY / lid)
                 return self.send_json({"ok": True})
             self.send_error(HTTPStatus.NOT_FOUND)
-        except (ValueError, RuntimeError, KeyError, OSError) as e:
-            self.send_json({"error": str(e)}, 400)
+        except (ValueError, RuntimeError, KeyError, OSError, PermissionError) as e:
+            status = 403 if isinstance(e, PermissionError) else 400
+            message = "Unable to access local data; check permissions and free space." if isinstance(e, OSError) else str(e)
+            self.send_json({"error": message}, status)
         except Exception as e:  # never answer with a bare 500 page the UI cannot read
             log_error(f"POST {path}")
-            self.send_json({"error": f"{type(e).__name__}: {e} (details in logs/studio.log)"}, 500)
+            self.send_json({"error": "Studio request failed; details in logs/studio.log."}, 500)
 
 
 LOG = ROOT / "logs" / "studio.log"

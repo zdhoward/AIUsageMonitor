@@ -1,5 +1,12 @@
 # Test report
 
+## v1.14.0 release hardening (2026-10-28)
+
+- Service: 49 tests passed. Studio: 20 tests passed, including atomic failure, private-key preservation, malformed values, same-origin enforcement and supported brightness limits.
+- Browser acceptance passed for settings persistence, unsaved-navigation prompts/revert and generator/image sky-control visibility. Desktop and narrow Settings screens inspected; no browser errors.
+- Owner reports v1.13.0 wake/reset behavior works well and display appearance is satisfactory. This is owner acceptance, not an automated timing measurement.
+- New public images and remaining limits: [v1.14.0 release evidence](RELEASE_1.14.0.md). Argon remains unknown despite the owner's report of exhaustion because there is no independent source.
+
 ## v1.11.1 due quota visibility (2026-10-25)
 
 - Default-profile firmware build passed: 583,159 bytes flash / 87,984 bytes static RAM. COM6 flash hash verified; `git diff --check` passed.
