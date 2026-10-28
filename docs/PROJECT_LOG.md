@@ -1,5 +1,15 @@
 # Project log
 
+## 2026-10-28: faster quota refresh and advance reset warnings
+
+- Split collection into a 2-second lightweight quota/activity pass and the existing 10-second heavy transcript/OpenCode pass. Heavy metrics are carried over between heavy passes, transcript directory discovery is cached for 30 seconds (first walk immediate, appends still read at once, removals/truncation safe), and usage/cost aggregates are cached by snapshot identity and local hour/day boundary so serial heartbeats no longer rebuild them. Intervals are clamped away from zero; Antigravity and OpenRouter keep their own cadences.
+- Serial pushes are now also requested immediately (coalesced, same port owner) when quota measurements, reset deadlines or activity state change; age/countdown-only changes rely on the unchanged 5-second heartbeat. The Codex rate-limit merge publishes fresh `Account` copies instead of mutating an already published snapshot.
+- Added a bounded rotating local transition log at `logs/quota_history.jsonl`: identity/source/time/window/used/deadline only, written solely on change, with `drop_before_reset` flagging a drop ahead of the previous deadline. Failures are logged and ignored.
+- Added `reset_warning_s` (default 3600) and a compact `warn` payload field; firmware keeps Console/Details awake when a known window still has quota and resets within that interval (due included). Countdowns, visuals and layout are untouched; absent `warn` preserves due-only behaviour.
+- Production Default build for v1.13.0 passed: 583,987 bytes flash / 88,616 bytes static RAM (`build/t023-installed-build.log`). Service restarted; live payload reports ok=1, warn=3600, five accounts and three cost accounts, with serial ACKs. Initial request timed out during startup loading, then recovered. Automated tests remain deferred to the owner's sprint-end phase; timed near-reset wake remains pending. A transition whose preceding value was never observed is not recorded; history writes retry with a 60-second backoff after failure.
+- DeepSeek implemented; Beam and Gemini Flash reviewed. Coordinator corrected inverted health status, cost-account key access, malformed/nonfinite quota handling and history retry behavior before installation. Syntax/scope checks passed; cost UNKNOWN. Routing shadow `277dc6c5-c330-40d1-91e3-16e1577a59a5`: local-jev timeout, Laya abstained. Public push remains pending owner publication approval under GOALS.
+- v1.13.0 flashed on COM6 with hash verification (`build/t023-flash.log`); live firmware greeting and ACKs confirmed. Coordinator inspected `build/t023-live.png`: all five cards and countdowns render normally; Argon remains unknown as before. First capture showed startup waiting; second confirmed normal data. This verifies delivery/rendering, not the timed pre-reset wake trigger.
+
 ## 2026-10-27: session wrap-up
 
 - Reconciled current README, ticket and handoff with installed source/layout, 60-second idle and weekly countdown emphasis. Exact Argon collection, Gemini weekly availability and testing-phase acceptance remain open; no new release/version tag while that milestone is incomplete.

@@ -305,6 +305,14 @@ bool parsePayload(const char* json, size_t len, Model& out) {
   m.bl = out.bl;
   m.hasBl = out.hasBl;
   m.blMs = out.blMs;
+  // Absent keeps the last known interval, so an older service payload retains
+  // whatever the device already learned (default stays due-only).
+  m.warnS = out.warnS;
+  JsonVariantConst warn = doc["warn"];
+  if (!warn.isNull() && warn.is<int>()) {
+    int interval = warn.as<int>();
+    m.warnS = interval >= 0 ? interval : -1;
+  }
   JsonVariantConst blv = doc["bl"];
   if (!blv.isNull() && blv.is<int>() && blv.as<int>() >= 0 && blv.as<int>() <= 255) {
     m.bl = (uint8_t)blv.as<int>();

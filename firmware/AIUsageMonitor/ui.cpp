@@ -132,15 +132,22 @@ static uint32_t lastActivity[2] = {};
 static Model usageBaseline;
 static bool haveUsageBaseline = false;
 
-static bool hasDueAvailableUsage(const Model& m, uint32_t now) {
+// A known window that still has quota keeps Console/Details awake when its
+// reset is due, or within the service-provided warning interval. Unknown
+// percentages, unknown deadlines and fully used windows never qualify. `u` is
+// the service's carefully rounded used percentage, so fractional availability
+// near 100% stays below 100 instead of looking exhausted.
+static bool hasSoonAvailableUsage(const Model& m, uint32_t now) {
   if (!m.valid) return false;
   const int32_t elapsed = (int32_t)((now - m.rxMillis) / 1000);
   for (uint8_t i = 0; i < m.nacc; ++i) {
     const AccData& account = m.acc[i];
     for (uint8_t j = 0; j < account.nw; ++j) {
       const WinData& window = account.w[j];
-      if (window.r >= 0 && window.r <= elapsed && window.u >= 0 && window.u < 100)
-        return true;
+      if (window.u < 0 || window.u >= 100 || window.r < 0) continue;
+      const int32_t remaining = window.r - elapsed;
+      if (remaining <= 0) return true;  // due, with quota available
+      if (m.warnS >= 0 && remaining <= m.warnS) return true;
     }
   }
   return false;
@@ -195,7 +202,7 @@ static void updateSaver(const Model& m, uint32_t now) {
     saverActive = false;
     return;
   }
-  if (hasDueAvailableUsage(m, now)) {
+  if (hasSoonAvailableUsage(m, now)) {
     saverActive = false;
     return;
   }
