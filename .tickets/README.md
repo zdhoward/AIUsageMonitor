@@ -32,4 +32,4 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 
 | T-022 | Installed: direct Gemini quota, pinned five-card landscape layout, 60-second Default idle delay. Argon card remains unknown: independent quota endpoint unavailable. Build/flash and framebuffer inspected; tests/timed idle acceptance deferred. |
 
-Latest public release: `v1.11.1` / `c5d4858`. Latest installed local milestone: `v1.13.0` / `f067c9f` (T-023), including the T-022 quota correction. Argon collection, automated tests and timed warning acceptance remain open. Publication status and earlier build evidence are in [HANDOFF.md](../HANDOFF.md).
+Latest public/installed release: `v1.14.0` / `9411540`, including T-022/T-023/T-024. Owner accepts wake/reset behavior; 49 service +20 Studio tests pass. Independent Argon telemetry, broader hardware acceptance and optional feature backlog remain open. Publication status and evidence are in [HANDOFF.md](../HANDOFF.md).
