@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-10-28: final session wrap-up
+
+- Reconciled release/installed versions, T-020 delivered items, T-026 planning-only state and remaining acceptance/licensing backlog. Handoff records published v1.14.1 plus installed firmware v1.14.0; no open PRs and main synchronized before close. Existing validation reused for docs-only close.
+- Retrospective recorded evidence-first licensing, service-validator unit checks and bounded output guidance in the project handoff. Gemini Flash handled bounded implementation/review with independent fallback; coordinator rework and total paid cost remain UNKNOWN. No promotion/savings claim or global instruction edits.
+
 ## 2026-10-28: weather and daylight roadmap
 
 - Owner requested a real Weather view and optional local-weather/daylight synchronization for parallax scenes. Recorded T-026 as planning only: shared private location, provider-neutral cached conditions, independent scene weather/daylight/backlight controls and staged implementation.

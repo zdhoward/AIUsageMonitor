@@ -31,9 +31,9 @@ Tickets T-002 through T-007 are complete in the main checkout. Worker checkout s
 | T-017 | Planned: VJ transitions between playlist scenes (after VIDEO_XCHNG), plus more termflix/sysc-Go effects. |
 | T-018 | Planned: audio visualizer page (bars, spectrogram, scope, radial, VU), with PC-side loopback capture and FFT and a `{"t":"aud"}` serial line. Open owner questions inside. |
 | T-019 | Idea: stock ticker page or strip (PC fetches quotes, `{"t":"stk"}` line, no keys in the repo). Not scheduled. |
-| T-020 | Planned: settings-pass follow-ups from docs/SETTINGS_REVIEW.md (hide dead sky colours, labels, Studio service Settings tab; 4 items to decide). |
+| T-020 | Recommended items 1–3 delivered in v1.14.0: hide generator sky controls, clearer labels and service Settings tab. Optional speed/gradient/hints/art-onboarding items remain undecided. |
 | T-021 | Delivered: optional six-account Console grid, Studio Rows/Grid selector, Default/Grid, Gemini cache collection. Session/5h outside, Weekly inside. Four live accounts inspected; tests, portrait and Studio interaction acceptance deferred. Historical dispatch records used T-013. |
 
 | T-022 | Installed: direct Gemini quota, pinned five-card landscape layout, 60-second Default idle delay. Argon card remains unknown: independent quota endpoint unavailable. Build/flash and framebuffer inspected; tests/timed idle acceptance deferred. |
 
-Latest public/installed release: `v1.14.0` / `9411540`, including T-022/T-023/T-024. Owner accepts wake/reset behavior; 49 service +20 Studio tests pass. Independent Argon telemetry, broader hardware acceptance and optional feature backlog remain open. Publication status and evidence are in [HANDOFF.md](../HANDOFF.md).
+Latest public release: `v1.14.1` / `0e71e0e` (licensing/docs/tools/GIF and optional CC0 pack). Installed firmware: `v1.14.0`. Owner accepts wake/reset behavior; 49 service +20 Studio tests pass. T-026 is planned only. Independent Argon telemetry, licensing/binary gaps, later tool tests, broader hardware acceptance and optional feature backlog remain open. Publication/evidence: [HANDOFF.md](../HANDOFF.md).
