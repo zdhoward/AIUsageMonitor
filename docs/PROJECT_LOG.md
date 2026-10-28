@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-10-28: v1.14.1 third-party notices and animated showcase
+
+- Audited vendored code, declared dependencies and scene sources. Preserved Grobot MIT and pinned MIT snapshots for termflix/sysc-Go/matrix. Confirmed Ansimuz Miami/Cyberpunk CC0 using downloaded license PDFs and official storefront evidence. PixelPatterns remains unverified; no blanket source/binary clearance claimed.
+- Removed Neon Pulse 8 from tracking without deleting the local copy; all downloaded palette JSON stays ignored and usable by Studio. Added bounded optional acquisition, declared-inventory checker and source/binary distribution checklist. Old public history/tags unchanged.
+- Prepared five-scene 12-second README native-preview GIF and optional CC0 archive: 16 referenced PNGs, three original license PDFs and README. No personal art directory, unverified palette/tiles or compiled firmware packaged. Production rendering/archive inspection, syntax, inventory check and independent review pass; automated tests deferred. Firmware remains v1.14.0.
+
 ## 2026-10-28: v1.14.0 Studio and public release
 
 - Implemented T-020 items 1–3: dedicated service Settings, generator sky-control suppression, clearer section titles. Settings writes preserve private/unknown keys atomically. All Studio POST routes enforce JSON and matching loopback origin/port; errors omit filesystem paths. Corrected brightness units/ranges during review.

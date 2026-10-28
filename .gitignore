@@ -8,6 +8,7 @@ service/aimon.config.json
 
 # Third-party art packs: licenses vary, keep them local (repo is public)
 assets/sprites/
+/assets/themes/*.json
 firmware/AIUsageMonitor/profile_gen.h
 
 # Generated Studio previews

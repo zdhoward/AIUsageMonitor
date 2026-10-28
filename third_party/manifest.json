@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": "1.0.0",
+  "audit_date": "2026-10-28",
+  "summary": "Scoped inventory of tracked and dependency third-party components for AI Usage Monitor",
+  "components": [
+    {
+      "id": "grobot",
+      "name": "Grobot Animations",
+      "category": "vendored_code",
+      "author": "Tanmay Wankar (tanmay_wankar)",
+      "upstream_url": "https://github.com/tanmaywankar/Grobot_Animations",
+      "revision_or_version": "858d8da648c9e71ff9b9f5e6f558ba85293a70fb",
+      "license_spdx": "MIT",
+      "license_evidence_url": "https://raw.githubusercontent.com/tanmaywankar/Grobot_Animations/858d8da648c9e71ff9b9f5e6f558ba85293a70fb/LICENSE",
+      "distribution_status": "vendored_adaptation",
+      "tracked_paths": [
+        "firmware/AIUsageMonitor/grobot/GrobotEyes.h",
+        "firmware/AIUsageMonitor/grobot/LICENSE.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain copyright notice and permission notice in all copies or substantial portions of the Software. Retain adaptation attribution in source comments.",
+      "uncertainty_and_gaps": "None; upstream MIT license verified at pinned commit."
+    },
+    {
+      "id": "lospec-neon-pulse-8",
+      "name": "Neon Pulse 8 Palette",
+      "category": "tracked_asset",
+      "author": "pablokld",
+      "upstream_url": "https://lospec.com/palette-list/neon-pulse-8",
+      "revision_or_version": "Declared/installed version unrecorded",
+      "license_spdx": "Unverified",
+      "license_evidence_url": "https://lospec.com/terms-and-conditions",
+      "distribution_status": "optional_local_not_distributed",
+      "tracked_paths": [
+        "assets/themes/neon-pulse-8.json"
+      ],
+      "redistribution_verified": false,
+      "obligations": "Lospec terms-and-conditions (https://lospec.com/terms-and-conditions) govern website usage and API requests. They do not grant public redistribution or sublicensing rights for third-party submissions.",
+      "uncertainty_and_gaps": "Author page contains no explicit open-source or Creative Commons license grant. Lospec terms are generic website terms of service. Permission to redistribute is unverified. Do not infer illegality, but refuse redistribution certification.",
+      "coordinator_action": "Removed from current Git index; existing local copy preserved and ignored. Historical tags still contain the old file."
+    },
+    {
+      "id": "ansimuz-miami-synth",
+      "name": "Warped Miami Synth Asset Pack",
+      "category": "untracked_asset_pack",
+      "author": "Luis Zuno (Ansimuz)",
+      "upstream_url": "https://ansimuz.itch.io/warped-miami-synth",
+      "revision_or_version": "Downloaded asset pack",
+      "license_spdx": "CC0-1.0",
+      "license_evidence_url": "Bundled public-license.pdf in official archive (verified CC0 v1.0 Universal by coordinator)",
+      "distribution_status": "untracked_local_asset",
+      "tracked_paths": [
+        "assets/library/miami-drive/entry.json"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Raw graphic assets remain local and git-ignored. Known Ansimuz CC0-1.0 supports GIF and visual demonstrations.",
+      "uncertainty_and_gaps": "Storefront page lacks an explicit license badge; CC0 1.0 Universal confirmed via bundled public-license.pdf in official archive. Supports rendered demonstration GIF generation."
+    },
+    {
+      "id": "ansimuz-cyberpunk-street",
+      "name": "Cyberpunk Street Environment Asset Pack",
+      "category": "untracked_asset_pack",
+      "author": "Luis Zuno (Ansimuz)",
+      "upstream_url": "https://ansimuz.itch.io/cyberpunk-street-environment",
+      "revision_or_version": "Downloaded asset pack",
+      "license_spdx": "CC0-1.0",
+      "license_evidence_url": "https://ansimuz.itch.io/cyberpunk-street-environment (More info: Asset license CC0 v1 Universal) & bundled public-license.pdf",
+      "distribution_status": "untracked_local_asset",
+      "tracked_paths": [
+        "assets/library/neon-skyline/entry.json",
+        "assets/library/rainy-street/entry.json"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Raw graphic assets remain local and git-ignored. Known Ansimuz CC0-1.0 supports GIF and visual demonstrations.",
+      "uncertainty_and_gaps": "CC0 confirmed on storefront page (More info: Asset license CC0 v1 Universal) and in bundled public-license.pdf in official archive. Supports rendered demonstration GIF generation."
+    },
+    {
+      "id": "pixelpatterns",
+      "name": "PixelPatterns Asset Pack",
+      "category": "untracked_asset_pack",
+      "author": "Unknown",
+      "upstream_url": "Unknown / unrecorded",
+      "revision_or_version": "Unknown",
+      "license_spdx": "Unknown",
+      "license_evidence_url": "None (repository label CC0 - PixelPatterns asset pack only; docs/SCENE_LIBRARY_PLAN records no bundled license)",
+      "distribution_status": "untracked_local_asset",
+      "tracked_paths": [
+        "assets/library/pixel-patterns/entry.json"
+      ],
+      "redistribution_verified": false,
+      "obligations": "Raw art tiles remain strictly local and git-ignored. Excluded from native demonstration GIF.",
+      "uncertainty_and_gaps": "Author, source URL, and license are unknown. Repository metadata entry.json contains an unverified label CC0 - PixelPatterns asset pack, but docs/SCENE_LIBRARY_PLAN records no bundled license. No universal CC0 page can be used as evidence without verified primary provenance. Raw tiles remain local."
+    },
+    {
+      "id": "esp32-arduino",
+      "name": "Arduino core for ESP32",
+      "category": "external_build_dependency",
+      "author": "Espressif Systems",
+      "upstream_url": "https://github.com/espressif/arduino-esp32",
+      "revision_or_version": "Declared/installed version unrecorded",
+      "license_spdx": "LGPL-2.1-only",
+      "license_evidence_url": "https://raw.githubusercontent.com/espressif/arduino-esp32/master/LICENSE.md",
+      "distribution_status": "external_build_dependency",
+      "tracked_paths": [],
+      "redistribution_verified": true,
+      "obligations": "If prebuilt binaries linking against the core are distributed, LGPL-2.1 obligations require providing relinkable object files or source code and preserving license notices. Source distribution does not bundle binaries.",
+      "uncertainty_and_gaps": "Installed via external build environment; declared/installed version unrecorded. Contains sub-components under Apache-2.0, MIT, and BSD licenses. Root license alone does not clear bundled subcomponents or binary release obligations. No prebuilt binaries are published in this repository."
+    },
+    {
+      "id": "tft-espi",
+      "name": "TFT_eSPI",
+      "category": "external_build_dependency",
+      "author": "Bodmer",
+      "upstream_url": "https://github.com/Bodmer/TFT_eSPI",
+      "revision_or_version": "Declared/installed version unrecorded",
+      "license_spdx": "BSD-2-Clause",
+      "license_evidence_url": "https://raw.githubusercontent.com/Bodmer/TFT_eSPI/master/license.txt",
+      "distribution_status": "external_build_dependency",
+      "tracked_paths": [],
+      "redistribution_verified": true,
+      "obligations": "Retain copyright notice and disclaimer in binary documentation/notices if prebuilt binaries are published.",
+      "uncertainty_and_gaps": "Installed via external build environment; declared/installed version unrecorded. Root license is BSD-2-Clause. Root license alone does not clear potential bundled font or driver subcomponents if binary release is created."
+    },
+    {
+      "id": "arduinojson",
+      "name": "ArduinoJson",
+      "category": "external_build_dependency",
+      "author": "Benoit Blanchon",
+      "upstream_url": "https://github.com/bblanchon/ArduinoJson",
+      "revision_or_version": "Declared/installed version unrecorded",
+      "license_spdx": "MIT",
+      "license_evidence_url": "https://raw.githubusercontent.com/bblanchon/ArduinoJson/7.x/LICENSE.md",
+      "distribution_status": "external_build_dependency",
+      "tracked_paths": [],
+      "redistribution_verified": true,
+      "obligations": "Retain copyright notice and permission notice in binary documentation.",
+      "uncertainty_and_gaps": "Installed via external build environment; declared/installed version unrecorded. Root license is MIT."
+    },
+    {
+      "id": "pyserial",
+      "name": "pyserial",
+      "category": "external_runtime_dependency",
+      "author": "Chris Liechti",
+      "upstream_url": "https://github.com/pyserial/pyserial",
+      "revision_or_version": "3.5",
+      "license_spdx": "BSD-3-Clause",
+      "license_evidence_url": "https://raw.githubusercontent.com/pyserial/pyserial/master/LICENSE.txt",
+      "distribution_status": "external_runtime_dependency",
+      "tracked_paths": [
+        "service/requirements.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain copyright notice and disclaimer if redistributing wheels or source distributions.",
+      "uncertainty_and_gaps": "None."
+    },
+    {
+      "id": "tzdata",
+      "name": "python-tzdata",
+      "category": "external_runtime_dependency",
+      "author": "Python Software Foundation / Paul Ganssle",
+      "upstream_url": "https://github.com/python/tzdata",
+      "revision_or_version": "2026.4",
+      "license_spdx": "Apache-2.0",
+      "license_evidence_url": "https://raw.githubusercontent.com/python/tzdata/master/LICENSE",
+      "distribution_status": "external_runtime_dependency",
+      "tracked_paths": [
+        "service/requirements.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain Apache-2.0 notice if redistributing.",
+      "uncertainty_and_gaps": "Database derived from IANA time zone database (public domain)."
+    },
+    {
+      "id": "psutil",
+      "name": "psutil",
+      "category": "external_runtime_dependency",
+      "author": "Jay Loden, Dave Daeschler, Giampaolo Rodola",
+      "upstream_url": "https://github.com/giampaolo/psutil",
+      "revision_or_version": ">=5.9",
+      "license_spdx": "BSD-3-Clause",
+      "license_evidence_url": "https://raw.githubusercontent.com/giampaolo/psutil/master/LICENSE",
+      "distribution_status": "external_runtime_dependency",
+      "tracked_paths": [
+        "service/requirements.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain BSD-3-Clause notice and disclaimer if redistributing.",
+      "uncertainty_and_gaps": "None."
+    },
+    {
+      "id": "termflix-inspirations",
+      "name": "termflix visual inspirations",
+      "category": "procedural_inspiration",
+      "author": "Paul Robello",
+      "upstream_url": "https://github.com/paulrobello/termflix",
+      "revision_or_version": "License snapshot f2f2a3abe818bc0f85986c66de5750ef13cd1e59; earlier implementation reference revision unrecorded",
+      "license_spdx": "MIT",
+      "license_evidence_url": "https://raw.githubusercontent.com/paulrobello/termflix/f2f2a3abe818bc0f85986c66de5750ef13cd1e59/LICENSE",
+      "distribution_status": "procedural_adaptation",
+      "tracked_paths": [
+        "assets/library/aurora/entry.json",
+        "assets/library/campfire/entry.json",
+        "assets/library/game-of-life/entry.json",
+        "assets/library/lava-lamp/entry.json",
+        "assets/library/ripples/entry.json",
+        "third_party/licenses/termflix-MIT.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain complete MIT notice: third_party/licenses/termflix-MIT.txt",
+      "uncertainty_and_gaps": "Upstream code license verified; exact earlier reference revision and source-copy extent not recorded. Root MIT does not clear upstream third-party assets."
+    },
+    {
+      "id": "sysc-go-inspirations",
+      "name": "sysc-Go visual inspiration",
+      "category": "procedural_inspiration",
+      "author": "Nomadcxx",
+      "upstream_url": "https://github.com/Nomadcxx/sysc-Go",
+      "revision_or_version": "License snapshot 84db16784091c310d21814bd0f244993b5cfb83b; earlier implementation reference revision unrecorded",
+      "license_spdx": "MIT",
+      "license_evidence_url": "https://raw.githubusercontent.com/Nomadcxx/sysc-Go/84db16784091c310d21814bd0f244993b5cfb83b/LICENSE",
+      "distribution_status": "procedural_adaptation",
+      "tracked_paths": [
+        "assets/library/fireworks/entry.json",
+        "third_party/licenses/sysc-Go-MIT.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain complete MIT notice: third_party/licenses/sysc-Go-MIT.txt",
+      "uncertainty_and_gaps": "Upstream code license verified; exact earlier reference revision and source-copy extent not recorded. Root MIT does not clear upstream third-party assets."
+    },
+    {
+      "id": "rezmason-matrix-inspiration",
+      "name": "matrix (Digital Rain inspiration)",
+      "category": "procedural_inspiration",
+      "author": "Rezmason",
+      "upstream_url": "https://github.com/Rezmason/matrix",
+      "revision_or_version": "License snapshot 5ba90490453ceceb6812d6b1bc658a99a92411d0; earlier implementation reference revision unrecorded",
+      "license_spdx": "MIT",
+      "license_evidence_url": "https://raw.githubusercontent.com/Rezmason/matrix/5ba90490453ceceb6812d6b1bc658a99a92411d0/LICENSE",
+      "distribution_status": "procedural_adaptation",
+      "tracked_paths": [
+        "assets/library/digital-rain/entry.json",
+        "third_party/licenses/matrix-MIT.txt"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Retain complete MIT notice: third_party/licenses/matrix-MIT.txt",
+      "uncertainty_and_gaps": "Upstream code license verified; exact earlier reference revision and source-copy extent not recorded. Root MIT does not clear upstream third-party assets."
+    },
+    {
+      "id": "spectre-videoeq-inspirations",
+      "name": "EMS Spectre / Video EQ concepts",
+      "category": "procedural_inspiration",
+      "author": "Historical video synthesizer concepts / open_spectre",
+      "upstream_url": "Unverified / historical synthesizer concepts",
+      "revision_or_version": "n/a",
+      "license_spdx": "Original implementation (source-copy provenance unverified)",
+      "license_evidence_url": "Conceptual hardware video synthesizer algorithms",
+      "distribution_status": "procedural_adaptation",
+      "tracked_paths": [
+        "assets/library/spectre-patch/entry.json",
+        "assets/library/video-equations/entry.json"
+      ],
+      "redistribution_verified": false,
+      "obligations": "Attribution in documentation and scene notes.",
+      "uncertainty_and_gaps": "Original procedural C++ implementations of historical analog video synthesizer concepts. Concepts are not licensed public-domain software; third-party source-copy provenance not verified, not Public Domain license assertion."
+    },
+    {
+      "id": "sunrisesunset-api",
+      "name": "SunriseSunset.io API",
+      "category": "external_service",
+      "author": "SunriseSunset.io",
+      "upstream_url": "https://sunrisesunset.io",
+      "revision_or_version": "v1 API",
+      "license_spdx": "Service-Terms",
+      "license_evidence_url": "https://sunrisesunset.io/api/#attribution-required",
+      "distribution_status": "external_service",
+      "tracked_paths": [
+        "service/aimon/brightness.py"
+      ],
+      "redistribution_verified": true,
+      "obligations": "Requires visible link wherever showing data: Powered by SunriseSunset.io linking to https://sunrisesunset.io.",
+      "uncertainty_and_gaps": "External web API. Terms require visible link wherever data is displayed; not licensed under CC-BY-4.0."
+    }
+  ]
+}

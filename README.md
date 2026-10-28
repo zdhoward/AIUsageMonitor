@@ -37,6 +37,10 @@ The service also exposes a localhost HTTP API for diagnostics and optional Wi-Fi
 
 ## Scene Studio and live display views
 
+![Animated preview of Miami Drive, Neon Skyline, Rainy Street, Plasma and Warp Speed](docs/img/scenes-preview.gif)
+
+*Native firmware-renderer preview, not hardware footage. City layers by Luis Zuno / Ansimuz (verified CC0); original themes only. [Get the optional CC0 scene pack](https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.14.1) and [review credits/setup](docs/THIRD_PARTY.md). PixelPatterns and unverified palettes are excluded.*
+
 Scene Studio edits profiles, playlists and procedural scenes, previews them, and sends builds to the display. Its Settings tab configures the local service without editing JSON; saved service settings take effect after restarting the service. [Studio guide](docs/STUDIO.md).
 
 ![Studio service settings using public default location values](docs/img/studio-settings.png)
@@ -47,7 +51,7 @@ Scene Studio edits profiles, playlists and procedural scenes, previews them, and
 | --- | --- | --- |
 | ![Live usage details](docs/img/display-details.png) | ![Live PC resource readings](docs/img/display-system.png) | ![MINT companion framebuffer](docs/img/display-companion.png) |
 
-Display captures show real running views; Studio Settings uses an isolated configuration with public defaults. No personal art or credentials are included. See [release evidence](docs/RELEASE_1.14.0.md).
+Display captures show real running views; Studio Settings uses public defaults. The animated demo uses the native scene engine with verified CC0 layers and original themes. Raw artwork is excluded from the source tree; an optional verified CC0 pack is available separately. No personal art or credentials are included. See [release evidence](docs/RELEASE_1.14.0.md) and [third-party notices and setup](docs/THIRD_PARTY.md).
 
 ## Hardware
 
@@ -111,6 +115,9 @@ The release verification includes 49 passing service tests, 20 Studio tests and 
 | [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
 | [UI](docs/UI.md) | Renderer layout, configuration and extension points |
 | [MINT companion](docs/MINT.md) | Grobot face, emotions, PC behavior, local reactions and verification limits |
+| [Assets](docs/ASSETS.md) | Image, GIF and scene pipeline, local asset rules, and theme customization |
+| [Third-party licensing](docs/THIRD_PARTY.md) | Component inventory, license audit, pack verification, and optional acquisition |
+| [Third-party notices](THIRD_PARTY_NOTICES.md) | Preserved upstream notices, attributions, and binary distribution obligations |
 | [Image and animation research](docs/IMAGE_ANIMATION_RESEARCH.md) | Candidate authoring, conversion and playback workflow for future visual assets |
 | [Visual pages implementation plan](.tickets/T-008.md) | Navigation and MINT implemented; automatic idle/wake behavior is documented in [Screensaver](docs/SCREENSAVER.md). Scenes/assets and broader measurements remain follow-up work |
 | [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
@@ -126,6 +133,10 @@ The HTTP API is unauthenticated and intended for localhost. Optional LAN/Wi-Fi o
 
 ## License
 
-[MIT](LICENSE). Third-party dependencies retain their own licenses. This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads.
+[MIT](LICENSE), Copyright (c) 2026 Zach Howard.
 
-Powered by [SunriseSunset.io](https://sunrisesunset.io) for automatic backlight sun times.
+Third-party dependencies, adapted code, and asset packs retain their own licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for full license texts and binary distribution obligations, and [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md) for detailed audit records.
+
+This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads.
+
+Powered by [SunriseSunset.io](https://sunrisesunset.io) for automatic backlight sun times (visible attribution link under service terms).
