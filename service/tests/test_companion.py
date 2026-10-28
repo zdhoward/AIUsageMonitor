@@ -96,14 +96,15 @@ class CompanionTests(unittest.TestCase):
     def test_companion_push_does_not_renew_measurement(self):
         from unittest.mock import patch
         app = App(Settings(serial_enabled=False, limits_stale_s=60))
+        epoch = 1790000000  # Modern date: Windows rejects local pre-1970 midnight.
         app.collector.state = State(accounts=[Account(
             "codex", "Codex", "codex", None, None,
-            [Window("primary", "session", "5h", 80, 2000)], checked_at=1000)])
+            [Window("primary", "session", "5h", 80, epoch + 2000)], checked_at=epoch + 1000)])
         app.companion.request("pet")
         app.companion.tick(time.monotonic())
-        with patch("aimon.server.time.time", return_value=1100):
+        with patch("aimon.server.time.time", return_value=epoch + 1100):
             first = app.device_payload()
-        with patch("aimon.server.time.time", return_value=1110):
+        with patch("aimon.server.time.time", return_value=epoch + 1110):
             second = app.device_payload()
         self.assertEqual(first["acc"][0]["age"], 100)
         self.assertEqual(first["mint"]["e"], "happy")

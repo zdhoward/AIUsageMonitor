@@ -1,5 +1,11 @@
 # Handoff — quota refresh and advance warning (2026-10-28)
 
+## T-024 release preparation
+
+- Owner accepts the new wake/reset behavior and display appearance. Argon is exhausted according to owner observation, but the independent collector remains unavailable; unknown is retained. Future screensavers/transitions/audio/ticker remain on the docket.
+- Studio T-020 items 1–3 implemented: Settings tab, generator sky suppression and clearer headings. New settings writes preserve unknown/private keys atomically; all POST endpoints enforce JSON and matching loopback origin/port. Corrected minutes vs seconds and brightness limits during review.
+- Owner explicitly authorized release tests: 49 service + 20 Studio tests pass. Browser checks save/reload/revert/navigation and sky visibility pass with no JS errors. Main production v1.14.0 Default build and COM6 hash-verified flash pass; firmware greeting/ACKs and installed dashboard inspected. New images reviewed; docs/RELEASE_1.14.0.md records evidence/limits. Gemini Flash implemented/reviewed; Beam unavailable (free quota exhausted); independent litellm/free-review fallback PASS. Public release authorized; publication follows this commit.
+
 ## T-023: v1.13.0 installed locally
 
 - Wrap-up: main commit `f067c9f`, local tag `v1.13.0`; no open PRs and no public push. Next: owner testing phase runs retained service tests and times near-reset saver/wake; investigate provider-side early Codex weekly reset only if it recurs using the new history. Existing Argon and T-016–T-020 backlog remains open.

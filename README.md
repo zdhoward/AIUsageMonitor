@@ -2,9 +2,9 @@
 
 A small, always-visible AI usage dashboard for your desk. An ESP32 touchscreen shows subscription quota remaining and reset countdowns, while a Python service collects usage telemetry from local developer tools.
 
-![AI Usage Monitor dashboard showing Claude A, Claude B and Codex with separate Session and Weekly quota rings and reset countdowns](docs/img/v1.4.2-rings.png)
+![Live five-account Console grid with session and weekly quota rings](docs/img/display-console.png)
 
-*Actual v1.4.2 device framebuffer, captured over USB. The console renders at 320×240; the image is enlarged 2× for readability. This is a screen capture, not a hardware photograph.*
+*Actual display framebuffer captured over USB. The console renders at 320×240; the image is enlarged 2× for readability. This is a screen capture, not a hardware photograph. Unknown Argon quota remains visibly unknown.*
 
 Built to sit beneath a monitor and answer a quick question: how much allowance is left, and when does it reset?
 
@@ -33,7 +33,21 @@ T3 caches + local transcripts + OpenCode history
        ESP32 -> TFT framebuffer -> display
 ```
 
-The service also exposes a localhost HTTP API for diagnostics and optional Wi-Fi polling. Collection normally runs every 10 seconds and USB pushes every 5 seconds. At a known reset deadline the collector rereads local sources; it does **not** force a provider request or assume the quota has refilled. See [data sources and freshness](docs/DATA_SOURCES.md).
+The service also exposes a localhost HTTP API for diagnostics and optional Wi-Fi polling. Lightweight quota/activity reads run every 2 seconds, transcript processing every 10 seconds, and USB heartbeats every 5 seconds; changed measurements also request an immediate push. Available quota keeps the dashboard awake for the hour before a reported reset. The app does **not** force a provider request or assume a refill. See [data sources and freshness](docs/DATA_SOURCES.md).
+
+## Scene Studio and live display views
+
+Scene Studio edits profiles, playlists and procedural scenes, previews them, and sends builds to the display. Its Settings tab configures the local service without editing JSON; saved service settings take effect after restarting the service. [Studio guide](docs/STUDIO.md).
+
+![Studio service settings using public default location values](docs/img/studio-settings.png)
+
+![Procedural Plasma scene preview and generator controls in Studio](docs/img/studio-generator.png)
+
+| Details | System | Companion |
+| --- | --- | --- |
+| ![Live usage details](docs/img/display-details.png) | ![Live PC resource readings](docs/img/display-system.png) | ![MINT companion framebuffer](docs/img/display-companion.png) |
+
+Display captures show real running views; Studio Settings uses an isolated configuration with public defaults. No personal art or credentials are included. See [release evidence](docs/RELEASE_1.14.0.md).
 
 ## Hardware
 
@@ -84,7 +98,7 @@ Capture the connected display after starting the service:
 python scripts/screenshot.py --feed --out build/dashboard.png
 ```
 
-The firmware has been built and flashed on the documented board; the service suite has 22 passing tests. Framebuffer inspection verifies the rendered layout. Physical viewing comfort, actual logon execution and optional Wi-Fi have separate limits documented in the [test report](docs/TEST_REPORT.md).
+The release verification includes 49 passing service tests, 20 Studio tests and browser checks of settings persistence and scene controls. Firmware builds and USB framebuffer captures verify the documented board and rendered layout. Physical comfort, logon execution and optional Wi-Fi have separate limits documented in the [test report](docs/TEST_REPORT.md).
 
 ## Documentation
 

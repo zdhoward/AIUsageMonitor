@@ -490,8 +490,13 @@ function renderEditor() {
     if (color) color.oninput = () => { const e = s.effects.find((x) => x.type === type); if (e) e.color = color.value; };
     fx.append(row);
   });
-  $("#eTop").value = s.background.top;
-  $("#eBottom").value = s.background.bottom;
+  const hasGen = Boolean(s.generator);
+  const skyWrap = $("#eSkyWrap");
+  if (skyWrap) skyWrap.hidden = hasGen;
+  if (!hasGen && s.background) {
+    $("#eTop").value = s.background.top || "#000000";
+    $("#eBottom").value = s.background.bottom || "#000000";
+  }
 }
 $("#eTop").oninput = (e) => (draft.background.top = e.target.value);
 $("#eBottom").oninput = (e) => (draft.background.bottom = e.target.value);
@@ -666,24 +671,40 @@ $("#lsGo").onclick = () => searchLospec(0);
 $("#lsTag").onkeydown = (e) => { if (e.key === "Enter") searchLospec(0); };
 $("#lsLinkGo").onclick = () => addPalette($("#lsLink").value);
 
+const GEN_TITLES = {
+  patterns: "Pixel Patterns settings",
+  plasma: "Plasma settings",
+  warp: "Warp Speed settings",
+  matrix: "Digital Rain settings",
+  fire: "Campfire settings",
+  lava: "Lava Lamp settings",
+  aurora: "Aurora settings",
+  life: "Game of Life settings",
+  ripple: "Ripples settings",
+  fireworks: "Fireworks settings",
+  videoeq: "Video Equations settings",
+  spectre: "Spectre Patch settings",
+};
+
 // Generator settings (patterns, plasma, warp).
 function renderGen() {
   const box = $("#eGen"), G = draft.generator;
   box.innerHTML = "";
   if (!G) return;
-  const fields = { patterns: [["scale", "Zoom"], ["vx", "Drift X px/s"], ["vy", "Drift Y px/s"], ["seconds", "Seconds each"]],
-                   plasma: [["scale", "Block size"]], warp: [["speed", "Speed"]],
-                   matrix: [["scale", "Glyph size"], ["speed", "Fall speed"], ["density", "Density %"]],
-                   fire: [["scale", "Cell size"], ["speed", "Wind"], ["density", "Heat %"]],
-                   lava: [["scale", "Cell size"], ["speed", "Speed"], ["density", "Blobs"]],
-                   aurora: [["scale", "Cell size"], ["speed", "Speed"], ["density", "Brightness %"]],
-                   life: [["scale", "Cell size"], ["speed", "Generations/s"], ["density", "Seed %"], ["seconds", "Reseed every s"]],
-                   ripple: [["scale", "Cell size"], ["density", "Drops/min"]],
-                   fireworks: [["speed", "Gravity"], ["density", "Launches/min"]],
-                   videoeq: [["scale", "Cell size"], ["speed", "Speed"], ["mode", "Equation 1-8 (0 cycles)"], ["seconds", "Seconds each"]],
-                   spectre: [["scale", "Cell size"], ["speed", "Speed"], ["mode", "Patch 1-6 (0 cycles)"], ["seconds", "Seconds each"]] }[G.type] || [];
+  const fields = { patterns: [["scale", "Zoom (px)"], ["vx", "Drift X (px/s)"], ["vy", "Drift Y (px/s)"], ["seconds", "Duration (s)"]],
+                   plasma: [["scale", "Block size (px)"]], warp: [["speed", "Warp speed (px/s)"]],
+                   matrix: [["scale", "Glyph scale (px)"], ["speed", "Fall speed (px/s)"], ["density", "Trail density (%)"]],
+                   fire: [["scale", "Cell size (px)"], ["speed", "Wind drift (px/s)"], ["density", "Heat (%)"]],
+                   lava: [["scale", "Cell size (px)"], ["speed", "Blob speed"], ["density", "Blob count"]],
+                   aurora: [["scale", "Cell size (px)"], ["speed", "Wave speed"], ["density", "Brightness (%)"]],
+                   life: [["scale", "Cell size (px)"], ["speed", "Generations/s"], ["density", "Seed density (%)"], ["seconds", "Reseed interval (s)"]],
+                   ripple: [["scale", "Cell size (px)"], ["density", "Drop rate (drops/min)"]],
+                   fireworks: [["speed", "Gravity"], ["density", "Launch rate (launches/min)"]],
+                   videoeq: [["scale", "Cell size (px)"], ["speed", "Equation speed"], ["mode", "Equation (1-8, 0=all)"], ["seconds", "Duration (s)"]],
+                   spectre: [["scale", "Cell size (px)"], ["speed", "Patch speed"], ["mode", "Patch (1-6, 0=all)"], ["seconds", "Duration (s)"]] }[G.type] || [];
   const tiles = player.gen ? player.gen.tiles.length / 32 : 0;
-  box.append(el(`<h3>${G.type[0].toUpperCase() + G.type.slice(1)} <span class="hint">${G.type === "patterns"
+  const genTitle = GEN_TITLES[G.type] || `${G.type[0].toUpperCase() + G.type.slice(1)} settings`;
+  box.append(el(`<h3>${genTitle} <span class="hint">${G.type === "patterns"
     ? `${tiles} tiles · colours are background/foreground pairs` : "colours are gradient stops"}</span></h3>`));
   const grid = el(`<div class="gen-grid"></div>`);
   fields.forEach(([k, label]) => {
