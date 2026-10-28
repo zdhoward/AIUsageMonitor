@@ -1,5 +1,11 @@
 # Handoff — quota refresh and advance warning (2026-10-28)
 
+## T-025: v1.14.1 licensing/docs candidate
+
+- Source notices/inventory, safe optional palette workflow and curated CC0 scene-pack builder added. Neon Pulse 8 untracked but retained locally; Git history unchanged. PixelPatterns provenance and full binary dependency/relinking review remain open.
+- Five-scene README GIF uses verified CC0 layers/original Plasma/Warp and is labelled native preview. Optional archive has 16 PNGs +3 original license PDFs +README; SHA and install steps in docs/RELEASE_1.14.1.md. No firmware binary; installed firmware remains v1.14.0.
+- Gemini Flash audit required correction of unsupported claims; coordinator verified correct MIT upstream sources and retained notices, fixed Git-index checking and fetch path confinement. Independent review PASS; compile/inventory/production render/archive inspection passed. Tests deferred; cost UNKNOWN. Ready for guarded publication.
+
 ## T-024: v1.14.0 published
 
 - Owner accepts the new wake/reset behavior and display appearance. Argon is exhausted according to owner observation, but the independent collector remains unavailable; unknown is retained. Future screensavers/transitions/audio/ticker remain on the docket.
