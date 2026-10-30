@@ -1,11 +1,12 @@
 {
   "provider": "xai",
-  "request": {"method": "GET", "url": "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
+  "request": {"method": "GET", "url": "https://cli-chat-proxy.grok.com/v1/billing",
               "header": {"Authorization": "Bearer $TOKEN$", "X-XAI-Token-Auth": "xai-grok-cli", "x-grok-client-version": "1.0.13"}},
   "windows": [
-    {"pool": "main", "label": "7d", "path": "config.currentPeriod", "used": null, "reset": "end", "length_s": 604800}
+    {"pool": "main", "label": "30d", "path": "config", "used": null, "used_text": "used.val", "text_fmt": "{}/mo",
+     "limit": "monthlyLimit.val", "reset": "billingPeriodEnd", "length_s": 2592000}
   ],
   "tile": {"layout": "rings", "pools": [{"id": "main", "label": "xAI"}]},
   "fallback": "cooldowns",
-  "notes": "2026-10-30: weekly period end only, no used/limit for this SuperGrok account, so the percent is unknown. Client version below 1.0.13 gets 426."
+  "notes": "2026-10-30: /v1/billing returns monthly used (74, unit unstated) with monthlyLimit 0, a known xAI quirk for subscription accounts (CLIProxyAPIHome#126). With limit > 0 the percent is computed; otherwise the raw used figure is shown as text. format=credits returns only the weekly period. Client version below 1.0.13 gets 426."
 }
