@@ -23,6 +23,7 @@ from .config import Settings
 from .companion import Companion, LocalMetrics
 from .serial_link import SerialLink
 from .snapshot import Collector, build_payload, build_status
+from .sources.cpamc import CpamcSource
 
 # Refresh and push delays are clamped so a zero, negative or tiny configured
 # value cannot spin the loop.
@@ -51,8 +52,11 @@ class App:
         self._stop = threading.Event()
         self.serial: SerialLink | None = None
         self.brightness = BrightnessController(settings)
+        self.cpamc = CpamcSource()
+        threading.Thread(target=self.cpamc.run, name="cpamc", daemon=True).start()
         if settings.serial_enabled:
-            self.serial = SerialLink(settings.serial_port, settings.serial_baud, settings.push_interval_s, self.device_payload)
+            self.serial = SerialLink(settings.serial_port, settings.serial_baud, settings.push_interval_s,
+                                     self.device_payload, self.cpamc.line)
 
     def device_payload(self) -> dict:
         with self._payload_lock:
