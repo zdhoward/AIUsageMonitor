@@ -16,3 +16,13 @@ The local dawn, day, dusk or night state associated with the configured place an
 
 **Ambient synchronization**:
 Optional coordination of scene weather and daylight phase with the configured place. Weather and daylight can be enabled independently.
+
+**Proxy group**:
+All active CPAMC accounts of one provider (e.g. claude, codex). The Proxy view shows one tile per group, with quota pooled across its accounts.
+
+**Provider profile**:
+The once-per-provider mapping from its usage source to display windows: request, field paths, window labels, pools and tile layout. New providers are added as profiles, not code.
+_Avoid_: Adapter, template
+
+**Usage window**:
+One limit with its own length and reset (5h, 7d, 30d). It is labelled from its actual length, never assumed.

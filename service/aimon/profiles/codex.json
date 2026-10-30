@@ -1,0 +1,12 @@
+{
+  "provider": "codex",
+  "request": {"method": "GET", "url": "https://chatgpt.com/backend-api/wham/usage",
+              "header": {"Authorization": "Bearer $TOKEN$", "User-Agent": "codex_cli_rs/0.76.0"}},
+  "windows": [
+    {"pool": "main", "path": "rate_limit.primary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds"},
+    {"pool": "main", "path": "rate_limit.secondary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds"}
+  ],
+  "tile": {"layout": "rings", "pools": [{"id": "main", "label": "Codex"}]},
+  "fallback": "headers",
+  "notes": "Verified 2026-10-30 on Plus (5h + 7d). Free accounts report one 30-day window; labels come from length_s."
+}
