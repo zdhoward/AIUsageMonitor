@@ -71,3 +71,11 @@ Caveats:
   excluded from totals and counts and never raise the danger icon.
 - Danger icon: on the affected tile and in the header. Proxy unreachable shows
   a full overlay over the dimmed last values.
+
+## Live usage per group via `POST /v0/management/api-call` (verified 2026-10-30)
+Body: `{"auth_index", "method", "url", "header", "data"?}`. CPAMC substitutes the account's token for `$TOKEN$`. The upstream status and body come back in `status_code`/`body`. This gives fresh numbers without waiting for traffic, which is better than the observed headers.
+- **claude:** `GET https://api.anthropic.com/api/oauth/usage`, headers `Authorization: Bearer $TOKEN$`, `anthropic-beta: oauth-2025-04-20`. Returns `five_hour`/`seven_day` `{utilization 0-100, resets_at ISO}`.
+- **codex:** `GET https://chatgpt.com/backend-api/wham/usage`, headers `Authorization: Bearer $TOKEN$`, `User-Agent: codex_cli_rs/0.76.0`. Returns `rate_limit.primary_window`/`secondary_window` `{used_percent, limit_window_seconds, reset_at}`; the 5h window appears here even when the headers omitted it.
+- **antigravity:** `retrieveUserQuotaSummary`, see T-031.
+- **xai:** `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits`, headers `Authorization: Bearer $TOKEN$`, `X-XAI-Token-Auth: xai-grok-cli`, `x-grok-client-version: 1.0.13` (older versions get 426). Returns the weekly period `end` (the reset) but no used/limit for this SuperGrok account: percent unknown, reset known.
+Observed headers in auth-files remain the fallback.
