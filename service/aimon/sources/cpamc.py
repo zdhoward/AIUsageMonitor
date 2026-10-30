@@ -172,7 +172,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
     """accounts: auth-files entries. live: auth_index -> windows (or None on failure)."""
     by_provider: dict[str, list] = {}
     for a in accounts:
-        if not a.get("disabled"):
+        if not a.get("disabled") and not profiles.get(a.get("provider"), {}).get("hidden"):
             by_provider.setdefault(a.get("provider", "?"), []).append(a)
     order = [p for p in ORDER if p in by_provider] + sorted(p for p in by_provider if p not in ORDER)
     groups = []
