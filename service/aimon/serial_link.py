@@ -35,7 +35,7 @@ def find_port() -> str | None:
 
 
 class SerialLink:
-    def __init__(self, port: str, baud: int, interval_s: float, get_payload):
+    def __init__(self, port: str, baud: int, interval_s: float, get_payload, get_proxy=None):
         self.port_setting = port
         self.baud = baud
         self.interval_s = interval_s
@@ -49,6 +49,7 @@ class SerialLink:
         self.last_push: float | None = None
         self.connected_port: str | None = None
         self.sys = SysSampler()
+        self.get_proxy = get_proxy
 
     def pause(self, seconds: float) -> None:
         """Release the port (e.g. so a firmware upload can use it)."""
@@ -111,6 +112,7 @@ class SerialLink:
         buf = b""
         next_push = 0.0
         next_sys = 0.0
+        next_proxy = 0.0
         retry_at = 0.0
         while not self._stop.is_set():
             now = time.time()
@@ -123,6 +125,7 @@ class SerialLink:
                     self._stop.wait(1)
                     continue
                 next_push = 0.0
+                next_proxy = 0.0
             # pause() may close and clear self._ser from the HTTP thread at any moment.
             ser = self._ser
             if ser is None:
@@ -143,6 +146,15 @@ class SerialLink:
                     stats = self.sys.sample()
                     if stats:
                         ser.write((json.dumps(stats, separators=(",", ":")) + "\n").encode("utf-8"))
+                if self.get_proxy and now >= next_proxy:  # Proxy page: own line every 10s
+                    next_proxy = now + 10.0
+                    proxy = self.get_proxy()
+                    if proxy:
+                        encoded = (json.dumps(proxy, separators=(",", ":")) + "\n").encode("utf-8")
+                        if len(encoded) <= 4096:
+                            ser.write(encoded)
+                        else:
+                            log.warn("serial.proxy_too_large", bytes=len(encoded))
                 waiting = ser.in_waiting
                 if waiting:
                     buf += ser.read(waiting)
