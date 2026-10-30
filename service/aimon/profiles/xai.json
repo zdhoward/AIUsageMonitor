@@ -1,0 +1,11 @@
+{
+  "provider": "xai",
+  "request": {"method": "GET", "url": "https://cli-chat-proxy.grok.com/v1/billing?format=credits",
+              "header": {"Authorization": "Bearer $TOKEN$", "X-XAI-Token-Auth": "xai-grok-cli", "x-grok-client-version": "1.0.13"}},
+  "windows": [
+    {"pool": "main", "label": "7d", "path": "config.currentPeriod", "used": null, "reset": "end", "length_s": 604800}
+  ],
+  "tile": {"layout": "rings", "pools": [{"id": "main", "label": "xAI"}]},
+  "fallback": "cooldowns",
+  "notes": "2026-10-30: weekly period end only, no used/limit for this SuperGrok account, so the percent is unknown. Client version below 1.0.13 gets 426."
+}
