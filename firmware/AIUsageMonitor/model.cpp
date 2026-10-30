@@ -343,3 +343,41 @@ bool parseSys(const char* json, size_t len, SysData& s) {
   s.netS = doc["ns"] | 0;
   return true;
 }
+
+ProxyData gProxy;
+
+bool parseProxy(const char* json, size_t len, ProxyData& out) {
+  JsonDocument doc;
+  if (deserializeJson(doc, json, len) || strcmp(doc["t"] | "", "proxy")) return false;
+  static ProxyData p;  // static: keeps the loop task stack small
+  p = ProxyData();
+  p.valid = true;
+  p.rxMillis = millis();
+  p.up = (doc["up"] | 0) == 1;
+  p.age = doc["age"] | -1;
+  p.attn = (doc["attn"] | 0) == 1;
+  p.ts = doc["ts"] | (uint32_t)0;
+  for (JsonObjectConst g : doc["g"].as<JsonArrayConst>()) {
+    if (p.ng >= 6) break;
+    ProxyGroup& d = p.g[p.ng++];
+    copyStr(d.n, sizeof d.n, g["n"]);
+    d.c = g["c"] | 0;
+    d.a = (g["a"] | 0) == 1;
+    d.multi = !strcmp(g["ly"] | "r", "m");
+    for (JsonObjectConst pl : g["p"].as<JsonArrayConst>()) {
+      if (d.np >= 3) break;
+      ProxyPool& pool = d.p[d.np++];
+      copyStr(pool.l, sizeof pool.l, pl["l"]);
+      for (JsonObjectConst w : pl["w"].as<JsonArrayConst>()) {
+        if (pool.nw >= 2) break;
+        ProxyWin& pw = pool.w[pool.nw++];
+        copyStr(pw.l, sizeof pw.l, w["l"]);
+        const int r = w["r"] | -1;
+        pw.r = r < 0 ? -1 : min(r, 100);
+        pw.z = w["z"] | (uint32_t)0;
+      }
+    }
+  }
+  out = p;
+  return true;
+}
