@@ -1,3 +1,9 @@
+# Handoff addendum — P-Gemini drained Codex (2026-10-30)
+
+- Cause: T3 provider `codex_proxy_gemini` ("P-Gemini") points at CPAMC. Antigravity offers no Sol/Codex models, so a P-Gemini + `gpt-6.1-sol` favorite was served by the Codex Plus account (5h 100%, 7d 90% used; 5h resets 23:38 UTC). The Antigrav "Cl/GPT" tile was correct (pool untouched).
+- Fixed (outside repo, `~/.t3/userdata/settings.json`, backup `.bak-20261030`): removed that favorite; P-Gemini now hides all built-in Codex models and lists only Antigravity models.
+- Open: P-Gemini has no default model in `~/.codex_cpamc`; set `model = "gemini-3.8-flash-high"` at the source and sync. Optional: CPAMC block for Codex model names from P-Gemini. Optional: relabel tile "Cl/GPT" -> "Cl/OSS".
+
 # Handoff — CPAMC Proxy home view (2026-10-30)
 
 ## Done
