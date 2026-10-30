@@ -584,21 +584,22 @@ static void drawGridArc(int cx, int cy, int r, int stroke, int used, int easedUs
 
 // One labelled window line: "<window> <left%> <reset>". Unknown stays "--".
 static void drawGridLine(int x, int y, int w, const WinData* win, uint16_t labelColor, uint16_t fillColor,
-                         int32_t elapsed) {
+                         int32_t elapsed, const char* alt = nullptr) {
   if (!win) {
     text("--", x + 5, y, 2, C_MUTED);
     return;
   }
-  text(win->l, x + 5, y + 5, 1, labelColor);
-  char pct[8];
+  const int lw = text(win->l, x + 5, y + 5, 1, labelColor);
+  char pct[10];
   uint16_t pc = C_MUTED;
-  if (win->u < 0) strlcpy(pct, "--", sizeof pct);
+  if (win->u < 0) strlcpy(pct, alt && *alt ? alt : "--", sizeof pct);
   else {
     const int left = 100 - min<int>(win->u, 100);
     snprintf(pct, sizeof pct, "%d%%", left);
     pc = fillColor ? fillColor : leftColor(left);
   }
-  text(pct, x + 22, y, 2, pc);
+  if (win->u < 0 && alt && *alt) text(pct, x + 10 + lw, y + 5, 1, C_TEXT);  // small: leaves room for the reset
+  else text(pct, x + 22, y, 2, pc);
   char cap[12];
   resetCaption(cap, sizeof cap, win, elapsed);
   const bool weeklySoon = eqNoCase(win->l, "7d") && win->r >= 0 &&
@@ -788,8 +789,9 @@ static void drawProxyTile(const ProxyGroup& gr, uint32_t epoch, int x, int y, in
   const int r = min((bottom - top) / 2, 24);
   drawGridArc(cx, cy, r, 4, so ? so->u : -1, so ? so->u : -1, 0);
   drawGridArc(cx, cy, r - 9, 4, si ? si->u : -1, si ? si->u : -1, UI_WEEKLY_COLOR);
-  drawGridLine(x, y + h - 32, w, so, C_TEXT, 0, 0);
-  drawGridLine(x, y + h - 17, w, si, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, 0);
+  drawGridLine(x, y + h - 32, w, so, C_TEXT, 0, 0, ow ? ow->v : nullptr);
+  drawGridLine(x, y + h - 17, w, si, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, 0,
+               iw ? iw->v : nullptr);
 }
 
 // Double-wide tile: one mini ring pair per pool, window percentages beneath.
