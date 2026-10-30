@@ -25,3 +25,34 @@ Console as the default Home. The Console stays selectable and configurable.
 - How are proxy groups defined and enumerated?
 - Which account/auth states count as "needs attention"?
 - Polling cost and rate limits; what to show when CPAMC is stale.
+
+## Research findings (2026-10-30, live CPAMC)
+Source: `GET /v0/management/auth-files` with `Authorization: Bearer <management key>`.
+One call returns every account, so it's the only endpoint Home needs.
+
+Per account: `provider` (the proxy group: claude, codex, antigravity, xai, devin),
+`status`, `status_message`, `disabled`, `unavailable`, `cooldowns[]`,
+`quota.observed_at`, `quota.signals`, `success`/`failed`, `recent_requests[]`
+(10-minute buckets), `last_refresh`.
+
+Quota signals are upstream rate-limit headers that CPAMC captured on the
+account's last request:
+- **claude:** `Anthropic-Ratelimit-Unified-5h-Utilization`/`-Reset` and
+  `-7d-Utilization`/`-Reset` (0–1 utilization, epoch reset), plus `-Status`
+  (`allowed`, `allowed_warning`, …). These give the same session and weekly
+  rings as today.
+- **codex:** `X-Codex-Primary-Used-Percent`/`-Reset-At`/`-Window-Minutes` and
+  `Secondary-*`. Window lengths vary by plan: Plus has a short primary window;
+  Free shows a 43200-minute (30-day) primary with an empty secondary. Rings
+  must be labelled from `Window-Minutes`, not assumed.
+- **antigravity, xai, devin:** no quota signals. The only limit information is
+  `cooldowns[]` (`reason: quota`, `retry_at`, per model).
+
+Caveats:
+- Readings are observed, not polled, so they're only as fresh as the account's
+  last proxied request (`observed_at`). Past resets should be shown as stale or
+  refilled rather than trusted.
+- `/v0/management/usage` returned an empty body; Home doesn't need it.
+- Needs-attention candidates: `status` not `active`, `unavailable`, a
+  non-empty `status_message`, auth refresh failures, proxy unreachable.
+  `disabled` may be intentional (devin is currently disabled).
