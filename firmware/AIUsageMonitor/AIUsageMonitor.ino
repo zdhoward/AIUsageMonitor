@@ -181,6 +181,7 @@ static void pollSerial() {
       if (!overflow && lineLen > 0 && lineBuf[0] == '!') handleCommand(lineBuf);
       if (!overflow && lineLen > 0 && lineBuf[0] == '{') {
         if (!strncmp(lineBuf, "{\"t\":\"sys\"", 10)) parseSys(lineBuf, lineLen, gSys);  // no ACK
+        else if (!strncmp(lineBuf, "{\"t\":\"proxy\"", 12)) parseProxy(lineBuf, lineLen, gProxy);  // no ACK
         else acceptPayload(lineBuf, lineLen);
       }
       lineLen = 0;

@@ -4,6 +4,7 @@
   "show_remaining": true,
   "console_layout": "grid",
   "pages": [
+    "proxy",
     "console",
     "system",
     "playlist:parallax"

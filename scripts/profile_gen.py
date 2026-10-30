@@ -16,6 +16,7 @@ PLAYLISTS_HEADER = ROOT / "firmware" / "AIUsageMonitor" / "playlists_gen.h"
 PLAYLIST_BASE = 200  # UI_PLAYLIST_PAGE_BASE in config.h
 
 PAGES = {  # profile name -> (page macro, enable macro or None when always present)
+    "proxy": ("UI_PAGE_PROXY", None),
     "console": ("UI_PAGE_CONSOLE", None),
     "details": ("UI_PAGE_DETAILS", None),
     "companion": ("UI_PAGE_COMPANION", "UI_COMPANION_ENABLED"),
@@ -74,8 +75,8 @@ def validate(p: dict) -> list[str]:
             errs.append(f"playlist '{pg[9:]}' does not exist")
     if len(set(pages)) != len(pages):
         errs.append("a page is listed twice")
-    if "console" not in pages:  # home page for the long-press gesture
-        errs.append("console page is required")
+    if "proxy" not in pages and "console" not in pages:  # home page for the long-press gesture
+        errs.append("proxy or console page is required")
     if p.get("console_layout", "rows") not in ("rows", "grid"):
         errs.append("console_layout must be rows or grid")
     if p.get("rotation") not in (0, 1, 2, 3):
@@ -85,7 +86,7 @@ def validate(p: dict) -> list[str]:
         target = s.get("page", "")
         if target.startswith("scene:") and target[6:] not in index:
             errs.append(f"screensaver scene '{target[6:]}' is not in the library")
-        elif not target.startswith(("scene:", "playlist:")) and (target not in PAGES or target in ("console", "details")):
+        elif not target.startswith(("scene:", "playlist:")) and (target not in PAGES or target in ("proxy", "console", "details")):
             errs.append("screensaver must show Companion, Images, City, Scenes or a scene")
         for key in ("timeout_s",):
             if not 1 <= s.get(key, 0) * 1000 <= MAX_MS:
@@ -109,6 +110,7 @@ def header(p: dict) -> str:
              "#pragma once",
              f"#define DISPLAY_ROTATION {p['rotation']}",
              f"#define SHOW_REMAINING {int(p.get('show_remaining', True))}"]
+    lines.append(f"#define UI_HOME_PAGE {PAGES['proxy' if 'proxy' in p['pages'] else 'console'][0]}")  # long-press target
     lines.append(f"#define UI_CONSOLE_LAYOUT {int(p.get('console_layout', 'rows') == 'grid')}")  # 0 rows, 1 grid
     index = scene_index(p.get("id"))
     for name, (_, enable) in PAGES.items():
