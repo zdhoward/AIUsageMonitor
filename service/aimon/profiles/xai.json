@@ -1,5 +1,6 @@
 {
   "provider": "xai",
+  "hidden": true,
   "request": {"method": "GET", "url": "https://cli-chat-proxy.grok.com/v1/billing",
               "header": {"Authorization": "Bearer $TOKEN$", "X-XAI-Token-Auth": "xai-grok-cli", "x-grok-client-version": "1.0.13"}},
   "windows": [

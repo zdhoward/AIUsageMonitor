@@ -288,3 +288,10 @@
 - **Idle delay:** owner requested twice as long before saving; Default and firmware fallback now use 60 seconds for Console/Details. Generated installed profile confirms 60000 ms for both. Timed transition acceptance remains deferred.
 - **Evidence:** final Default production build passed (583,991 bytes flash / 88,608 bytes static RAM), COM6 flash hash verified, service restarted. Live service reports Gemini about 10% used and Argon unavailable. Coordinator inspected `build/t022-console.png`: A/B left, Codex top centre, Antigrav/Argon right, bottom centre blank; unknown weekly/Argon values use `--`. Logs: `build/t022-final-build.log`, `build/t022-final-flash.log`. Retained fixture tests were not executed (sprint-end phase).
 - **Review/routing:** DeepSeek free implementation and Beam source review passed; required second review via free-review failed with ECONNREFUSED and is unavailable, not a pass. Coordinator inspected critical logic and excluded Argon from the Gemini aggregate, cleared retained readings on profile changes, and bounded configurable polling/timeouts. Shadow routing capture was omitted (process gap); paid cost UNKNOWN, no savings/promotion claim. No public push or release tag; exact Argon source remains open.
+
+## 2026-10-30 — CPAMC Proxy home view
+- Owner switched to CPAMC (CLIProxyAPI, 127.0.0.1:8317); the old Console went to 0% because its T3 caches stopped updating once the direct T3 providers were disabled.
+- New Proxy home view (T-027..T-032): one tile per proxy group with quota pooled across accounts, next reset only, danger icon only for actionable problems, System card in a spare slot. The Console stays selectable.
+- Decision: live usage comes from CPAMC's `/v0/management/api-call` passthrough (no plugin), mapped by per-provider JSON profiles (`service/aimon/profiles`) so new providers are data, not code.
+- xAI reports monthly use but no limit, so it's hidden for now to free a slot (Mistral Vibe candidate).
+- Free lanes hit their limits; firmware went to Sonnet and the service was implemented inline for owner priority. Verified by live polls and framebuffer captures; tests deferred to sprint end.
