@@ -1,3 +1,20 @@
+# Handoff — CPAMC Proxy home view (2026-10-30)
+
+## Done
+- The Proxy view is the default home (firmware merged in `2e7fb8c`, service `fdca048`, xAI text and hide `14083cf` and later). Flashed to COM6, service restarted, live data confirmed by framebuffer capture (Claude, Codex, Antigrav multi tile, System card). Console stays selectable.
+- Data: `service/aimon/sources/cpamc.py` polls `/v0/management/auth-files` every 30s and live usage per account through `/v0/management/api-call` every 5 min, using `service/aimon/profiles/*.json`. Keys live in gitignored `service/.cpamc.env` (CPAMC_API_KEY, CPAMC_MANAGEMENT_KEY). Serial `proxy` line every 10s; contract in .tickets/T-028.md.
+- Design, research and endpoint evidence: docs/CPAMC_HOME.md. Terms: GLOSSARY.md (Proxy group, Provider profile, Usage window).
+- Rate-limit/quota states never raise the danger flag. xAI is hidden (`"hidden": true`) because it reports no limit.
+
+## Validation
+Live CPAMC polls and four device captures inspected by the coordinator. Firmware build ok. Service/firmware test suites NOT run (sprint-end policy); no tests were added for cpamc.py yet.
+
+## Next
+- T-033: Antigrav bottom-line clipping, header count, Argon ring, version bump and tag, next provider (e.g. Mistral Vibe profile).
+- Add retained tests for `cpamc.pool_groups`/`read_windows` with redacted fixtures at sprint end.
+- Old Console T3-cache sources are effectively dead under CPAMC; decide whether to retire them.
+- Still open from before: T-026 weather plan and the items listed below.
+
 # Handoff — public releases, licensing and weather roadmap (2026-10-28)
 
 ## Session closed
