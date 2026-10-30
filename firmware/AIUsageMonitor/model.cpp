@@ -375,6 +375,7 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
         const int r = w["r"] | -1;
         pw.r = r < 0 ? -1 : min(r, 100);
         pw.z = w["z"] | (uint32_t)0;
+        copyStr(pw.v, sizeof pw.v, w["v"]);
       }
     }
   }

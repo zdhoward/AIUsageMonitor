@@ -110,6 +110,7 @@ struct ProxyWin {
   char l[5];   // window label: 5h, 7d, 30d
   int8_t r;    // remaining percent 0..100, -1 unknown
   uint32_t z;  // next reset epoch, 0 none
+  char v[9];   // optional text shown instead of "--" when r is unknown (e.g. "74 used")
 };
 struct ProxyPool {
   char l[8];   // pool label (Flash, Cl/GPT, Argon)

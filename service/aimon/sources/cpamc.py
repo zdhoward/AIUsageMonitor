@@ -123,11 +123,19 @@ def read_windows(profile: dict, body) -> list[dict]:
             rem = None if raw is None else 100 - float(raw) * (100 / w.get("scale", 100))
         else:
             rem = None
+        text = ""
+        if w.get("used_text"):
+            used = _get(node, w["used_text"])
+            limit = float(_get(node, w.get("limit")) or 0)
+            if used is not None and limit > 0:
+                rem = 100 - float(used) / limit * 100
+            elif used is not None:
+                text = w.get("text_fmt", "{}").format(used)  # no limit reported: raw figure
         if length <= 0 and not w.get("label"):
             continue  # empty window (e.g. a Free plan's unused secondary)
         out.append({"pool": w["pool"], "label": w.get("label") or label_for(length),
                     "rem": None if rem is None else max(0.0, min(100.0, rem)),
-                    "reset": _epoch(_get(node, w.get("reset"))), "len": length})
+                    "reset": _epoch(_get(node, w.get("reset"))), "len": length, "text": text})
     return out
 
 
@@ -197,10 +205,12 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
             labels.sort(key=lambda x: x[1])
             ws = []
             for lab, _ in labels[:2]:
-                rems, resets, known = [], [], False
+                rems, resets, known, texts = [], [], False, []
                 for wins in per_acc:
                     hit = next((w for w in wins if w["pool"] == pl["id"] and w["label"] == lab), None)
                     if hit is None or hit["rem"] is None:
+                        if hit and hit.get("text"):
+                            texts.append(hit["text"])
                         if hit and hit["reset"] > now:
                             resets.append(hit["reset"])
                         rems.append(None)
@@ -214,7 +224,10 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                             resets.append(hit["reset"])
                 vals = [r for r in rems if r is not None]
                 r = round(sum(vals) / len(vals)) if known and vals else -1
-                ws.append({"l": lab, "r": r, "z": int(min(resets)) if resets else 0})
+                win = {"l": lab, "r": r, "z": int(min(resets)) if resets else 0}
+                if r < 0 and len(texts) == 1:
+                    win["v"] = texts[0][:8]  # raw figure for a provider without a limit
+                ws.append(win)
             out_pools.append({"l": pl["label"], "w": ws})
         groups.append({"n": NAMES.get(prov, prov.title()), "c": len(accs), "a": int(bool(attn)),
                        "ly": "m" if tile.get("layout") == "multi" else "r", "p": out_pools})
