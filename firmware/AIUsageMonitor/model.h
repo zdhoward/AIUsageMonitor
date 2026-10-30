@@ -100,3 +100,40 @@ struct SysData {
 extern SysData gSys;
 
 bool parseSys(const char* json, size_t len, SysData& out);
+
+// CPAMC proxy groups for the Proxy page. Arrives as its own {"t":"proxy"} line
+// about every 30 s (contract in .tickets/T-028.md). `r` is percent REMAINING,
+// -1 unknown; `z` is the next reset epoch, 0 none. Epochs need a clock: the
+// optional top-level "ts" (current epoch) anchors countdowns; without it they
+// show "--".
+struct ProxyWin {
+  char l[5];   // window label: 5h, 7d, 30d
+  int8_t r;    // remaining percent 0..100, -1 unknown
+  uint32_t z;  // next reset epoch, 0 none
+};
+struct ProxyPool {
+  char l[8];   // pool label (Flash, Cl/GPT, Argon)
+  ProxyWin w[2];  // w[0] is the shorter window (outer ring), w[1] the longer
+  uint8_t nw = 0;
+};
+struct ProxyGroup {
+  char n[10];  // group name
+  uint8_t c = 0;      // active accounts
+  bool a = false;     // needs the owner's attention
+  bool multi = false; // "m": double-wide tile, one mini ring set per pool
+  ProxyPool p[3];
+  uint8_t np = 0;
+};
+struct ProxyData {
+  bool valid = false;
+  uint32_t rxMillis = 0;
+  bool up = false;     // proxy reachable
+  int32_t age = -1;    // seconds since the last good poll, -1 unknown
+  bool attn = false;   // global danger flag
+  uint32_t ts = 0;     // epoch at receive time, 0 unknown
+  ProxyGroup g[6];
+  uint8_t ng = 0;
+};
+extern ProxyData gProxy;
+
+bool parseProxy(const char* json, size_t len, ProxyData& out);
