@@ -56,3 +56,18 @@ Caveats:
 - Needs-attention candidates: `status` not `active`, `unavailable`, a
   non-empty `status_message`, auth refresh failures, proxy unreachable.
   `disabled` may be intentional (devin is currently disabled).
+
+## Design decisions (2026-10-30)
+- Layout: same 3-column, 2-row grid as today's Console (mockup A). Tile order:
+  Claude, Codex, Antigrav, xAI.
+- The two spare slots are for small data cards. First card: **System**, showing
+  CPU, GPU and RAM as 0–100% (CPU is the total across all cores). It reuses the
+  System page's existing telemetry (`psutil`; GPU on Windows only).
+- Codex shows only its 7-day window while the Free accounts are disabled.
+  Missing windows render as `--`, as today.
+- Tiles without percentages (Antigrav, xAI): dashed unknown ring. A quota
+  cooldown shows `COOLDOWN <time to the soonest retry_at>`.
+- `×N` active account count beside the group name. Disabled accounts are
+  excluded from totals and counts and never raise the danger icon.
+- Danger icon: on the affected tile and in the header. Proxy unreachable shows
+  a full overlay over the dimmed last values.
