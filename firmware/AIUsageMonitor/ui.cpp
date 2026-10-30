@@ -36,9 +36,11 @@ static void drawCity(const Model&, uint32_t, const ViewDef&, int y);
 static void drawScenes(const Model&, uint32_t, const ViewDef&, int y);
 static void drawOneScene(const Model&, uint32_t, const ViewDef&, int y);
 static void drawSystem(const Model&, uint32_t, const ViewDef&, int y);
+static void drawProxy(const Model&, uint32_t, const ViewDef&, int y);
 
 static const ViewDef kAllViews[] = {
   {UI_PAGE_CONSOLE, drawConsole},
+  {UI_PAGE_PROXY, drawProxy},
   {UI_PAGE_DETAILS, drawDetails},
   {UI_PAGE_COMPANION, drawCompanion},
   {UI_PAGE_IMAGE, drawImage},
@@ -180,6 +182,12 @@ static bool sameUsage(const Model& a, const Model& b) {
   return true;
 }
 
+// Idle-saver policy slot of a page: Console and Proxy share slot 0, Details
+// is 1, every other page has none (2).
+static uint8_t saverSlot(uint8_t id) {
+  return id == UI_PAGE_CONSOLE || id == UI_PAGE_PROXY ? 0 : id == UI_PAGE_DETAILS ? 1 : 2;
+}
+
 static void updateSaver(const Model& m, uint32_t now) {
   if (!idleStarted) {
     lastActivity[0] = lastActivity[1] = now;
@@ -188,16 +196,15 @@ static void updateSaver(const Model& m, uint32_t now) {
   if (!haveUsageBaseline || !sameUsage(m, usageBaseline)) {
     usageBaseline = m;
     haveUsageBaseline = true;
-    const uint8_t shown = kStaticViews[selView].id;
+    const uint8_t shown = saverSlot(kStaticViews[selView].id);
     for (uint8_t i = 0; i < 2; ++i) {
       const bool wake = i == 0 ? UI_CONSOLE_WAKE_ON_USAGE : UI_DETAILS_WAKE_ON_USAGE;
       if (i != shown || !saverActive || wake) lastActivity[i] = now;
       if (i == shown && wake) saverActive = false;
     }
   }
-  const uint8_t id = kStaticViews[selView].id;
-  const bool eligible = id == UI_PAGE_CONSOLE ? UI_CONSOLE_SAVER_ENABLED :
-    id == UI_PAGE_DETAILS ? UI_DETAILS_SAVER_ENABLED : false;
+  const uint8_t slot = saverSlot(kStaticViews[selView].id);
+  const bool eligible = slot == 0 ? UI_CONSOLE_SAVER_ENABLED : slot == 1 ? UI_DETAILS_SAVER_ENABLED : false;
   if (!UI_SCREENSAVER_ENABLED || !UI_SCREENSAVER_AUTO_ENABLED || !eligible) {
     saverActive = false;
     return;
@@ -206,8 +213,8 @@ static void updateSaver(const Model& m, uint32_t now) {
     saverActive = false;
     return;
   }
-  const uint32_t timeout = id == UI_PAGE_CONSOLE ? UI_CONSOLE_SAVER_TIMEOUT_MS : UI_DETAILS_SAVER_TIMEOUT_MS;
-  if ((uint32_t)(now - lastActivity[id]) >= timeout) saverActive = true;
+  const uint32_t timeout = slot == 0 ? UI_CONSOLE_SAVER_TIMEOUT_MS : UI_DETAILS_SAVER_TIMEOUT_MS;
+  if ((uint32_t)(now - lastActivity[slot]) >= timeout) saverActive = true;
 }
 
 // Palette (RGB565, quantized from the requested hex values).
@@ -521,8 +528,14 @@ static void drawClientCard(const Model& m, uint32_t now, int slot, int x, int y,
   drawQuotaRing(ring2Cx, ringCy, ringR, ringStroke, wUsed, wEased, UI_WEEKLY_COLOR, wReset);
 }
 
+// Status dot plus caption, leaving room for the page indicator.
+static void drawFooterLine(int pad, int fy, const char* caption, uint16_t dotColor) {
+  G().fillCircle(pad + 4, fy + 7, 4, col(dotColor));
+  const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
+  text(caption, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);
+}
+
 static void drawConsoleFooter(const Model& m, uint32_t now, int pad, int fy) {
-  TFT_eSPI& g = G();
   char b[28];
   // Footer: newest provider reading age (not the serial push age) + link
   // health. An idle account's reading ages on its own (T3 re-polls quota only
@@ -545,10 +558,7 @@ static void drawConsoleFooter(const Model& m, uint32_t now, int pad, int fy) {
   // arrived for DATA_TIMEOUT_MS, red source error. Reserve the page
   // indicator's width (dots or the "n / m" counter).
   const bool linkLost = now - m.rxMillis > DATA_TIMEOUT_MS;
-  const uint16_t sc = !m.ok ? C_RED : linkLost ? C_AMBER : C_GREEN;
-  g.fillCircle(pad + 4, fy + 7, 4, col(sc));
-  const int navSpace = (kViewCount <= UI_MAX_DOTS ? kViewCount * 10 : 56) + 8;
-  text(b, pad + 14, fy, 2, C_MUTED, TL_DATUM, W - 2 * pad - 14 - navSpace);
+  drawFooterLine(pad, fy, b, !m.ok ? C_RED : linkLost ? C_AMBER : C_GREEN);
 }
 
 // Compact grid: first six accounts, concentric rings (Session outer,
@@ -556,15 +566,15 @@ static void drawConsoleFooter(const Model& m, uint32_t now, int pad, int fy) {
 static void drawGridArc(int cx, int cy, int r, int stroke, int used, int easedUsed, uint16_t fillColor) {
   TFT_eSPI& g = G();
   const int ir = max(r - stroke, 1);
-  g.drawArc(cx, cy, r, ir, 0, 360, C_FAINT, C_BG, false);
+  g.drawArc(cx, cy, r, ir, 0, 360, col(C_FAINT), C_BG, false);
   if (used < 0) {  // unknown: dashed, never an empty "0%" ring
-    for (int deg = 0; deg < 360; deg += 30) g.drawArc(cx, cy, r, ir, deg, deg + 10, C_MUTED, C_BG, false);
+    for (int deg = 0; deg < 360; deg += 30) g.drawArc(cx, cy, r, ir, deg, deg + 10, col(C_MUTED), C_BG, false);
     return;
   }
   const int easedLeft = 100 - min(easedUsed, 100);
   if (easedLeft <= 0) return;
   uint32_t endAngle = min<uint32_t>(360, (uint32_t)((easedLeft * 360L + 50) / 100));
-  const uint16_t c = fillColor ? fillColor : leftColor(100 - min(used, 100));
+  const uint16_t c = col(fillColor ? fillColor : leftColor(100 - min(used, 100)));
   if (endAngle <= 180) g.drawArc(cx, cy, r, ir, 180, 180 + endAngle, c, C_BG, false);
   else {
     g.drawArc(cx, cy, r, ir, 180, 360, c, C_BG, false);
@@ -697,6 +707,232 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
     drawClientCard(m, now, slot, pad, top + slot * (ch + gap), W - 2 * pad, ch);
 
   drawConsoleFooter(m, now, pad, fy);
+}
+
+// ---------------------------------------------------------------- proxy page
+// CPAMC proxy groups in the Console grid: one tile per group (rings, lines and
+// colours shared with the Console grid), multi-pool groups double-wide with a
+// mini ring pair per pool, a System card in the next free slot.
+
+#define PROXY_STALE_MS 90000UL  // proxy line is sent about every 30 s
+
+// Red warning triangle, 13x12, top-left at (x, y).
+static void dangerIcon(int x, int y) {
+  TFT_eSPI& g = G();
+  g.fillTriangle(x + 6, y, x, y + 11, x + 12, y + 11, C_RED);
+  g.fillRect(x + 5, y + 4, 2, 4, C_TEXT);
+  g.fillRect(x + 5, y + 9, 2, 2, C_TEXT);
+}
+
+// Current epoch from the proxy line's "ts" and the time since it arrived; 0 if unknown.
+static uint32_t proxyEpoch(uint32_t now) { return gProxy.ts ? gProxy.ts + (now - gProxy.rxMillis) / 1000 : 0; }
+
+// Proxy windows share the Console's WinData view (percent used, seconds to reset).
+static const WinData* proxyWin(const ProxyWin* w, uint32_t epoch, WinData& d) {
+  if (!w) return nullptr;
+  strlcpy(d.l, w->l, sizeof d.l);
+  d.u = w->r < 0 ? -1 : 100 - w->r;
+  d.r = (w->z && epoch) ? (w->z > epoch ? (int32_t)(w->z - epoch) : 0) : -1;
+  return &d;
+}
+
+// Outer ring is the shorter window. A lone window takes the outer ring only
+// when it is the 5h one; the other ring then shows `--`.
+static void proxySplit(const ProxyPool& p, const ProxyWin*& outer, const ProxyWin*& inner) {
+  outer = inner = nullptr;
+  if (p.nw >= 2) {
+    outer = &p.w[0];
+    inner = &p.w[1];
+  } else if (p.nw == 1) {
+    (eqNoCase(p.w[0].l, "5h") ? outer : inner) = &p.w[0];
+  }
+}
+
+// Seconds until the soonest quota cooldown (0% remaining, reset ahead), -1 if none.
+static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch) {
+  int32_t best = -1;
+  for (uint8_t i = 0; i < gr.np; ++i)
+    for (uint8_t k = 0; k < gr.p[i].nw; ++k) {
+      const ProxyWin& w = gr.p[i].w[k];
+      if (w.r != 0 || !w.z) continue;
+      const int32_t s = epoch && w.z > epoch ? (int32_t)(w.z - epoch) : 0;
+      if (best < 0 || s < best) best = s;
+    }
+  return best;
+}
+
+// Group name, `xN` account count and the danger icon.
+static void proxyTitle(const ProxyGroup& gr, bool cooling, int x, int y, int w) {
+  char b[8];
+  const int reserve = (gr.c ? 20 : 0) + (gr.a ? 16 : 0);
+  const int nw = text(gr.n, x + 6, y + 2, 2, cooling ? C_AMBER : C_TEXT, TL_DATUM, w - 10 - reserve);
+  if (gr.c) {
+    snprintf(b, sizeof b, "x%u", gr.c);
+    text(b, x + 9 + nw, y + 7, 1, C_MUTED);
+  }
+  if (gr.a) dangerIcon(x + w - 17, y + 3);
+}
+
+static void drawProxyTile(const ProxyGroup& gr, uint32_t epoch, int x, int y, int w, int h) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 5, C_PANEL);
+  const ProxyWin *ow = nullptr, *iw = nullptr;
+  if (gr.np) proxySplit(gr.p[0], ow, iw);
+  proxyTitle(gr, proxyCooldown(gr, epoch) >= 0, x, y, w);
+
+  WinData od, id;
+  const WinData* so = proxyWin(ow, epoch, od);
+  const WinData* si = proxyWin(iw, epoch, id);
+  const int top = y + 19, bottom = y + h - 33;
+  const int cx = x + w / 2, cy = (top + bottom) / 2;
+  const int r = min((bottom - top) / 2, 24);
+  drawGridArc(cx, cy, r, 4, so ? so->u : -1, so ? so->u : -1, 0);
+  drawGridArc(cx, cy, r - 9, 4, si ? si->u : -1, si ? si->u : -1, UI_WEEKLY_COLOR);
+  drawGridLine(x, y + h - 32, w, so, C_TEXT, 0, 0);
+  drawGridLine(x, y + h - 17, w, si, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, 0);
+}
+
+// Double-wide tile: one mini ring pair per pool, window percentages beneath.
+static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, int w, int h) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 5, C_PANEL);
+  const int32_t cd = proxyCooldown(gr, epoch);
+  proxyTitle(gr, cd >= 0, x, y, w - (cd >= 0 ? 78 : 0));
+  if (cd >= 0) {
+    char b[24], d[12];
+    fmtDur(d, sizeof d, epoch ? cd : -1);
+    snprintf(b, sizeof b, "COOLDOWN %s", d);
+    text(b, x + w - 6, y + 7, 1, C_AMBER, TR_DATUM);
+  }
+  const int n = max<int>(gr.np, 1), colW = (w - 8) / n;
+  const int r = min(18, colW / 2 - 4);
+  const int cy = y + 19 + r + 3;
+  for (int i = 0; i < gr.np; ++i) {
+    const ProxyWin *ow, *iw;
+    proxySplit(gr.p[i], ow, iw);
+    WinData od, id;
+    const WinData* so = proxyWin(ow, epoch, od);
+    const WinData* si = proxyWin(iw, epoch, id);
+    const int cx = x + 4 + colW * i + colW / 2;
+    drawGridArc(cx, cy, r, 3, so ? so->u : -1, so ? so->u : -1, 0);
+    drawGridArc(cx, cy, r - 7, 3, si ? si->u : -1, si ? si->u : -1, UI_WEEKLY_COLOR);
+    text(gr.p[i].l, cx, cy + r + 4, 2, C_TEXT, TC_DATUM, colW - 2);
+    const WinData* win[2] = {so, si};
+    for (int k = 0; k < 2; ++k) {
+      char b[14];
+      uint16_t c = C_MUTED;
+      if (!win[k]) strlcpy(b, "--", sizeof b);
+      else if (win[k]->u < 0) snprintf(b, sizeof b, "%s --", win[k]->l);
+      else {
+        const int left = 100 - min<int>(win[k]->u, 100);
+        snprintf(b, sizeof b, "%s %d%%", win[k]->l, left);
+        c = k && UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : leftColor(left);
+      }
+      text(b, cx, cy + r + 22 + k * 10, 1, c, TC_DATUM, colW - 2);
+    }
+  }
+}
+
+// System card (T-029) for the next free slot: CPU, GPU and RAM load.
+static void drawProxySystem(int x, int y, int w, int h) {
+  TFT_eSPI& g = G();
+  g.fillRoundRect(x, y, w, h, 5, C_PANEL);
+  text("SYSTEM", x + 6, y + 2, 2, C_TEXT);
+  const SysData& s = gSys;
+  const int ram = s.memTotal ? (int)(100UL * s.memUsed / s.memTotal) : -1;
+  const char* const label[3] = {"CPU", "GPU", "RAM"};
+  const int val[3] = {s.valid ? s.cpu : -1, s.valid ? s.gpu : -1, s.valid ? ram : -1};
+  const int rowH = (h - 21) / 3;
+  for (int i = 0; i < 3; ++i) {
+    const int ry = y + 20 + i * rowH;
+    char b[8];
+    if (val[i] >= 0) snprintf(b, sizeof b, "%d%%", val[i]);
+    else strlcpy(b, "--", sizeof b);
+    text(label[i], x + 6, ry + 5, 1, C_MUTED);
+    text(b, x + w - 6, ry, 2, val[i] >= 0 ? C_TEXT : C_MUTED, TR_DATUM);
+    g.fillRoundRect(x + 6, ry + 17, w - 12, 4, 2, col(C_TRACK));
+    const int fw = val[i] > 0 ? max(3, (w - 12) * min(val[i], 100) / 100) : 0;
+    if (fw) g.fillRoundRect(x + 6, ry + 17, fw, 4, 2, col(levelColor(val[i])));
+  }
+}
+
+static void drawProxy(const Model&, uint32_t now, const ViewDef&, int) {
+  TFT_eSPI& g = G();
+  const bool portrait = H > W;
+  const int pad = portrait ? 8 : 6, gap = 4;
+  const int cols = portrait ? 2 : 3, rows = portrait ? 3 : 2;
+  const ProxyData& p = gProxy;
+  if (!p.valid) {
+    text("PROXY", pad, 2, 2, C_TEXT);
+    g.drawFastHLine(pad, 20, W - 2 * pad, C_PANEL);
+    text("Waiting for proxy data", W / 2, H / 2 - 10, 2, C_MUTED, TC_DATUM);
+    text("aimon sends it about every 30 s", W / 2, H / 2 + 10, 1, C_FAINT, TC_DATUM, W - 8);
+    return;
+  }
+  const int32_t elapsed = (int32_t)((now - p.rxMillis) / 1000);
+  const bool down = !p.up || now - p.rxMillis > PROXY_STALE_MS;
+
+  int accounts = 0;
+  for (uint8_t i = 0; i < p.ng; ++i) accounts += p.g[i].c;
+  char b[28];
+  snprintf(b, sizeof b, "PROXY (%d)", accounts);
+  text(b, pad, 2, 2, C_TEXT);
+  g.fillCircle(W - pad - 4, 11, 4, down ? C_RED : C_GREEN);
+  if (p.attn) dangerIcon(W - pad - 24, 5);
+  g.drawFastHLine(pad, 20, W - 2 * pad, C_PANEL);
+
+  const int fy = H - 18, top = 22, bottom = fy - 2;
+  const int cw = (W - 2 * pad - (cols - 1) * gap) / cols;
+  const int ch = (bottom - top - (rows - 1) * gap) / rows;
+  const uint32_t epoch = proxyEpoch(now);
+  dim = down;  // last values stay readable but muted under the overlay
+  bool used[9] = {};
+  auto place = [&](int span, int& cell) {
+    for (int c = 0; c + span <= rows * cols; ++c) {
+      if (c % cols + span > cols) continue;
+      bool free = true;
+      for (int k = 0; k < span; ++k) free &= !used[c + k];
+      if (!free) continue;
+      for (int k = 0; k < span; ++k) used[c + k] = true;
+      cell = c;
+      return true;
+    }
+    return false;
+  };
+  for (uint8_t i = 0; i < p.ng; ++i) {
+    const ProxyGroup& gr = p.g[i];
+    const int span = gr.multi ? 2 : 1;
+    int cell;
+    if (!place(span, cell)) continue;
+    const int x = pad + (cell % cols) * (cw + gap), y = top + (cell / cols) * (ch + gap);
+    if (gr.multi) drawProxyMulti(gr, epoch, x, y, cw * span + gap * (span - 1), ch);
+    else drawProxyTile(gr, epoch, x, y, cw, ch);
+  }
+  int cell;
+  if (place(1, cell)) drawProxySystem(pad + (cell % cols) * (cw + gap), top + (cell / cols) * (ch + gap), cw, ch);
+  dim = false;
+
+  if (down) {
+    const int ow = min(W - 40, 230), oh = 46, ox = (W - ow) / 2, oy = (H - oh) / 2 - 6;
+    g.fillRoundRect(ox, oy, ow, oh, 6, C_PANEL);
+    g.drawRoundRect(ox, oy, ow, oh, 6, C_RED);
+    g.fillCircle(ox + 14, oy + 15, 4, C_RED);
+    text(p.up ? "NO PROXY DATA" : "PROXY DOWN", ox + 26, oy + 6, 2, C_TEXT);
+    char d[10];
+    fmtDur(d, sizeof d, (p.age >= 0 ? p.age : 0) + (int32_t)((now - p.rxMillis) / 1000));
+    snprintf(b, sizeof b, "last good %s ago", d);
+    text(b, ox + ow / 2, oy + 28, 1, C_MUTED, TC_DATUM, ow - 8);
+  }
+
+  char d[10];
+  if (p.age < 0) strlcpy(b, "Updated --", sizeof b);
+  else {
+    const int32_t s = p.age + elapsed;
+    if (s < 60) snprintf(d, sizeof d, "%lds", (long)s);
+    else fmtDur(d, sizeof d, s);
+    snprintf(b, sizeof b, "Updated %s", d);
+  }
+  drawFooterLine(pad, fy, b, down ? C_RED : C_GREEN);
 }
 
 // ---------------------------------------------------------------- detail sections
@@ -1218,7 +1454,7 @@ bool uiScreenshot(Stream& out) {
 
 bool uiShow(const char* name) {
   static const struct { const char* name; uint8_t id; } kPages[] = {
-    {"console", UI_PAGE_CONSOLE}, {"details", UI_PAGE_DETAILS}, {"companion", UI_PAGE_COMPANION},
+    {"console", UI_PAGE_CONSOLE}, {"proxy", UI_PAGE_PROXY}, {"details", UI_PAGE_DETAILS}, {"companion", UI_PAGE_COMPANION},
     {"image", UI_PAGE_IMAGE}, {"city", UI_PAGE_CITY}, {"scenes", UI_PAGE_SCENES},
     {"system", UI_PAGE_SYSTEM}};
   for (const auto& p : kPages)
@@ -1247,7 +1483,7 @@ void uiNextView(const Model&) {
   if (forcedId >= 0) forcedId = -1;
   else if (saverActive) saverActive = false;
   else selView = (uint8_t)((selView + 1) % kViewCount);
-  if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
+  if (saverSlot(kStaticViews[selView].id) < 2) lastActivity[saverSlot(kStaticViews[selView].id)] = millis();
 }
 
 void uiGoHome() {
@@ -1255,7 +1491,7 @@ void uiGoHome() {
   saverActive = false;
   for (uint8_t i = 0; i < kViewCount; ++i)
     if (kStaticViews[i].id == UI_HOME_PAGE) { selView = i; break; }
-  if (kStaticViews[selView].id < 2) lastActivity[kStaticViews[selView].id] = millis();
+  if (saverSlot(kStaticViews[selView].id) < 2) lastActivity[saverSlot(kStaticViews[selView].id)] = millis();
 }
 
 // Page position, bottom right. A few pages get dots; past UI_MAX_DOTS the dots
