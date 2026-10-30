@@ -1,0 +1,12 @@
+{
+  "provider": "claude",
+  "request": {"method": "GET", "url": "https://api.anthropic.com/api/oauth/usage",
+              "header": {"Authorization": "Bearer $TOKEN$", "anthropic-beta": "oauth-2025-04-20"}},
+  "windows": [
+    {"pool": "main", "label": "5h", "path": "five_hour", "used": "utilization", "scale": 100, "reset": "resets_at", "length_s": 18000},
+    {"pool": "main", "label": "7d", "path": "seven_day", "used": "utilization", "scale": 100, "reset": "resets_at", "length_s": 604800}
+  ],
+  "tile": {"layout": "rings", "pools": [{"id": "main", "label": "Claude"}]},
+  "fallback": "headers",
+  "notes": "Verified 2026-10-30 on 2 Max accounts."
+}

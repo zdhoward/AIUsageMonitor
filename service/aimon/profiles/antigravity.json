@@ -1,0 +1,17 @@
+{
+  "provider": "antigravity",
+  "request": {"method": "POST", "url": "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary",
+              "fallback_urls": ["https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"],
+              "header": {"Authorization": "Bearer $TOKEN$", "Content-Type": "application/json", "User-Agent": "antigravity/hub/2.23.1 windows/amd64"},
+              "data": "{\"project\": \"{project_id}\"}"},
+  "windows": [
+    {"pool": "flash", "label": "5h", "path": "groups[*].buckets[*]", "match": {"bucketId": "gemini-5h"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 18000, "skip_if": "disabled"},
+    {"pool": "flash", "label": "7d", "path": "groups[*].buckets[*]", "match": {"bucketId": "gemini-weekly"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 604800},
+    {"pool": "3p", "label": "5h", "path": "groups[*].buckets[*]", "match": {"bucketId": "3p-5h"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 18000, "skip_if": "disabled"},
+    {"pool": "3p", "label": "7d", "path": "groups[*].buckets[*]", "match": {"bucketId": "3p-weekly"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 604800},
+    {"pool": "argon", "label": "7d", "path": "groups[*].buckets[*]", "match": {"bucketId": "gemini-argon-wtu-weekly"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 604800}
+  ],
+  "tile": {"layout": "multi", "span": 2, "pools": [{"id": "flash", "label": "Flash"}, {"id": "3p", "label": "Cl/GPT"}, {"id": "argon", "label": "Argon"}]},
+  "fallback": "cooldowns",
+  "notes": "Verified 2026-10-30 on 2 accounts. A missing remainingFraction means 0. Fall back to the daily endpoint if the Gemini group is missing (CPAMC #499)."
+}
