@@ -152,6 +152,7 @@
 #define UI_PAGE_CITY 5
 #define UI_PAGE_SCENES 6
 #define UI_PAGE_SYSTEM 7
+#define UI_PAGE_PROXY 8
 // Single-scene pages: UI_SCENE_PAGE_BASE + index into SCENES (scenes_gen.h).
 #define UI_SCENE_PAGE_BASE 100
 // Playlist pages: UI_PLAYLIST_PAGE_BASE + index into the profile's playlists.
@@ -159,12 +160,12 @@
 
 // Tap order of the pages. Pages switched off above are skipped.
 #ifndef UI_VIEW_ORDER
-#define UI_VIEW_ORDER UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY, UI_PAGE_SCENES
+#define UI_VIEW_ORDER UI_PAGE_PROXY, UI_PAGE_CONSOLE, UI_PAGE_DETAILS, UI_PAGE_COMPANION, UI_PAGE_IMAGE, UI_PAGE_CITY, UI_PAGE_SCENES
 #endif
 
 // Long-press home: holding the screen for UI_HOLD_MS jumps to UI_HOME_PAGE.
 #ifndef UI_HOME_PAGE
-#define UI_HOME_PAGE UI_PAGE_CONSOLE
+#define UI_HOME_PAGE UI_PAGE_PROXY
 #endif
 #ifndef UI_HOLD_MS
 #define UI_HOLD_MS 700
@@ -207,7 +208,7 @@
 #if UI_SCREENSAVER_PAGE == UI_PAGE_SCREENSAVER
 #error "Screensaver cannot target itself"
 #endif
-#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || (UI_SCREENSAVER_PAGE > UI_PAGE_SYSTEM && UI_SCREENSAVER_PAGE < UI_SCENE_PAGE_BASE) || UI_SCREENSAVER_PAGE > 255
+#if UI_SCREENSAVER_PAGE < UI_PAGE_CONSOLE || (UI_SCREENSAVER_PAGE > UI_PAGE_PROXY && UI_SCREENSAVER_PAGE < UI_SCENE_PAGE_BASE) || UI_SCREENSAVER_PAGE > 255
 #error "Unknown screensaver target page"
 #endif
 #endif
