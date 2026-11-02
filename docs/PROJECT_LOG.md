@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-11-02: Wider account sector gaps
+
+- Increased the gap between account sectors from 4 to 10 degrees so each account's arc endpoints are easier to distinguish, including the inner weekly ring.
+
 ## 2026-11-02: Deploy account sectors and clear recovered warnings
 
 - Flashed the built sector-ring firmware to the connected display and restarted the collector. Live polling reports two Codex accounts and no account warning after successful probes.

@@ -797,7 +797,7 @@ static void drawProxyArc(int cx, int cy, int r, int stroke, const ProxyWin* win,
   }
   const int ir = max(r - stroke, 1);
   for (int i = 0; i < count; ++i) {
-    const int start = i * 360 / count + 2, end = (i + 1) * 360 / count - 2;
+    const int start = i * 360 / count + 5, end = (i + 1) * 360 / count - 5;
     proxyArcPart(cx, cy, r, ir, start, end, C_FAINT);
     const int rem = win->q[i];
     if (rem < 0) {
