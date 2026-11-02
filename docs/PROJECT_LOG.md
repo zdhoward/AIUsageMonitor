@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-11-02: Proxy account sectors
+
+- Live CPAMC discovery and per-account probes returned both Codex accounts; pooling discarded their distinction and incorrectly inferred a refill after a reset. Preserve anonymous ordered readings and reset epochs, evict removed accounts from cache, and draw equal account sectors in each pool while retaining group figures and upcoming timers.
+- Default production firmware build passed (`build/multi-account-build.log`); live proxy payload reported two known 5h and 7d Codex readings, 832 bytes. Automated tests deferred to the owner's sprint-end phase. New dashboard framebuffer and hardware acceptance remain pending; no flash was authorized.
+
 ## 2026-10-28: final session wrap-up
 
 - Reconciled release/installed versions, T-020 delivered items, T-026 planning-only state and remaining acceptance/licensing backlog. Handoff records published v1.14.1 plus installed firmware v1.14.0; no open PRs and main synchronized before close. Existing validation reused for docs-only close.

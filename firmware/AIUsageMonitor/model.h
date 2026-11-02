@@ -111,6 +111,9 @@ struct ProxyWin {
   int8_t r;    // remaining percent 0..100, -1 unknown
   uint32_t z;  // next reset epoch, 0 none
   char v[9];   // optional text shown instead of "--" when r is unknown (e.g. "74 used")
+  int8_t q[8]; // anonymous account remaining percentages, -1 unknown
+  uint32_t qz[8]; // account reset epochs
+  uint8_t nq = 0;
 };
 struct ProxyPool {
   char l[8];   // pool label (Flash, Cl/GPT, Argon)
