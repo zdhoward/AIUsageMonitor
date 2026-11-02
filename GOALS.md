@@ -1,5 +1,9 @@
 # Accepted display decisions
 
+## Proxy account sectors (2026-11-02)
+
+- Keep provider totals and the earliest upcoming reset, and divide each pool's session and weekly rings into equal clockwise sectors for its active accounts. Preserve individual measurements, distinguish unknown from zero, and never infer a refill from a passed deadline. Account order is stable and anonymous; support older aggregate-only payloads.
+
 ## Idle delay (2026-10-27)
 
 - Default-profile Console and Details wait 60 seconds before automatic saving, doubled from 30 seconds at the owner's request.

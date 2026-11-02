@@ -376,6 +376,12 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
         pw.r = r < 0 ? -1 : min(r, 100);
         pw.z = w["z"] | (uint32_t)0;
         copyStr(pw.v, sizeof pw.v, w["v"]);
+        for (JsonArrayConst account : w["q"].as<JsonArrayConst>()) {
+          if (pw.nq >= 8) break;
+          const int value = account[0] | -1;
+          pw.q[pw.nq] = value < 0 ? -1 : min(value, 100);
+          pw.qz[pw.nq++] = account[1] | (uint32_t)0;
+        }
       }
     }
   }

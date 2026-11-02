@@ -774,6 +774,42 @@ static void proxyTitle(const ProxyGroup& gr, bool cooling, int x, int y, int w) 
   if (gr.a) dangerIcon(x + w - 17, y + 3);
 }
 
+// Angles start at the top and wrap at 360. Each anonymous account owns one
+// equal clockwise sector; dashed sectors distinguish unknown from empty.
+static void proxyArcPart(int cx, int cy, int r, int ir, int start, int end, uint16_t color) {
+  if (end <= start) return;
+  TFT_eSPI& g = G();
+  start += 180; end += 180;
+  if (start >= 360) { start -= 360; end -= 360; }
+  if (end <= 360) g.drawArc(cx, cy, r, ir, start, end, col(color), C_BG, false);
+  else {
+    g.drawArc(cx, cy, r, ir, start, 360, col(color), C_BG, false);
+    g.drawArc(cx, cy, r, ir, 0, end - 360, col(color), C_BG, false);
+  }
+}
+
+static void drawProxyArc(int cx, int cy, int r, int stroke, const ProxyWin* win,
+                         uint8_t count, uint16_t fillColor) {
+  if (!win || count < 2 || win->nq != count) {
+    const int used = !win || win->r < 0 ? -1 : 100 - win->r;
+    drawGridArc(cx, cy, r, stroke, used, used, fillColor);
+    return;
+  }
+  const int ir = max(r - stroke, 1);
+  for (int i = 0; i < count; ++i) {
+    const int start = i * 360 / count + 2, end = (i + 1) * 360 / count - 2;
+    proxyArcPart(cx, cy, r, ir, start, end, C_FAINT);
+    const int rem = win->q[i];
+    if (rem < 0) {
+      for (int a = start; a < end; a += 20)
+        proxyArcPart(cx, cy, r, ir, a, min(a + 8, end), C_MUTED);
+    } else if (rem > 0) {
+      proxyArcPart(cx, cy, r, ir, start, start + (end - start) * rem / 100,
+                   fillColor ? fillColor : leftColor(rem));
+    }
+  }
+}
+
 static void drawProxyTile(const ProxyGroup& gr, uint32_t epoch, int x, int y, int w, int h) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
@@ -787,8 +823,8 @@ static void drawProxyTile(const ProxyGroup& gr, uint32_t epoch, int x, int y, in
   const int top = y + 19, bottom = y + h - 33;
   const int cx = x + w / 2, cy = (top + bottom) / 2;
   const int r = min((bottom - top) / 2, 24);
-  drawGridArc(cx, cy, r, 4, so ? so->u : -1, so ? so->u : -1, 0);
-  drawGridArc(cx, cy, r - 9, 4, si ? si->u : -1, si ? si->u : -1, UI_WEEKLY_COLOR);
+  drawProxyArc(cx, cy, r, 4, ow, gr.c, 0);
+  drawProxyArc(cx, cy, r - 9, 4, iw, gr.c, UI_WEEKLY_COLOR);
   drawGridLine(x, y + h - 32, w, so, C_TEXT, 0, 0, ow ? ow->v : nullptr);
   drawGridLine(x, y + h - 17, w, si, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, 0,
                iw ? iw->v : nullptr);
@@ -816,8 +852,8 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
     const WinData* so = proxyWin(ow, epoch, od);
     const WinData* si = proxyWin(iw, epoch, id);
     const int cx = x + 4 + colW * i + colW / 2;
-    drawGridArc(cx, cy, r, 3, so ? so->u : -1, so ? so->u : -1, 0);
-    drawGridArc(cx, cy, r - 7, 3, si ? si->u : -1, si ? si->u : -1, UI_WEEKLY_COLOR);
+    drawProxyArc(cx, cy, r, 3, ow, gr.c, 0);
+    drawProxyArc(cx, cy, r - 7, 3, iw, gr.c, UI_WEEKLY_COLOR);
     text(gr.p[i].l, cx, cy + r + 4, 2, C_TEXT, TC_DATUM, colW - 2);
     const WinData* win[2] = {so, si};
     for (int k = 0; k < 2; ++k) {

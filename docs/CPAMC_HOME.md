@@ -49,9 +49,9 @@ account's last request:
   `cooldowns[]` (`reason: quota`, `retry_at`, per model).
 
 Caveats:
-- Readings are observed, not polled, so they're only as fresh as the account's
-  last proxied request (`observed_at`). Past resets should be shown as stale or
-  refilled rather than trusted.
+- Header readings are observed on the last proxied request (`observed_at`);
+  live profile probes below are polled separately. A passed reset does not
+  establish that quota has refilled.
 - `/v0/management/usage` returned an empty body; Home doesn't need it.
 - Needs-attention candidates: `status` not `active`, `unavailable`, a
   non-empty `status_message`, auth refresh failures, proxy unreachable.
@@ -63,10 +63,9 @@ Caveats:
 - The two spare slots are for small data cards. First card: **System**, showing
   CPU, GPU and RAM as 0–100% (CPU is the total across all cores). It reuses the
   System page's existing telemetry (`psutil`; GPU on Windows only).
-- Codex shows only its 7-day window while the Free accounts are disabled.
-  Missing windows render as `--`, as today.
-- Tiles without percentages (Antigrav, xAI): dashed unknown ring. A quota
-  cooldown shows `COOLDOWN <time to the soonest retry_at>`.
+- Codex windows follow the live response. Missing windows render as `--`.
+- Windows without percentages use dashed unknown rings. A measured empty
+  window with a reset can show a cooldown; a cooldown alone does not prove zero.
 - `×N` active account count beside the group name. Disabled accounts are
   excluded from totals and counts and never raise the danger icon.
 - Danger icon: on the affected tile and in the header. Proxy unreachable shows

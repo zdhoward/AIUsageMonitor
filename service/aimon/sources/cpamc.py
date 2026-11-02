@@ -117,7 +117,7 @@ def read_windows(profile: dict, body) -> list[dict]:
         length = float(_get(node, length) or 0) if isinstance(length, str) else float(length or 0)
         if w.get("remaining"):
             raw = _get(node, w["remaining"])
-            rem = float(raw or 0) * (100 / w.get("scale", 1))  # a missing fraction means 0
+            rem = None if raw is None else float(raw) * (100 / w.get("scale", 1))
         elif w.get("used"):
             raw = _get(node, w["used"])
             rem = None if raw is None else 100 - float(raw) * (100 / w.get("scale", 100))
@@ -151,9 +151,10 @@ def header_windows(provider: str, signals: dict) -> list[dict]:
     elif provider == "codex":
         for side in ("Primary", "Secondary"):
             mins = float(signals.get(f"X-Codex-{side}-Window-Minutes") or 0)
+            used = signals.get(f"X-Codex-{side}-Used-Percent")
             if mins > 0:
                 out.append({"pool": "main", "label": label_for(mins * 60),
-                            "rem": 100 - float(signals.get(f"X-Codex-{side}-Used-Percent") or 0),
+                            "rem": None if used is None else 100 - float(used),
                             "reset": _epoch(signals.get(f"X-Codex-{side}-Reset-At")), "len": mins * 60})
     return out
 
@@ -177,7 +178,8 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
     order = [p for p in ORDER if p in by_provider] + sorted(p for p in by_provider if p not in ORDER)
     groups = []
     for prov in order:
-        accs = by_provider[prov]
+        # auth_index is an opaque CPAMC identifier. Never send it to the display.
+        accs = sorted(by_provider[prov], key=lambda a: str(a.get("auth_index") or a.get("id") or ""))
         prof = profiles.get(prov, {})
         tile = prof.get("tile", {})
         pools = tile.get("pools") or [{"id": "main", "label": NAMES.get(prov, prov.title())}]
@@ -188,13 +190,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
             wins = entry.get("windows")
             if wins is None:
                 wins = header_windows(prov, (a.get("quota") or {}).get("signals") or {})
-            # Quota cooldown on an account without readings: treat as empty until retry_at.
-            if not wins:
-                cds = [c for c in a.get("cooldowns") or [] if c.get("reason") == "quota"]
-                if cds:
-                    wins = [{"pool": pools[0]["id"], "label": "7d", "rem": 0.0,
-                             "reset": min(_epoch(c.get("retry_at")) for c in cds), "len": 604800}]
-            per_acc.append(wins)
+            per_acc.append(wins or [])
         out_pools = []
         for pl in pools[:3]:
             labels = []
@@ -205,9 +201,11 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
             labels.sort(key=lambda x: x[1])
             ws = []
             for lab, _ in labels[:2]:
-                rems, resets, known, texts = [], [], False, []
+                rems, resets, known, texts, detail = [], [], False, [], []
                 for wins in per_acc:
                     hit = next((w for w in wins if w["pool"] == pl["id"] and w["label"] == lab), None)
+                    detail.append([round(hit["rem"]) if hit and hit["rem"] is not None else -1,
+                                   int(hit["reset"]) if hit and hit["reset"] else 0])
                     if hit is None or hit["rem"] is None:
                         if hit and hit.get("text"):
                             texts.append(hit["text"])
@@ -216,15 +214,14 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                         rems.append(None)
                         continue
                     known = True
-                    if hit["reset"] and hit["reset"] <= now:
-                        rems.append(100.0)  # past reset: refilled
-                    else:
-                        rems.append(hit["rem"])
-                        if hit["reset"] > now:
-                            resets.append(hit["reset"])
+                    rems.append(hit["rem"])
+                    if hit["reset"] > now:
+                        resets.append(hit["reset"])
                 vals = [r for r in rems if r is not None]
                 r = round(sum(vals) / len(vals)) if known and vals else -1
                 win = {"l": lab, "r": r, "z": int(min(resets)) if resets else 0}
+                if len(accs) <= 8:
+                    win["q"] = detail
                 if r < 0 and len(texts) == 1:
                     win["v"] = texts[0][:8]  # raw figure for a provider without a limit
                 ws.append(win)
@@ -295,7 +292,9 @@ class CpamcSource:
             with self._lock:
                 self._up = False
             return
-        live = dict(self._live)
+        indices = {a.get("auth_index") for a in accounts if a.get("auth_index") and not a.get("disabled")}
+        live = {idx: value for idx, value in self._live.items() if idx in indices}
+        self._live_at = {idx: value for idx, value in self._live_at.items() if idx in indices}
         for a in accounts:
             prof = self.profiles.get(a.get("provider"))
             idx = a.get("auth_index")
@@ -336,4 +335,14 @@ class CpamcSource:
             up = self._up
             age = int(now - self._ok_at) if self._ok_at else 0
         attn = (not up) or any(g["a"] for g in groups)
-        return {"t": "proxy", "ts": int(now), "up": int(up), "age": age, "attn": int(attn), "g": groups}
+        result = {"t": "proxy", "ts": int(now), "up": int(up), "age": age, "attn": int(attn), "g": groups}
+        # Preserve valid JSON and aggregate data if an unusually large fleet exceeds
+        # the firmware's line buffer. Missing q means aggregate-only legacy mode.
+        if len(json.dumps(result, separators=(",", ":")).encode()) > 4095:
+            for group in reversed(groups):
+                for pool in group["p"]:
+                    for win in pool["w"]:
+                        win.pop("q", None)
+                if len(json.dumps(result, separators=(",", ":")).encode()) <= 4095:
+                    break
+        return result

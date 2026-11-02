@@ -1,8 +1,10 @@
 # Usage data sources
 
+The Proxy home reads CPAMC auth files every 30 seconds and probes each enabled account through the management API every five minutes. Profiles define provider windows and pools. Probe failures retain the last good measurement except an authentication failure; removed or disabled accounts are evicted from the live cache. The service sends anonymous ordered account readings and reset epochs alongside the known-account average and earliest future reset. Missing readings stay unknown and a passed deadline does not imply a refill. See [CPAMC Home](CPAMC_HOME.md).
+
 Baseline verified 2026-10-21 against T3 Code server 0.1.1, with the direct Antigravity probe added 2026-10-27. Local source files and databases are read without modification. The service sends no prompts and does not refresh logins or modify T3/agy state. Cache, database and transcript schemas are implementation details of their respective applications and may change.
 
-The default transport is USB serial. Subscription quota comes from local T3 caches; the one exception is the read-only Antigravity probe described below, which reuses T3's stored Antigravity login to ask the provider for Gemini quota. The optional OpenRouter status source is different: when enabled (the code default), it reads `OPENROUTER_API_KEY` or falls back to OpenCode's local `auth.json`, and sends that key only to OpenRouter's HTTPS status endpoint. The supplied example config disables this source; enable it deliberately if wanted. Keys and OAuth tokens are never part of the device payload, logs, or `/v1/status`.
+The default transport is USB serial. The older Console sources include local T3 caches and a read-only Antigravity probe that reuses T3's stored login. The optional OpenRouter status source reads `OPENROUTER_API_KEY` or falls back to OpenCode's local `auth.json`, and sends that key only to OpenRouter's HTTPS status endpoint. The supplied example config disables this source; enable it deliberately if wanted. Keys and OAuth tokens are never part of the device payload, logs, or `/v1/status`.
 
 | Source | Where | Metrics | Freshness |
 | --- | --- | --- | --- |
