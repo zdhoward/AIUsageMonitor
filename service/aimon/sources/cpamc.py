@@ -183,7 +183,10 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
         prof = profiles.get(prov, {})
         tile = prof.get("tile", {})
         pools = tile.get("pools") or [{"id": "main", "label": NAMES.get(prov, prov.title())}]
-        attn = any(needs_attention(a) or live.get(a.get("auth_index"), {}).get("auth_failed") for a in accs)
+        attn = any(
+            entry.get("auth_failed") or (needs_attention(a) and not entry.get("probe_ok"))
+            for a in accs for entry in [live.get(a.get("auth_index")) or {}]
+        )
         per_acc = []
         for a in accs:
             entry = live.get(a.get("auth_index")) or {}
@@ -279,7 +282,7 @@ class CpamcSource:
                 continue
             wins = read_windows(prof, body)
             if wins:
-                return {"windows": wins}
+                return {"windows": wins, "probe_ok": True}
         return {"windows": None}
 
     def poll_once(self) -> None:
@@ -303,7 +306,7 @@ class CpamcSource:
             if now - self._live_at.get(idx, 0) >= LIVE_EVERY_S:
                 res = self._live_one(a, prof)
                 if res.get("windows") is None and not res.get("auth_failed") and idx in live:
-                    res = live[idx]  # keep the last good reading
+                    res = {**live[idx], "probe_ok": False}  # retain quota, not proof of current health
                 live[idx] = res
                 self._live_at[idx] = now
         with self._lock:
