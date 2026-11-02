@@ -8,6 +8,12 @@ A small, always-visible AI usage dashboard for your desk. An ESP32 touchscreen s
 
 Built to sit beneath a monitor and answer a quick question: how much allowance is left, and when does it reset?
 
+The [v1.15.0 release](docs/RELEASE_1.15.0.md) adds the CLIProxyAPI Console proxy Home view with live per-account quota sectors, provider totals and reset countdowns. Each account occupies an equal section of the session and weekly rings, with wider gaps between sections. Successful current probes clear stale account warnings.
+
+![Proxy Home with two accounts per provider and segmented quota rings](docs/img/display-proxy.png)
+
+*Actual USB framebuffer from the running display. Unknown quota is dashed; numbers remain provider aggregates.*
+
 ## What it does
 
 - Selectable Console layout: the original Claude A / Claude B / Codex rows, or a compact six-account grid (Default) with concentric Session and Weekly rings.

@@ -1,6 +1,6 @@
 # CPAMC Home view — idea (2026-10-30)
 
-Status: idea agreed; research next, then design, then implementation.
+Status: implemented and installed; published as part of v1.15.0. Historical research and decisions follow. Current behavior is described in [UI](UI.md), [protocol](PROTOCOL.md) and [release evidence](RELEASE_1.15.0.md).
 
 ## Goal
 A glance at what's left in the tank, per CPAMC proxy group. It replaces the
