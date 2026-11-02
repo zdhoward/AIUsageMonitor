@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-11-02: Deploy account sectors and clear recovered warnings
+
+- Flashed the built sector-ring firmware to the connected display and restarted the collector. Live polling reports two Codex accounts and no account warning after successful probes.
+- A successful current quota probe supersedes stale proxy account error metadata; failed probes retain quota without claiming current health, and authentication failures still warn. USB framebuffer captured at `build/multi-account-live.png`. Automated tests remain deferred to sprint end.
+
 ## 2026-11-02: Proxy account sectors
 
 - Live CPAMC discovery and per-account probes returned both Codex accounts; pooling discarded their distinction and incorrectly inferred a refill after a reset. Preserve anonymous ordered readings and reset epochs, evict removed accounts from cache, and draw equal account sectors in each pool while retaining group figures and upcoming timers.
