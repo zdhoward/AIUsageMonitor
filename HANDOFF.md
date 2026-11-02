@@ -1,3 +1,15 @@
+# Current handoff — v1.15.0 Proxy Home (2026-11-02)
+
+- Owner authorized public GitHub release and accepted the installed account-sector spacing. Release target is `v1.15.0` on `main`; release URL: https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.15.0. No open PRs at wrap-up.
+- Completed: preserve both Codex accounts' live quotas, anonymous stable account ordering, equal session/weekly sectors, 10-degree gaps, aggregate figures/earliest upcoming reset captions, unknown versus zero, and recovered-account warning correction. Successful current probes supersede stale proxy error metadata; failed probes retain quota without claiming current health. No inferred refill from an elapsed deadline.
+- Implementation commits: `7a977c9`, `e15856f`, `3cea6ec`; release preparation follows. Main implementation used owner-requested Terra 6.1; coordinator reviewed core diff and made the small warning/gap changes. No independent review claimed for those adjustments.
+- Verification: production builds, hash-verified USB uploads and live two-Codex-account probes passed. Inspected USB framebuffers `build/multi-account-live.png` and `build/sector-gap-live.png`; public evidence is `docs/img/display-proxy.png`. Versioned build/upload logs use `build/v1.15.0-*`. Automated tests remain deferred to owner testing phase; wrap-up does not authorize them.
+- Release is source-only: existing third-party obligations for prebuilt binaries remain unresolved. Optional CC0 scene pack stays on v1.14.1. Do not publish local merged firmware, private settings or art. Public push guard installed; never bypass it.
+- Next: owner testing phase should cover account removal, missing readings, current auth failure/recovery, more than eight accounts and serial fallback, portrait/Rows and retained tests. T-033 items 1–4 (clipping/layout/header/provider polish) remain open; version item is completed. T-026 weather and earlier backlog remain unchanged.
+- Efficiency: deployment and framebuffer inspection belong in the implementation's done criteria; the first handback left the owner waiting for installation. Reuse existing build/flash/capture scripts and report deferred tests explicitly. Token/cost totals UNKNOWN; no routing promotion justified.
+
+## Earlier handoff
+
 # Handoff addendum — P-Gemini drained Codex (2026-10-30)
 
 - Cause: T3 provider `codex_proxy_gemini` ("P-Gemini") points at CPAMC. Antigravity offers no Sol/Codex models, so a P-Gemini + `gpt-6.1-sol` favorite was served by the Codex Plus account (5h 100%, 7d 90% used; 5h resets 23:38 UTC). The Antigrav "Cl/GPT" tile was correct (pool untouched).

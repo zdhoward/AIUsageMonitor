@@ -1,5 +1,7 @@
 # Session tickets
 
+2026-11-02 / v1.15.0: T-027 through T-032 delivered the live CPAMC Proxy Home, System card, danger states and multi-pool tiles. Per-account sector follow-up and recovered-warning correction are committed and installed; owner accepted 10-degree sector gaps. T-033 items 1–4 remain backlog; its version/tag item is delivered by v1.15.0. Automated tests remain deferred to the owner's testing phase.
+
 T-026: Planned at owner request: API-backed Weather page, local-weather effects for parallax and independent local daylight scene lighting. Shared private location/solar cache, manual overrides, offline freshness, provider terms/attribution and phased acceptance are in [T-026](T-026.md). Not implemented or activated.
 
 T-025: v1.14.1 licensing/docs published (`0e71e0e`): retained third-party notices, scoped inventory/optional fetch, untracked local palette, five-scene animated README demo and optional CC0 parallax pack. PixelPatterns/historical source provenance and full binary obligations remain open; no prebuilt firmware released.

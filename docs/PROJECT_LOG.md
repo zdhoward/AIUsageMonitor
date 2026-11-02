@@ -1,5 +1,10 @@
 # Project log
 
+## 2026-11-02: v1.15.0 public release wrap-up
+
+- Owner accepted sector spacing and authorized public release. Version firmware as v1.15.0; reconcile Proxy Home status, ticket index/T-033 version item, README, test report and handoff. Publish source and the inspected dashboard framebuffer; retain existing binary-distribution restriction.
+- No open PRs. Production build/USB capture evidence is recorded in the release notes; tests remain deferred under the owner's testing schedule. Layout polish, high-account/failure-state acceptance and weather remain backlog.
+
 ## 2026-11-02: Wider account sector gaps
 
 - Increased the gap between account sectors from 4 to 10 degrees so each account's arc endpoints are easier to distinguish, including the inner weekly ring.

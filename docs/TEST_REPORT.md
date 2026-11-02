@@ -1,5 +1,11 @@
 # Test report
 
+## v1.15.0 proxy account sectors (2026-11-02)
+
+- Production firmware builds and hash-verified USB uploads passed. Live proxy polling returned two Codex accounts with both short and weekly windows; compact payload was 832 bytes before the later warning correction.
+- Inspected actual USB framebuffers: account sectors, 10-degree gaps, aggregate figures and reset captions render on the display. A successful current probe clears stale Codex error metadata. Owner accepted the wider spacing.
+- Automated tests remain deferred to the owner's testing phase; the v1.14.0 counts below are historical. More than eight accounts, maximum payload fallback, portrait and failure-state transitions remain unverified.
+
 ## v1.14.0 release hardening (2026-10-28)
 
 - Service: 49 tests passed. Studio: 20 tests passed, including atomic failure, private-key preservation, malformed values, same-origin enforcement and supported brightness limits.
