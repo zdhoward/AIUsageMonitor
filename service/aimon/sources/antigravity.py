@@ -294,10 +294,12 @@ def _gemini_windows(models: dict) -> list[Window]:
     windows: list[Window] = []
     if session:
         worst = max(session, key=lambda w: w.used_percent or 0.0)
-        windows.append(Window("antigravity-5h", "session", "5h", worst.used_percent, worst.resets_at, 300))
+        earliest_reset = min((w.resets_at for w in session if w.resets_at is not None), default=worst.resets_at)
+        windows.append(Window("antigravity-5h", "session", "5h", worst.used_percent, earliest_reset, 300))
     if weekly:
         worst = max(weekly, key=lambda w: w.used_percent or 0.0)
-        windows.append(Window("antigravity-7d", "weekly", "7d", worst.used_percent, worst.resets_at, 10080))
+        earliest_reset = min((w.resets_at for w in weekly if w.resets_at is not None), default=worst.resets_at)
+        windows.append(Window("antigravity-7d", "weekly", "7d", worst.used_percent, earliest_reset, 10080))
     return windows
 
 
