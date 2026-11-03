@@ -423,8 +423,9 @@ def build_payload(st: State, now: float, pricing: Pricing, settings: Settings, s
         if acct.reset_credits is not None and acct.reset_credits >= 0:
             entry["rc"] = acct.reset_credits
         ws = []
+        seven_day_exhausted = any(w.label in ("7d", "weekly") and _used_percent(w) >= 100 for w in acct.windows)
         for w in acct.windows[:3]:
-            used = _used_percent(w)
+            used = 100 if seven_day_exhausted and w.label in ("5h", "session") else _used_percent(w)
             if w.resets_at is None or not math.isfinite(w.resets_at):
                 remain = -1
             elif w.resets_at <= now:
