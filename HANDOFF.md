@@ -1,4 +1,5 @@
-# Current handoff — v1.15.0 Proxy Home (2026-11-02)
+# Current handoff — v1.15.1 patch (2026-11-03)
+n- v1.15.1 released (service-only): 5h forced to 0% left when 7d exhausted (tiles + proxy rings), Antigravity earliest-reset fix. 51 tests pass, service restarted, ESP32 acking. No open PRs. Next: owner visually confirms the Codex ring on the device; firmware still 1.15.0.
 
 - Owner authorized public GitHub release and accepted the installed account-sector spacing. Release target is `v1.15.0` on `main`; release URL: https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.15.0. No open PRs at wrap-up.
 - **Antigravity reset fix:** Antigravity session and weekly `resets_at` now use the earliest upcoming reset across Gemini models instead of the worst model's reset, so countdowns match real refills.

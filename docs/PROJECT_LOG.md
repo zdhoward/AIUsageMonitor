@@ -314,3 +314,7 @@
 - Decision: live usage comes from CPAMC's `/v0/management/api-call` passthrough (no plugin), mapped by per-provider JSON profiles (`service/aimon/profiles`) so new providers are data, not code.
 - xAI reports monthly use but no limit, so it's hidden for now to free a slot (Mistral Vibe candidate).
 - Free lanes hit their limits; firmware went to Sonnet and the service was implemented inline for owner priority. Verified by live polls and framebuffer captures; tests deferred to sprint end.
+
+## 2026-11-03 — v1.15.1 patch
+- 5h shows 0% left when 7d is exhausted; the rule lives in both payload paths (`snapshot.build_payload` tiles and `cpamc.pool_groups` proxy rings), since Codex renders through the proxy path.
+- Antigravity resets use the earliest Gemini model reset. Service-only; firmware unchanged.
