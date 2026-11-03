@@ -169,6 +169,14 @@ def needs_attention(acc: dict) -> bool:
             or bool(msg))
 
 
+def _exhaust_short_windows(wins: list[dict]) -> list[dict]:
+    """A pool whose 7d window has 0% left cannot use its 5h window either."""
+    dead = {w["pool"] for w in wins if w["label"] in ("7d", "weekly") and w["rem"] is not None and w["rem"] <= 0}
+    if not dead:
+        return wins
+    return [dict(w, rem=0.0) if w["pool"] in dead and w["label"] in ("5h", "session") else w for w in wins]
+
+
 def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) -> list[dict]:
     """accounts: auth-files entries. live: auth_index -> windows (or None on failure)."""
     by_provider: dict[str, list] = {}
@@ -193,7 +201,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
             wins = entry.get("windows")
             if wins is None:
                 wins = header_windows(prov, (a.get("quota") or {}).get("signals") or {})
-            per_acc.append(wins or [])
+            per_acc.append(_exhaust_short_windows(wins or []))
         out_pools = []
         for pl in pools[:3]:
             labels = []

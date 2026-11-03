@@ -15,7 +15,7 @@ from aimon.models import Account, Activity, UsageRecord, Window
 from aimon.pricing import Pricing
 from aimon import quota_history, snapshot
 from aimon.snapshot import Collector, State, build_payload, select_accounts, short_model
-from aimon.sources import antigravity, opencode_db, openrouter, t3_activity, t3_limits
+from aimon.sources import antigravity, cpamc, opencode_db, openrouter, t3_activity, t3_limits
 from aimon.sources.session_logs import SessionLogScanner
 
 NOW = 1_792_600_000.0  # fixed clock
@@ -517,9 +517,16 @@ class WarningPayloadTests(unittest.TestCase):
     def test_fractional_availability_near_exhaustion_is_not_one_hundred(self):
         st = self.state()
         st.accounts[0].windows[0].used_percent = 99.6
+        st.accounts[0].windows[1].used_percent = 91.0
+        p = build_payload(st, NOW, PRICING, Settings())
+        self.assertEqual([w["u"] for w in p["acc"][0]["w"]], [99, 91])
+
+    def test_seven_day_zero_left_forces_five_hour_zero_left(self):
+        st = self.state()
+        st.accounts[0].windows[0].used_percent = 37.0
         st.accounts[0].windows[1].used_percent = 100.0
         p = build_payload(st, NOW, PRICING, Settings())
-        self.assertEqual([w["u"] for w in p["acc"][0]["w"]], [99, 100])
+        self.assertEqual([w["u"] for w in p["acc"][0]["w"]], [100, 100])
 
     def test_usage_aggregate_is_reused_for_an_unchanged_snapshot(self):
         st = self.state()
@@ -577,3 +584,18 @@ class DiscoveryCadenceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ProxyExhaustionTests(unittest.TestCase):
+    def test_codex_seven_day_zero_left_forces_five_hour_zero_left(self):
+        accounts = [{"auth_index": "a1", "provider": "codex"}, {"auth_index": "a2", "provider": "codex"}]
+        live = {
+            "a1": {"windows": [{"pool": "main", "label": "5h", "rem": 80.0, "reset": NOW + 100, "len": 18000},
+                               {"pool": "main", "label": "7d", "rem": 0.0, "reset": NOW + 900, "len": 604800}]},
+            "a2": {"windows": [{"pool": "main", "label": "5h", "rem": 60.0, "reset": NOW + 100, "len": 18000},
+                               {"pool": "main", "label": "7d", "rem": 0.4, "reset": NOW + 900, "len": 604800}]},
+        }
+        g = cpamc.pool_groups(accounts, live, {"codex": {}}, NOW)
+        five = g[0]["p"][0]["w"][0]
+        self.assertEqual(five["l"], "5h")
+        self.assertEqual([q[0] for q in five["q"]], [0, 60])
