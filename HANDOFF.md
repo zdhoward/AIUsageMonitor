@@ -1,3 +1,8 @@
+# Handoff addendum — commit identity cleanup (2026-11-03)
+- Cause: agent sessions on 2026-10-27/28 committed with invented emails (`zech@users.noreply...`, `197633046+agricidaniel@users.noreply...`), so GitHub credited users `zech` and `kglxeee` (ID 197633046). Only collaborator is zdhoward; no outside contributions.
+- Fixed: `git filter-repo --mailmap` rewrite of remote branches and tags; force-pushed `main` (`ac27eb6`), v1.14.1, v1.15.0, v1.15.1. All main commits now use `3210164+zdhoward@users.noreply.github.com`. Global CLAUDE.md/AGENTS.md/GEMINI.md now forbid overriding commit identity; synced.
+- Caution: local T3 worktree branches still hold pre-rewrite history; rebase onto new `main` before merging or pushing any of them.
+
 # Current handoff — v1.15.1 patch (2026-11-03)
 - v1.15.1 released (service-only): 5h forced to 0% left when 7d exhausted (tiles + proxy rings), Antigravity earliest-reset fix. 51 tests pass, service restarted, ESP32 acking. No open PRs. Next: owner visually confirms the Codex ring on the device; firmware still 1.15.0.
 
