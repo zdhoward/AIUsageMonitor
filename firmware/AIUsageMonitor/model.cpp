@@ -364,6 +364,11 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
     d.c = g["c"] | 0;
     d.a = (g["a"] | 0) == 1;
     d.multi = !strcmp(g["ly"] | "r", "m");
+    for (JsonVariantConst v : g["rc"].as<JsonArrayConst>()) {
+      if (d.nrc >= 8) break;
+      const int n = v | -1;
+      d.rc[d.nrc++] = n < 0 ? -1 : min(n, 99);
+    }
     for (JsonObjectConst pl : g["p"].as<JsonArrayConst>()) {
       if (d.np >= 3) break;
       ProxyPool& pool = d.p[d.np++];

@@ -237,8 +237,13 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                     win["v"] = texts[0][:8]  # raw figure for a provider without a limit
                 ws.append(win)
             out_pools.append({"l": pl["label"], "w": ws})
-        groups.append({"n": NAMES.get(prov, prov.title()), "c": len(accs), "a": int(bool(attn)),
-                       "ly": "m" if tile.get("layout") == "multi" else "r", "p": out_pools})
+        group = {"n": NAMES.get(prov, prov.title()), "c": len(accs), "a": int(bool(attn)),
+                 "ly": "m" if tile.get("layout") == "multi" else "r", "p": out_pools}
+        # Banked manual resets per account, in sector order; -1 unknown.
+        credits = [(live.get(a.get("auth_index")) or {}).get("rc", -1) for a in accs]
+        if len(accs) <= 8 and any(c >= 0 for c in credits):
+            group["rc"] = credits
+        groups.append(group)
     return groups[:6]
 
 
@@ -290,7 +295,11 @@ class CpamcSource:
                 continue
             wins = read_windows(prof, body)
             if wins:
-                return {"windows": wins, "probe_ok": True}
+                res = {"windows": wins, "probe_ok": True}
+                credits = _get(body, prof.get("reset_credits"))
+                if isinstance(credits, int):
+                    res["rc"] = credits  # banked manual limit resets
+                return res
         return {"windows": None}
 
     def poll_once(self) -> None:
