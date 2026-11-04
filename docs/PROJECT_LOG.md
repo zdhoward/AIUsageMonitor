@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-11-03: Proxy Messages card
+
+- Added MESSAGES card (24HR BURN PILE calls to action, MANUAL RESETS from Codex banked reset credits). Owner trimmed it to calls to action only; reset dates are unavailable from the API, so counts only. Tests deferred.
+
 ## 2026-11-02: v1.15.0 public release wrap-up
 
 - Owner accepted sector spacing and authorized public release. Version firmware as v1.15.0; reconcile Proxy Home status, ticket index/T-033 version item, README, test report and handoff. Publish source and the inspected dashboard framebuffer; retain existing binary-distribution restriction.
