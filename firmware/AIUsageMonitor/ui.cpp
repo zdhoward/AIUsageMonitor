@@ -960,29 +960,72 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
   text("MESSAGES", x + 6, y + 2, 2, C_TEXT, TL_DATUM, w - 10);
-  const int lineH = 11, top = y + 21;
-  const int cap = min(8, max(1, (y + h - 3 - top) / lineH));
+  const int lineH = 10;
+  int ly = y + 21;
+  const int lines = (y + h - 2 - ly) / lineH;
+
+  // Accounts holding banked manual resets.
+  ProxyMsg res[8];
+  int nRes = 0;
+  for (uint8_t gi = 0; gi < gProxy.ng && nRes < 8; ++gi) {
+    const ProxyGroup& gr = gProxy.g[gi];
+    for (uint8_t i = 0; i < gr.nrc && nRes < 8; ++i) {
+      if (gr.rc[i] <= 0) continue;
+      ProxyMsg& m = res[nRes++];
+      m.secs = 0;
+      m.left = gr.rc[i];
+      if (gr.nrc > 1) snprintf(m.who, sizeof m.who, "%.8s%d", gr.n, i + 1);
+      else strlcpy(m.who, gr.n, sizeof m.who);
+    }
+  }
+
+  // Two headings plus at least one line each; the burn pile gets first pick.
+  const int body = max(2, lines - 2);
+  const int resLines = min(max(1, nRes), body / 2);
   ProxyMsg msgs[8];
   int total;
-  const int n = collectProxyMsgs(epoch, msgs, cap, total);
-  if (!n) {
-    text(epoch ? "All clear" : "No clock yet", x + 6, top, 1, C_MUTED, TL_DATUM, w - 12);
-    return;
-  }
+  const int n = collectProxyMsgs(epoch, msgs, min(8, body - resLines), total);
+
+  auto heading = [&](const char* s) {
+    text(s, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 12);
+    g.drawFastHLine(x + 6, ly + 8, w - 12, col(C_FAINT));
+    ly += lineH;
+  };
+  auto line = [&](const char* who, const char* r, uint16_t c) {
+    const int rw = text(r, x + w - 6, ly, 1, c, TR_DATUM);
+    text(who, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 16 - rw);
+    ly += lineH;
+  };
+  auto note = [&](const char* s) {
+    text(s, x + 6, ly, 1, C_MUTED, TL_DATUM, w - 12);
+    ly += lineH;
+  };
+
+  heading("24HR BURN PILE");
+  if (!n) note(epoch ? "All clear" : "No clock yet");
   const int shown = total > n ? n - 1 : n;  // last line becomes "+N more"
   for (int i = 0; i < shown; ++i) {
-    const ProxyMsg& m = msgs[i];
-    const int ly = top + i * lineH;
     char r[16], d[12];
-    fmtDurShort(d, sizeof d, m.secs);
-    snprintf(r, sizeof r, "%d%% %s", m.left, d);
-    const int rw = text(r, x + w - 6, ly, 1, C_GREEN, TR_DATUM);
-    text(m.who, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 16 - rw);
+    fmtDurShort(d, sizeof d, msgs[i].secs);
+    snprintf(r, sizeof r, "%d%% %s", msgs[i].left, d);
+    line(msgs[i].who, r, C_GREEN);
   }
+  char b[16];
   if (shown < n) {
-    char b[16];
     snprintf(b, sizeof b, "+%d more", total - shown);
-    text(b, x + 6, top + shown * lineH, 1, C_MUTED, TL_DATUM, w - 12);
+    note(b);
+  }
+
+  heading("MANUAL RESETS");
+  if (!nRes) note("None banked");
+  const int resShown = nRes > resLines ? resLines - 1 : nRes;
+  for (int i = 0; i < resShown; ++i) {
+    snprintf(b, sizeof b, "x%d", res[i].left);
+    line(res[i].who, b, C_AMBER);
+  }
+  if (resShown < nRes) {
+    snprintf(b, sizeof b, "+%d more", nRes - resShown);
+    note(b);
   }
 }
 

@@ -7,6 +7,7 @@
     {"pool": "main", "path": "rate_limit.secondary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds"}
   ],
   "tile": {"layout": "rings", "pools": [{"id": "main", "label": "Codex"}]},
+  "reset_credits": "rate_limit_reset_credits.available_count",
   "fallback": "headers",
   "notes": "Verified 2026-10-30 on Plus (5h + 7d). Free accounts report one 30-day window; labels come from length_s."
 }

@@ -127,6 +127,8 @@ struct ProxyGroup {
   bool multi = false; // "m": double-wide tile, one mini ring set per pool
   ProxyPool p[3];
   uint8_t np = 0;
+  int8_t rc[8];       // banked manual resets per account (sector order), -1 unknown
+  uint8_t nrc = 0;
 };
 struct ProxyData {
   bool valid = false;
