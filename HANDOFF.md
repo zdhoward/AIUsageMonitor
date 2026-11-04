@@ -1,3 +1,9 @@
+# Handoff addendum — Proxy Messages card (2026-11-03)
+- Done: last Proxy grid cell (under System) is a MESSAGES card. **24HR BURN PILE** lists accounts with quota left in their full-reset window (pool's longest, 7d/30d) resetting within 24 h, soonest first. **MANUAL RESETS** lists accounts with banked resets (`Codex1 x2`). Commits `aa527cf`, `0ee0c16`, `0711c64`; flashed to COM6, service restarted, framebuffer `build/messages-card.png` inspected.
+- Data: service reads `rate_limit_reset_credits.available_count` from Codex `wham/usage` (profile key `reset_credits`) and sends per-group `rc` array (sector order, -1 unknown) on the proxy line. Counts available, not `applicable_available_count` (owner OK).
+- Limit: no expiry/earned date for banked resets exists in Codex `wham/usage` or T3's cache; owner accepted count-only. Claude reports no manual resets.
+- Deferred: automated tests (owner testing phase); no test yet for `rc` in `pool_groups`. Firmware version not bumped.
+
 # Handoff addendum — commit identity cleanup (2026-11-03)
 - Cause: agent sessions on 2026-10-27/28 committed with invented emails (`zech@users.noreply...`, `197633046+agricidaniel@users.noreply...`), so GitHub credited users `zech` and `kglxeee` (ID 197633046). Only collaborator is zdhoward; no outside contributions.
 - Fixed: `git filter-repo --mailmap` rewrite of remote branches and tags; force-pushed `main` (`ac27eb6`), v1.14.1, v1.15.0, v1.15.1. All main commits now use `3210164+zdhoward@users.noreply.github.com`. Global CLAUDE.md/AGENTS.md/GEMINI.md now forbid overriding commit identity; synced.
