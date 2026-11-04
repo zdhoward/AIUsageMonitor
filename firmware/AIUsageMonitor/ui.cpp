@@ -894,71 +894,53 @@ static void drawProxySystem(int x, int y, int w, int h) {
   }
 }
 
-// Messages card: notices derived from the proxy line, most urgent first. Red
-// "!" for groups needing attention, amber for accounts in cooldown (0% left,
-// reset ahead), green for accounts still holding quota in a window longer than
-// 5h that resets within 24 h (use it or lose it).
+// Messages card: calls to action only. Lists accounts that still hold quota in
+// their full-reset window (the pool's longest window, 7d or 30d) when that
+// window resets within 24 h, soonest first. Cooldowns and 5h resets are noise.
 #define MSG_USE_SOON_S 86400
 struct ProxyMsg {
-  uint8_t kind;  // 0 attention, 1 cooldown, 2 use soon
-  int32_t secs;  // seconds to reset (sort key), -1 none
+  int32_t secs;  // seconds to reset (sort key)
   int8_t left;   // remaining percent
   char who[12];
-  char win[5];
 };
 
-static bool msgBefore(const ProxyMsg& a, const ProxyMsg& b) {
-  return a.kind != b.kind ? a.kind < b.kind : a.secs < b.secs;
-}
-
-// Keeps the `cap` most urgent notices in `out`; `total` counts all of them.
+// Keeps the `cap` soonest notices in `out`; `total` counts all of them.
 static void msgAdd(ProxyMsg* out, int& n, int cap, int& total, const ProxyMsg& m) {
   total++;
   if (n < cap) { out[n++] = m; return; }
-  int worst = 0;
+  int latest = 0;
   for (int i = 1; i < n; ++i)
-    if (msgBefore(out[worst], out[i])) worst = i;
-  if (msgBefore(m, out[worst])) out[worst] = m;
+    if (out[i].secs > out[latest].secs) latest = i;
+  if (m.secs < out[latest].secs) out[latest] = m;
 }
 
 static int collectProxyMsgs(uint32_t epoch, ProxyMsg* out, int cap, int& total) {
   int n = 0;
   total = 0;
+  if (!epoch) return 0;
   const ProxyData& p = gProxy;
   for (uint8_t gi = 0; gi < p.ng; ++gi) {
     const ProxyGroup& gr = p.g[gi];
-    if (gr.a) {
-      ProxyMsg m{0, -1, -1, {}, {}};
-      strlcpy(m.who, gr.n, sizeof m.who);
-      msgAdd(out, n, cap, total, m);
-    }
     for (uint8_t pi = 0; pi < gr.np; ++pi) {
       const ProxyPool& pool = gr.p[pi];
-      for (uint8_t wi = 0; wi < pool.nw; ++wi) {
-        const ProxyWin& w = pool.w[wi];
-        const bool longWin = !eqNoCase(w.l, "5h");
-        const int count = w.nq ? w.nq : 1;
-        for (int ai = 0; ai < count; ++ai) {
-          const int left = w.nq ? w.q[ai] : w.r;
-          const uint32_t z = w.nq ? w.qz[ai] : w.z;
-          if (left < 0 || !z || !epoch || z <= epoch) continue;
-          const int32_t s = (int32_t)(z - epoch);
-          uint8_t kind;
-          if (left == 0) kind = 1;
-          else if (longWin && s <= MSG_USE_SOON_S) kind = 2;
-          else continue;
-          ProxyMsg m{kind, s, (int8_t)left, {}, {}};
-          const char* base = gr.np > 1 ? pool.l : gr.n;
-          if (count > 1) snprintf(m.who, sizeof m.who, "%.8s%d", base, ai + 1);
-          else strlcpy(m.who, base, sizeof m.who);
-          strlcpy(m.win, w.l, sizeof m.win);
-          msgAdd(out, n, cap, total, m);
-        }
+      if (!pool.nw) continue;
+      const ProxyWin& w = pool.w[pool.nw - 1];  // longest window = full reset
+      if (eqNoCase(w.l, "5h")) continue;
+      const int count = w.nq ? w.nq : 1;
+      for (int ai = 0; ai < count; ++ai) {
+        const int left = w.nq ? w.q[ai] : w.r;
+        const uint32_t z = w.nq ? w.qz[ai] : w.z;
+        if (left <= 0 || !z || z <= epoch || z - epoch > MSG_USE_SOON_S) continue;
+        ProxyMsg m{(int32_t)(z - epoch), (int8_t)left, {}};
+        const char* base = gr.np > 1 ? pool.l : gr.n;
+        if (count > 1) snprintf(m.who, sizeof m.who, "%.8s%d", base, ai + 1);
+        else strlcpy(m.who, base, sizeof m.who);
+        msgAdd(out, n, cap, total, m);
       }
     }
   }
-  for (int i = 1; i < n; ++i)  // insertion sort, most urgent first
-    for (int j = i; j > 0 && msgBefore(out[j], out[j - 1]); --j) {
+  for (int i = 1; i < n; ++i)  // insertion sort, soonest first
+    for (int j = i; j > 0 && out[j].secs < out[j - 1].secs; --j) {
       const ProxyMsg t = out[j - 1];
       out[j - 1] = out[j];
       out[j] = t;
@@ -992,24 +974,10 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
     const ProxyMsg& m = msgs[i];
     const int ly = top + i * lineH;
     char r[16], d[12];
-    uint16_t c;
-    if (m.kind == 0) {
-      strlcpy(r, "check", sizeof r);
-      c = C_RED;
-    } else {
-      fmtDurShort(d, sizeof d, m.secs);
-      if (m.kind == 1) {
-        snprintf(r, sizeof r, "%s %s", m.win, d);
-        c = C_AMBER;
-      } else {
-        snprintf(r, sizeof r, "%d%% %s", m.left, d);
-        c = C_GREEN;
-      }
-    }
-    const int rw = text(r, x + w - 6, ly, 1, c, TR_DATUM);
-    char who[14];
-    snprintf(who, sizeof who, "%s%s", m.kind == 0 ? "! " : "", m.who);
-    text(who, x + 6, ly, 1, m.kind == 0 ? C_RED : C_TEXT, TL_DATUM, w - 16 - rw);
+    fmtDurShort(d, sizeof d, m.secs);
+    snprintf(r, sizeof r, "%d%% %s", m.left, d);
+    const int rw = text(r, x + w - 6, ly, 1, C_GREEN, TR_DATUM);
+    text(m.who, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 16 - rw);
   }
   if (shown < n) {
     char b[16];
