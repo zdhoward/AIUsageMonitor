@@ -751,10 +751,12 @@ static void proxySplit(const ProxyPool& p, const ProxyWin*& outer, const ProxyWi
 
 // Seconds until the soonest weekly (non-5h) quota cooldown (0% remaining, reset ahead), -1 if none.
 // `from` (optional) receives the pool and window label that cools down first.
-static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch, char* from = nullptr, size_t fromN = 0) {
+// `onlyPool` >= 0 restricts it to that pool index (the multi tile uses pool 0, Flash).
+static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch, char* from = nullptr, size_t fromN = 0,
+                             int onlyPool = -1) {
   int32_t best = -1;
   for (uint8_t i = 0; i < gr.np; ++i)
-    for (uint8_t k = 0; k < gr.p[i].nw; ++k) {
+    for (uint8_t k = 0; k < gr.p[i].nw && (onlyPool < 0 || i == onlyPool); ++k) {
       const ProxyWin& w = gr.p[i].w[k];
       if (eqNoCase(w.l, "5h")) continue;  // weekly cooldowns only
       // Each account cools down on its own; the averaged `r` would hide one
@@ -849,7 +851,7 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
   char from[16];
-  const int32_t cd = proxyCooldown(gr, epoch, from, sizeof from);
+  const int32_t cd = proxyCooldown(gr, epoch, from, sizeof from, 0);
   int reserve = 0;
   if (cd >= 0) {
     char b[32], d[12];
@@ -875,7 +877,11 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
     for (int k = 0; k < 2; ++k) {
       char b[14];
       uint16_t c = C_MUTED;
-      if (!win[k]) strlcpy(b, "--", sizeof b);
+      if (!win[k] && k == 0 && win[1] && win[1]->r > 0) {
+        // Weekly-only pool (Argon): show its next reset in the empty 5h slot.
+        fmtDur(b, sizeof b, win[1]->r);
+        c = UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT;
+      } else if (!win[k]) strlcpy(b, "--", sizeof b);
       else if (win[k]->u < 0) snprintf(b, sizeof b, "%s --", win[k]->l);
       else {
         const int left = 100 - min<int>(win[k]->u, 100);
