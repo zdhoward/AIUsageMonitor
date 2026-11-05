@@ -164,6 +164,44 @@ class AntigravityTests(unittest.TestCase):
         self.assertEqual(antigrav.unavailable, "no Gemini quota")
         self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
 
+    def buckets(self):
+        return [
+            {"bucketId": "gemini-weekly", "remainingFraction": 0.178, "resetTime": iso(NOW + 97 * 3600)},
+            {"bucketId": "gemini-5h", "resetTime": iso(NOW + 4900)},  # absent fraction = exhausted
+            {"bucketId": "3p-weekly", "remainingFraction": 0, "resetTime": iso(NOW + 1100)},
+            {"bucketId": "3p-5h", "remainingFraction": 1, "disabled": True},
+            {"bucketId": "gemini-argon-wtu-weekly", "remainingFraction": 0.5, "resetTime": iso(NOW + 94 * 3600)},
+        ]
+
+    def test_summary_supplies_gemini_weekly_and_argon(self):
+        accounts = antigravity.accounts_from_models(self.models(), NOW)
+        antigrav, argon = antigravity.apply_summary(accounts, self.buckets(), NOW)
+        self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
+                         [("5h", 100.0), ("7d", 82.2)])
+        self.assertAlmostEqual(antigrav.windows[1].resets_at - NOW, 97 * 3600, delta=1)
+        self.assertEqual([(w.label, w.used_percent) for w in argon.windows], [("7d", 50.0)])
+        self.assertIsNone(argon.unavailable)
+        # The Claude/GPT 3p buckets never leak into Gemini or Argon.
+        self.assertEqual(len(antigrav.windows), 2)
+
+    def test_summary_without_matching_buckets_keeps_model_data(self):
+        accounts = antigravity.accounts_from_models(self.models(), NOW)
+        antigrav, argon = antigravity.apply_summary(accounts, [{"bucketId": "3p-weekly", "remainingFraction": 0}], NOW)
+        self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
+                         [("5h", 25.0), ("7d", 50.0)])
+        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
+
+    def test_summary_failure_falls_back_to_models(self):
+        with tempfile.TemporaryDirectory() as d:
+            reader = antigravity.AntigravityReader(Path(d), refresh_s=300, timeout_s=1)
+            token = antigravity.Token("i", "s", "r", "p")
+            with mock.patch.object(antigravity, "discover_token", return_value=antigravity.TokenChoice(token, "p", None)), \
+                 mock.patch.object(antigravity, "refresh_access_token", return_value=("a", NOW + 3600)), \
+                 mock.patch.object(antigravity, "fetch_models", return_value=self.models()), \
+                 mock.patch.object(antigravity, "fetch_quota_summary", side_effect=antigravity.QuotaError("http 500")):
+                antigrav = next(a for a in reader.read(NOW) if a.name == "Antigrav")
+            self.assertEqual([w.label for w in antigrav.windows], ["5h", "7d"])
+
     def test_failed_refresh_retains_last_good_checked_at(self):
         with tempfile.TemporaryDirectory() as d:
             reader = antigravity.AntigravityReader(Path(d), refresh_s=300, timeout_s=1)
