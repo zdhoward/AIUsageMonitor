@@ -325,3 +325,8 @@
 
 ## 2026-11-05 — Codex console fix
 - Console Codex tile now gets limits from ~/.codex logs via a ChatGPT-plan fallback match (7fc7c6a). API-key proxy accounts remain "unsupported" by design. Tests deferred.
+
+## 2026-11-05 — Antigrav cooldown and weekly source
+- The tile's cooldown was the soonest 0% window of any pool, from the cross-account average, so it disagreed with the 24HR BURN PILE. It is now Flash's soonest per-account 7d cooldown, countdown only; the Cl/GPT pool is labelled Claude; Argon's next reset sits in its 5h slot.
+- The direct Antigrav probe also reads `retrieveUserQuotaSummary` (agy `/usage`). T3's login is a different account from the CPAMC ones, so the console cards remain 5h-only; the Proxy view has the real numbers.
+- Verified: live CPAMC buckets vs agy `/usage`, framebuffer captures, 54 service tests. Firmware-only commits ran no tests.
