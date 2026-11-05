@@ -116,7 +116,7 @@ struct ProxyWin {
   uint8_t nq = 0;
 };
 struct ProxyPool {
-  char l[8];   // pool label (Flash, Cl/GPT, Argon)
+  char l[8];   // pool label (Flash, Claude, Argon)
   ProxyWin w[2];  // w[0] is the shorter window (outer ring), w[1] the longer
   uint8_t nw = 0;
 };
