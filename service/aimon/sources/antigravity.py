@@ -236,6 +236,71 @@ def fetch_models(token: Token, access_token: str, timeout: float) -> dict:
     raise last or QuotaError("no models reported")
 
 
+def fetch_quota_summary(token: Token, access_token: str, timeout: float) -> list[dict]:
+    """POST retrieveUserQuotaSummary, returning the flat bucket list only.
+
+    This is the source behind agy's /usage: it carries the Gemini weekly and the
+    separate Argon weekly that fetchAvailableModels omits.
+    """
+    body = json.dumps({"project": token.project_id} if token.project_id else {}).encode()
+    last: QuotaError | None = None
+    for base in QUOTA_ENDPOINTS:
+        try:
+            doc = _post_json(
+                f"{base}/v1internal:retrieveUserQuotaSummary",
+                body,
+                {
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                    "User-Agent": USER_AGENT,
+                },
+                timeout,
+            )
+        except QuotaError as e:
+            last = e
+            continue
+        buckets = [
+            b
+            for g in doc.get("groups") or []
+            if isinstance(g, dict)
+            for b in g.get("buckets") or []
+            if isinstance(b, dict) and isinstance(b.get("bucketId"), str)
+        ]
+        if buckets:
+            return buckets
+        last = QuotaError("no buckets reported")
+    raise last or QuotaError("no buckets reported")
+
+
+def _bucket_window(buckets: list[dict], bucket_id: str, window_id: str, kind: str, label: str, mins: int) -> Window | None:
+    for b in buckets:
+        if b.get("bucketId") != bucket_id or b.get("disabled"):
+            continue
+        fraction = b.get("remainingFraction", 0)  # an absent fraction means exhausted
+        used = fraction_to_used(fraction)
+        if used is None:
+            return None
+        return Window(window_id, kind, label, used, _iso(b.get("resetTime")), mins)
+    return None
+
+
+def apply_summary(accounts: list[Account], buckets: list[dict], now: float) -> list[Account]:
+    """Overlay summary buckets (Gemini 5h/7d, Argon 7d) on the model-derived accounts."""
+    antigrav, argon = accounts
+    five = _bucket_window(buckets, "gemini-5h", "antigravity-5h", "session", "5h", 300)
+    week = _bucket_window(buckets, "gemini-weekly", "antigravity-7d", "weekly", "7d", 10080)
+    keep = [w for w in antigrav.windows if not (
+        (five and w.kind == "session") or (week and w.kind == "weekly"))]
+    antigrav.windows = sorted(keep + [w for w in (five, week) if w], key=lambda w: w.kind != "session")
+    if antigrav.windows:
+        antigrav.checked_at, antigrav.unavailable = now, None
+    wk = _bucket_window(buckets, "gemini-argon-wtu-weekly", f"{ARGON_MODEL}-weekly", "weekly", "7d", 10080)
+    if wk:
+        argon.windows = [w for w in argon.windows if w.kind != "weekly"] + [wk]
+        argon.checked_at, argon.unavailable = now, None
+    return accounts
+
+
 def _family(model_id: str, model: dict) -> str | None:
     provider = model.get("modelProvider")
     if provider == "MODEL_PROVIDER_GOOGLE" or model_id.startswith("gemini-"):
@@ -432,4 +497,10 @@ class AntigravityReader:
             self._good = None
         access = self._access_token(choice.token, now)
         models = fetch_models(choice.token, access, self.timeout_s)
-        return accounts_from_models(models, now)
+        accounts = accounts_from_models(models, now)
+        try:
+            buckets = fetch_quota_summary(choice.token, access, self.timeout_s)
+        except QuotaError as e:  # models-only data is still honest, just without weekly
+            log.warn("antigravity.summary_failed", reason=e.reason)
+            return accounts
+        return apply_summary(accounts, buckets, now)

@@ -1,3 +1,8 @@
+# Handoff addendum — Antigrav cooldown label and weekly source (2026-11-05)
+- Finding: the Proxy multi tile's amber "COOLDOWN" was the soonest 0% window across all pools, here Cl/GPT `3p-weekly` (~19 min), not the Gemini weekly (97.7 h, correctly outside the 24 h burn pile). Tile now reads `Cl/GPT 7d 17m` (pool + window). Firmware commit `ui.cpp`, flashed to COM6, framebuffer `build/cooldown-label.png`.
+- Service: the direct Antigrav probe now also calls `retrieveUserQuotaSummary` (agy `/usage` source) for `gemini-5h`, `gemini-weekly` and Argon's `gemini-argon-wtu-weekly`, falling back to models-only. 54 service tests pass (3 new).
+- Limit: T3's stored Antigravity login is a different Google account from the two CPAMC ones and returns only `3p-*` buckets, so the console Antigrav/Argon cards stay 5h-only/unknown. The Proxy view (CPAMC) has the real Gemini numbers. Option: source the console cards from CPAMC.
+
 # Handoff addendum — Console Codex "unsupported" fix (2026-11-05)
 - Done: console Codex tile showed "unsupported". Cause: T3 names the ChatGPT account by UUID (stale cache, "unsupported"), while `snapshot._merge_codex_log_limits` only matched an account with id `codex`. Now falls back to the ChatGPT-plan Codex account with no windows when no exact id exists. Commit `7fc7c6a`; service restarted; device payload shows 5h 12% / 7d 79% (source `codex_log`).
 - Expected, not a bug: API-key proxy accounts (P-Codex, P-Gemini, P-Grok, P-Claude) stay "unsupported" on the console. The Proxy view reads CPAMC and was always correct.
