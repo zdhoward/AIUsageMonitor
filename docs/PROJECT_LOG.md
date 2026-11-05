@@ -322,3 +322,6 @@
 ## 2026-11-03 — v1.15.1 patch
 - 5h shows 0% left when 7d is exhausted; the rule lives in both payload paths (`snapshot.build_payload` tiles and `cpamc.pool_groups` proxy rings), since Codex renders through the proxy path.
 - Antigravity resets use the earliest Gemini model reset. Service-only; firmware unchanged.
+
+## 2026-11-05 — Codex console fix
+- Console Codex tile now gets limits from ~/.codex logs via a ChatGPT-plan fallback match (7fc7c6a). API-key proxy accounts remain "unsupported" by design. Tests deferred.
