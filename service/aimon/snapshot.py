@@ -252,8 +252,15 @@ class Collector:
             if not latest:
                 continue
             ts, payload = latest
+            # T3 names the signed-in ChatGPT account by UUID, so the default
+            # "codex" log home matches no instance id; fall back to the one
+            # subscription (non-API-key) Codex account that reports no windows.
+            exact = any(a.instance_id == sc.account for a in st.accounts)
             for pos, acct in enumerate(st.accounts):
-                if acct.instance_id == sc.account and (acct.checked_at or 0) < ts:
+                match = acct.instance_id == sc.account or (
+                    not exact and acct.driver == "codex" and acct.plan == "ChatGPT" and not acct.windows
+                )
+                if match and (acct.checked_at or 0) < ts:
                     windows = codex_windows(payload)
                     if windows:
                         st.accounts[pos] = replace(
