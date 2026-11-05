@@ -1,3 +1,9 @@
+# Handoff addendum — Console Codex "unsupported" fix (2026-11-05)
+- Done: console Codex tile showed "unsupported". Cause: T3 names the ChatGPT account by UUID (stale cache, "unsupported"), while `snapshot._merge_codex_log_limits` only matched an account with id `codex`. Now falls back to the ChatGPT-plan Codex account with no windows when no exact id exists. Commit `7fc7c6a`; service restarted; device payload shows 5h 12% / 7d 79% (source `codex_log`).
+- Expected, not a bug: API-key proxy accounts (P-Codex, P-Gemini, P-Grok, P-Claude) stay "unsupported" on the console. The Proxy view reads CPAMC and was always correct.
+- Limit: log-based reading is only as fresh as the last Codex use.
+- Deferred: tests (owner testing phase); no test yet for the fallback match. Optional: friendlier label or hide for API-key accounts.
+
 # Handoff addendum — Proxy Messages card (2026-11-03)
 - Done: last Proxy grid cell (under System) is a MESSAGES card. **24HR BURN PILE** lists accounts with quota left in their full-reset window (pool's longest, 7d/30d) resetting within 24 h, soonest first. **MANUAL RESETS** lists accounts with banked resets (`Codex1 x2`). Commits `aa527cf`, `0ee0c16`, `0711c64`; flashed to COM6, service restarted, framebuffer `build/messages-card.png` inspected.
 - Data: service reads `rate_limit_reset_credits.available_count` from Codex `wham/usage` (profile key `reset_credits`) and sends per-group `rc` array (sector order, -1 unknown) on the proxy line. Counts available, not `applicable_available_count` (owner OK).
