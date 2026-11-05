@@ -749,14 +749,14 @@ static void proxySplit(const ProxyPool& p, const ProxyWin*& outer, const ProxyWi
   }
 }
 
-// Seconds until the soonest quota cooldown (0% remaining, reset ahead), -1 if none.
+// Seconds until the soonest weekly (non-5h) quota cooldown (0% remaining, reset ahead), -1 if none.
 // `from` (optional) receives the pool and window label that cools down first.
 static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch, char* from = nullptr, size_t fromN = 0) {
   int32_t best = -1;
   for (uint8_t i = 0; i < gr.np; ++i)
     for (uint8_t k = 0; k < gr.p[i].nw; ++k) {
       const ProxyWin& w = gr.p[i].w[k];
-      if (w.r != 0 || !w.z) continue;
+      if (w.r != 0 || !w.z || eqNoCase(w.l, "5h")) continue;  // weekly cooldowns only
       const int32_t s = epoch && w.z > epoch ? (int32_t)(w.z - epoch) : 0;
       if (best >= 0 && s >= best) continue;
       best = s;
