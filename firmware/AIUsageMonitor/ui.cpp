@@ -856,7 +856,7 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
   if (cd >= 0) {
     char b[32], d[12];
     fmtDur(d, sizeof d, epoch ? cd : -1);
-    snprintf(b, sizeof b, "%s %s", from, d);  // e.g. "Cl/GPT 7d 19m"
+    snprintf(b, sizeof b, "%s", d);  // countdown only; the cooldown is always Flash's 7d
     reserve = text(b, x + w - 6, y + 7, 1, C_AMBER, TR_DATUM) + 8;
   }
   proxyTitle(gr, cd >= 0, x, y, w - reserve);
