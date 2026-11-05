@@ -756,13 +756,21 @@ static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch, char* from = 
   for (uint8_t i = 0; i < gr.np; ++i)
     for (uint8_t k = 0; k < gr.p[i].nw; ++k) {
       const ProxyWin& w = gr.p[i].w[k];
-      if (w.r != 0 || !w.z || eqNoCase(w.l, "5h")) continue;  // weekly cooldowns only
-      const int32_t s = epoch && w.z > epoch ? (int32_t)(w.z - epoch) : 0;
-      if (best >= 0 && s >= best) continue;
-      best = s;
-      if (from && fromN) {
-        if (gr.np > 1) snprintf(from, fromN, "%.6s %s", gr.p[i].l, w.l);
-        else strlcpy(from, w.l, fromN);
+      if (eqNoCase(w.l, "5h")) continue;  // weekly cooldowns only
+      // Each account cools down on its own; the averaged `r` would hide one
+      // exhausted account behind a healthy one.
+      const uint8_t count = w.nq ? w.nq : 1;
+      for (uint8_t a = 0; a < count; ++a) {
+        const int left = w.nq ? w.q[a] : w.r;
+        const uint32_t z = w.nq ? w.qz[a] : w.z;
+        if (left != 0 || !z) continue;
+        const int32_t s = epoch && z > epoch ? (int32_t)(z - epoch) : 0;
+        if (best >= 0 && s >= best) continue;
+        best = s;
+        if (from && fromN) {
+          if (gr.np > 1) snprintf(from, fromN, "%.6s %s", gr.p[i].l, w.l);
+          else strlcpy(from, w.l, fromN);
+        }
       }
     }
   return best;
