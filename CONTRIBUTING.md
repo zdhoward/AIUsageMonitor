@@ -4,9 +4,13 @@ Start with the [setup guide](docs/SETUP.md), [hardware reference](docs/HARDWARE.
 
 Keep changes focused and explain the user-visible behavior. Separate collection, transport, model caching and rendering. Preserve unknown-versus-zero semantics, last measured values during stale data, and independent Session/Weekly windows. A passed reset deadline is not proof of quota refill.
 
+## Working with AI agents and branches
+
+Agents start from [AGENTS.md](AGENTS.md), which links step-by-step [recipes](docs/recipes/README.md). Contributors and users alike keep `main` identical to upstream and work on a branch; run `scripts/doctor.ps1` (add `-Maintainer` if you work on `main` yourself) before and after a change. Studio's Updates tab and `docs/recipes/update.md` describe how users take releases.
+
 ## Validate changes
 
-- Service behavior: run the relevant fixture tests, then `python -m unittest discover -s tests -t .` from `service/` for a completed milestone.
+- Service behavior: run the relevant fixture tests, then `python -m unittest discover -s tests -t .` from `service/` for a completed milestone. Studio: `python -m unittest discover -s studio/tests -t .` from the repo root.
 - Firmware: run `scripts/build.ps1`; for renderer changes, flash the actual board and attach a framebuffer capture using `scripts/screenshot.py`.
 - Third-party compliance: run `python scripts/third_party.py check` to audit dependencies, tracked files, and license declarations.
 - Documentation: check local links, commands and version claims against source. Mark untested compatibility as untested.

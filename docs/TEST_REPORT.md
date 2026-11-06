@@ -1,5 +1,12 @@
 # Test report
 
+## Updates tab, agent docs and tz test (2026-11-06)
+
+- Ran 2026-11-06: service suite **56 tests OK** (adds two for the proxy line's `ts`/`tz`, which nothing covered after v1.16.0), Studio suite **29 tests OK** (adds nine for `studio/updater.py` against scratch git repos), and `scripts/third_party.py check` PASS. No hardware involved.
+- Updater cases: up to date, pending-change preview, clean merge keeps local work and tags a backup, conflict previewed then aborted with the tree and tags unchanged, dirty tree blocked unless saved first, local `main` with its own commits blocked, update while on `main`, rollback, rollback with no backup.
+- Fixed from review: a failed or conflicting update no longer leaves a backup tag, which would have made "Undo last update" restore the current state. A dirty-file listing lost the first character of its first name.
+- Checked by eye: the Updates tab renders in a browser and reports the real version, branch and build. **Not exercised:** the update-available panel, the conflict panel and a live update through the UI (covered only by the logic tests); a network fetch failure message; the setup prompt run end to end on a clean machine; portrait and other screen sizes (the resize recipe is unverified).
+
 ## v1.15.0 proxy account sectors (2026-11-02)
 
 - Production firmware builds and hash-verified USB uploads passed. Live proxy polling returned two Codex accounts with both short and weekly windows; compact payload was 832 bytes before the later warning correction.
