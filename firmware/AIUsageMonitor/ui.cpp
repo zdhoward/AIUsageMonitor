@@ -982,9 +982,9 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   TFT_eSPI& g = G();
   g.fillRoundRect(x, y, w, h, 5, C_PANEL);
   text("MESSAGES", x + 6, y + 2, 2, C_TEXT, TL_DATUM, w - 10);
-  const int lineH = 10;
+  const int headH = 12, rowH = 17;
   int ly = y + 21;
-  const int lines = (y + h - 2 - ly) / lineH;
+  const int avail = y + h - 2 - ly;
 
   // Accounts holding banked manual resets.
   ProxyMsg res[8];
@@ -1001,36 +1001,40 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
     }
   }
 
-  // Two headings plus at least one line each; the burn pile gets first pick.
-  const int body = max(2, lines - 2);
-  const int resLines = min(max(1, nRes), body / 2);
+  // Two headings plus at least one row each; the burn pile gets first pick.
+  const int rows = max(2, (avail - 2 * headH) / rowH);
+  const int resRows = min(max(1, nRes), rows / 2);
   ProxyMsg msgs[8];
   int total;
-  const int n = collectProxyMsgs(epoch, msgs, min(8, body - resLines), total);
+  const int n = collectProxyMsgs(epoch, msgs, min(8, rows - resRows), total);
 
-  auto heading = [&](const char* s) {
-    text(s, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 12);
-    g.drawFastHLine(x + 6, ly + 8, w - 12, col(C_FAINT));
-    ly += lineH;
+  auto heading = [&](const char* s, uint16_t c) {
+    text(s, x + 6, ly, 1, c, TL_DATUM, w - 12);
+    g.drawFastHLine(x + 6, ly + 9, w - 12, col(C_FAINT));
+    ly += headH;
   };
-  auto line = [&](const char* who, const char* r, uint16_t c) {
-    const int rw = text(r, x + w - 6, ly, 1, c, TR_DATUM);
-    text(who, x + 6, ly, 1, C_TEXT, TL_DATUM, w - 16 - rw);
-    ly += lineH;
+  // Name left, big value right, optional small detail beside the value.
+  auto row = [&](const char* who, const char* val, const char* sub, uint16_t c) {
+    const int vw = text(val, x + w - 6, ly, 2, c, TR_DATUM);
+    int sw = 0;
+    // The detail yields to the name: drop it when the name would be cut.
+    if (sub && g.textWidth(who, 2) + vw + g.textWidth(sub, 1) + 22 <= w) sw = text(sub, x + w - 10 - vw, ly + 5, 1, C_MUTED, TR_DATUM) + 4;
+    text(who, x + 6, ly, 2, C_TEXT, TL_DATUM, w - 18 - vw - sw);
+    ly += rowH;
   };
   auto note = [&](const char* s) {
-    text(s, x + 6, ly, 1, C_MUTED, TL_DATUM, w - 12);
-    ly += lineH;
+    text(s, x + 6, ly + 3, 1, C_MUTED, TL_DATUM, w - 12);
+    ly += rowH;
   };
 
-  heading("24HR BURN PILE");
+  heading("24HR BURN PILE", C_GREEN);
   if (!n) note(epoch ? "All clear" : "No clock yet");
-  const int shown = total > n ? n - 1 : n;  // last line becomes "+N more"
+  const int shown = total > n ? n - 1 : n;  // last row becomes "+N more"
   for (int i = 0; i < shown; ++i) {
-    char r[16], d[12];
+    char pct[8], d[12];
     fmtDurShort(d, sizeof d, msgs[i].secs);
-    snprintf(r, sizeof r, "%d%% %s", msgs[i].left, d);
-    line(msgs[i].who, r, C_GREEN);
+    snprintf(pct, sizeof pct, "%d%%", msgs[i].left);
+    row(msgs[i].who, d, pct, C_GREEN);
   }
   char b[16];
   if (shown < n) {
@@ -1038,12 +1042,12 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
     note(b);
   }
 
-  heading("MANUAL RESETS");
+  heading("MANUAL RESETS", C_AMBER);
   if (!nRes) note("None banked");
-  const int resShown = nRes > resLines ? resLines - 1 : nRes;
+  const int resShown = nRes > resRows ? resRows - 1 : nRes;
   for (int i = 0; i < resShown; ++i) {
     snprintf(b, sizeof b, "x%d", res[i].left);
-    line(res[i].who, b, C_AMBER);
+    row(res[i].who, b, nullptr, C_AMBER);
   }
   if (resShown < nRes) {
     snprintf(b, sizeof b, "+%d more", nRes - resShown);
