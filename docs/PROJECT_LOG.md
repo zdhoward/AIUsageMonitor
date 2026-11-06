@@ -6,7 +6,7 @@
 - README setup prompt gained a Step 0 for the branch flow, plus an update prompt. Resize decision: stretch header, footer and cards to the screen and lay content out inside them; scenes and city art stay authored at 320x240.
 - Scene Studio **Updates** tab (`studio/updater.py`, `studio/web/updates.js`): check, conflict preview by trial merge, update with a backup tag, abort-and-hand-to-agent on conflict, flash and service restart, undo.
 - Fixes: backup tag left behind by failed updates; first character lost in the dirty-file list; no test covered the proxy `tz`, now added. Docs updated: SETUP, STUDIO, CONTRIBUTING, TEST_REPORT, README, update recipe.
-- Tests run this session: service 56 OK, Studio 29 OK, third-party check PASS. Not released or version-bumped.
+- Tests run this session: service 56 OK, Studio 29 OK, third-party check PASS. Released as v1.17.0 at the owner's request; no firmware change, so `FW_VERSION` stays 1.16.0.
 
 ## 2026-11-06: v1.16.0 release
 
