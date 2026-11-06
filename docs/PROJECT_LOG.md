@@ -3,6 +3,7 @@
 ## 2026-11-06: v1.16.0 release
 
 - Messages card UI pass (large rows, colour headings, even spacing). Proxy header now shows local date and time from `ts` plus a new `tz` offset sent by the service. Manual-reset expiry dates are unavailable from any source we can read (Codex `wham/usage` and T3's cache give counts only). Released as v1.16.0; tests deferred.
+- README rewritten for discovery: plain pitch, what-you-need, an AI-agent setup prompt that asks all questions first then automates install/flash/verify, and customisation starter prompts. The prompt has not been run end to end.
 
 ## 2026-11-03: Proxy Messages card
 
