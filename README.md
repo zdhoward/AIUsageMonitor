@@ -59,6 +59,11 @@ Clone the repo, open it in your agent (Claude Code, Codex, Gemini CLI, OpenCode,
 You are setting up AI Usage Monitor from this repository for me. Read README.md,
 docs/SETUP.md, docs/HARDWARE.md and docs/DATA_SOURCES.md first.
 
+STEP 0 - Protect my updates. Read AGENTS.md and docs/recipes/customise-safely.md.
+Keep `main` untouched and do all my changes on a `my-setup` branch with my own
+profile (profiles/my.json), so I can take new releases from upstream later. Log any
+tracked file you edit in docs/MY_CHANGES.md. Run scripts/doctor.ps1 when done.
+
 STEP 1 - Check, then ask. Before changing anything, verify what you can yourself
 (OS, Python version, whether arduino-cli is installed, whether a CH340 serial port
 is present). If the OS is not Windows or my board is not an ESP32-2432S024C, stop
@@ -93,6 +98,18 @@ Scene Studio is a small local app for editing profiles, playlists and screensave
 ![Animated preview of the built-in scenes](docs/img/scenes-preview.gif)
 
 *Preview from the firmware's own renderer, not hardware footage.*
+
+### Keep getting updates
+
+Your changes live on your own `my-setup` branch, and your config, keys and art stay out of Git, so new releases merge in without touching them. When a release comes out, paste this into your agent:
+
+````text
+Update AI Usage Monitor to the latest release by following
+docs/recipes/update.md exactly. Tag a backup first, keep my customisations, rebuild
+and flash, then show me a framebuffer capture. Ask me before discarding anything.
+````
+
+Agents working on this repo read [AGENTS.md](AGENTS.md) first. It points to step-by-step [recipes](docs/recipes/README.md) for adding a card, a scene or a data source, and for fitting another screen size, written so even a small model can follow them.
 
 Want to go further? Ask your agent. A few starters:
 
@@ -152,6 +169,7 @@ The service's HTTP API has no authentication and is meant for localhost only. Wi
 | [Brightness](docs/BRIGHTNESS.md) | Automatic backlight by sunrise and sunset |
 | [Companion](docs/MINT.md) | The animated face and its behavior |
 | [Assets](docs/ASSETS.md) | Image, GIF and scene pipeline |
+| [Agent guide](AGENTS.md) and [recipes](docs/recipes/README.md) | Rules and step-by-step procedures for AI agents, including safe updates |
 | [Tests](docs/TEST_REPORT.md) | What was verified and what wasn't |
 | [Releases](https://github.com/zdhoward/AIUsageMonitor/releases) | Release notes, newest first |
 
