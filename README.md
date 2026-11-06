@@ -1,77 +1,44 @@
 # AI Usage Monitor
 
-A small, always-visible AI usage dashboard for your desk. An ESP32 touchscreen shows subscription quota remaining and reset countdowns, while a Python service collects usage telemetry from local developer tools.
+**A little screen on your desk that tells you how much AI you have left, and when it refills.**
 
-![Live five-account Console grid with session and weekly quota rings](docs/img/display-console.png)
+If you pay for Claude, Codex, Gemini or a few of them at once, you know the feeling: you're mid-task and wonder whether you have enough allowance left, or whether you should have started that big job an hour ago. This project puts the answer in the corner of your eye. It's a small ESP32 touchscreen that sits under your monitor and shows quota rings, reset countdowns and a few other useful things, all day, without you opening a single dashboard.
 
-*Actual display framebuffer captured over USB. The console renders at 320×240; the image is enlarged 2× for readability. This is a screen capture, not a hardware photograph. Unknown Argon quota remains visibly unknown.*
+![The Proxy home screen: quota rings per provider, a system card, and a messages card, with the date and time in the header](docs/img/display-proxy.png)
 
-Built to sit beneath a monitor and answer a quick question: how much allowance is left, and when does it reset?
+*A real capture from the running display (320×240, shown at 2×). Not a mock-up.*
 
-The [v1.16.0 release](docs/RELEASE_1.16.0.md) adds a local date and time to the Proxy header and a clearer, larger Messages card (24HR BURN PILE and MANUAL RESETS). It builds on the [v1.15.0 Proxy Home](docs/RELEASE_1.15.0.md): live per-account quota sectors, provider totals and reset countdowns, with each account in an equal section of the session and weekly rings.
+It's free, MIT-licensed and a hobby project. It works well for me and I'd love for it to work for you too, and to see what you do with it.
 
-![Proxy Home with two accounts per provider and segmented quota rings](docs/img/display-proxy.png)
+## What you get
 
-*Actual USB framebuffer from the running display. Unknown quota is dashed; numbers remain provider aggregates.*
-
-## What it does
-
-- Selectable Console layout: the original Claude A / Claude B / Codex rows, or a compact six-account grid (Default) with concentric Session and Weekly rings.
-- Exact percent remaining, bright reset countdowns and a yellow weekly ring for quick recognition.
-- A whole-screen tap switches between the clean console and a detailed activity, token and cost dashboard.
-- Cached measurements remain visible when data is stale or disconnected; unknown is distinct from zero.
-- USB serial carries compact JSON from the PC. The display holds no account credentials.
-- The collector combines T3 status caches, Claude/Codex transcripts and OpenCode history. Optional OpenRouter key-status polling adds reported allowance and spend data.
-- A System page, styled like Task Manager, shows the PC's CPU, RAM and GPU load, disk read/write, and download/upload rates. Updates arrive about once a second (GPU on Windows only; needs `psutil`).
-- Optional automatic backlight: the service dims the display at night and brightens it during daylight using local sunrise/sunset times (set your location in `service/aimon.config.json`; the default is a placeholder). See [automatic brightness](docs/BRIGHTNESS.md).
-
-This is a working, board-specific project, tested on Windows with an ESP32-2432S024C. It is not a universal usage API: subscription readings depend on the data your local tools have already recorded.
-
-## How it works
-
-```text
-T3 caches + local transcripts + OpenCode history
-                     |
-              Python collector
-                     |
-         compact JSON over USB serial
-                     |
-       ESP32 -> TFT framebuffer -> display
-```
-
-The service also exposes a localhost HTTP API for diagnostics and optional Wi-Fi polling. Lightweight quota/activity reads run every 2 seconds, transcript processing every 10 seconds, and USB heartbeats every 5 seconds; changed measurements also request an immediate push. Available quota keeps the dashboard awake for the hour before a reported reset. The app does **not** force a provider request or assume a refill. See [data sources and freshness](docs/DATA_SOURCES.md).
-
-## Scene Studio and live display views
-
-![Animated preview of Miami Drive, Neon Skyline, Rainy Street, Plasma and Warp Speed](docs/img/scenes-preview.gif)
-
-*Native firmware-renderer preview, not hardware footage. City layers by Luis Zuno / Ansimuz (verified CC0); original themes only. [Get the optional CC0 scene pack](https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.14.1) and [review credits/setup](docs/THIRD_PARTY.md). PixelPatterns and unverified palettes are excluded.*
-
-Scene Studio edits profiles, playlists and procedural scenes, previews them, and sends builds to the display. Its Settings tab configures the local service without editing JSON; saved service settings take effect after restarting the service. [Studio guide](docs/STUDIO.md).
-
-![Studio service settings using public default location values](docs/img/studio-settings.png)
-
-![Procedural Plasma scene preview and generator controls in Studio](docs/img/studio-generator.png)
+- **Quota at a glance.** Concentric rings for the session (5h) and weekly windows, the exact percent left, and a countdown to the next reset. Full ring means plenty left.
+- **A "use it or lose it" list.** The Messages card shows accounts that still have quota in a window that resets within 24 hours, soonest first, plus any banked manual resets you can spend.
+- **Many accounts, one view.** If you pool accounts through a [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) proxy, each account gets its own slice of the ring. The classic Console view also works without a proxy.
+- **Honest numbers.** Unknown shows as unknown, never as zero. Stale data stays on screen and is marked as stale. A passed reset time is not treated as a refill.
+- **More than quotas.** Tap through a details page (activity, tokens, API-equivalent cost estimates), a Task-Manager-style system page (CPU, RAM, GPU, disk, network), and a small animated companion.
+- **A screensaver that's actually fun.** Pixel-art scenes and procedural effects, plus an optional automatic backlight that dims at night using your local sunrise and sunset.
+- **Private by design.** The screen never sees your prompts, transcripts or credentials. It only gets compact numbers over USB.
 
 | Details | System | Companion |
 | --- | --- | --- |
-| ![Live usage details](docs/img/display-details.png) | ![Live PC resource readings](docs/img/display-system.png) | ![MINT companion framebuffer](docs/img/display-companion.png) |
+| ![Usage details](docs/img/display-details.png) | ![PC resource readings](docs/img/display-system.png) | ![Companion face](docs/img/display-companion.png) |
 
-Display captures show real running views; Studio Settings uses public defaults. The animated demo uses the native scene engine with verified CC0 layers and original themes. Raw artwork is excluded from the source tree; an optional verified CC0 pack is available separately. No personal art or credentials are included. See [release evidence](docs/RELEASE_1.14.0.md) and [third-party notices and setup](docs/THIRD_PARTY.md).
+## What you need
 
-## Hardware
+- An **ESP32-2432S024C**: an ESP32 with a built-in 2.4" touchscreen. No wiring, just a USB **data** cable (some cables only charge).
+- A PC. It's built and tested on **Windows** (the helper scripts are PowerShell). Linux and macOS are not tested.
+- At least one source of usage data. The service reads what your local tools already record: [T3](docs/DATA_SOURCES.md) caches, Claude and Codex transcripts, OpenCode history, and optionally your OpenRouter key.
 
-- **ESP32-2432S024C**, integrated 2.4-inch ILI9341 240×320 display and CST820 capacitive touch.
-- A USB **data** cable and a PC; no external jumper wiring is required for this integrated board.
-- Optional desk mount or enclosure; none is included in this repository.
+This is a board-specific project, not a universal usage API. Look-alike boards can use different controllers or pins, so check the [hardware notes](docs/HARDWARE.md) before buying or adapting anything.
 
-The display is used in landscape at 320×240. The implemented TFT connections are MISO 12, MOSI 13, SCLK 14, CS 15, DC 2 and backlight 27. Touch uses SDA 33, SCL 32 and reset 25. See the [complete pinout and board-variant notes](docs/HARDWARE.md) before adapting it to another board.
+## Get it running
 
-## Get started
+You can do it by hand with the [setup guide](docs/SETUP.md), or let your AI coding agent do it.
 
-The tested baseline is Python 3.13, pyserial 3.5, Arduino CLI 1.2.0, ESP32 Arduino core 3.3.1, TFT_eSPI 2.5.43 and ArduinoJson 7.4.2. The helper scripts use Windows PowerShell.
+### Option 1: by hand
 
-After installing the toolchain and libraries in the [setup guide](docs/SETUP.md), run from the repository root:
+The tested baseline is Python 3.13, Arduino CLI 1.2.0 and the ESP32 core 3.3.1. Install those and the libraries listed in the [setup guide](docs/SETUP.md), then from the repo root:
 
 ```powershell
 python -m pip install -r service/requirements.txt
@@ -82,19 +49,115 @@ Copy-Item service/aimon.config.example.json service/aimon.config.json
 .\scripts\service.ps1 status
 ```
 
-The example config keeps HTTP on localhost and disables optional OpenRouter access. Without it, code defaults enable that source. Local settings and Wi-Fi credentials are Git-ignored.
+Local settings stay in `service/aimon.config.json`, which Git ignores.
 
-For the original three console rows, use T3 display names `A`/`B`/`Codex`, `CL1`/`CL2`, or the supported Claude A / Claude B prefixes. Select Grid in Studio's Console layout setting for up to six accounts. The named landscape setup pins A/B left, Codex top centre, and Antigrav/Argon right, leaving bottom centre empty. Gemini uses a direct quota probe through the existing T3 login; its weekly quota and the independent Argon quota stay unknown when unavailable. See [data sources](docs/DATA_SOURCES.md) and [UI configuration](docs/UI.md).
+### Option 2: let your AI do it
 
-## Reading the display
+Clone the repo, open it in your agent (Claude Code, Codex, Gemini CLI, OpenCode, anything that can run shell commands), and paste this. It asks everything up front, then does the rest without more questions.
 
-Rings show **remaining** quota: full means all allowance remains. Session colors follow capacity thresholds; Weekly stays yellow. `--` means unavailable, `due` means a reset deadline passed, and `STALE` (or an amber footer dot) means the source or link has aged; a red footer dot is a source error. A fresh USB connection does not guarantee a fresh provider measurement.
+````text
+You are setting up AI Usage Monitor from this repository for me. Read README.md,
+docs/SETUP.md, docs/HARDWARE.md and docs/DATA_SOURCES.md first.
 
-Tap to open the detailed dashboard for activity, quota windows, reset credits, token totals, free-model activity and API-equivalent cost estimates. Those estimates are **not subscription charges**. Cached values are held in RAM and are lost on device reboot.
+STEP 1 - Check, then ask. Before changing anything, verify what you can yourself
+(OS, Python version, whether arduino-cli is installed, whether a CH340 serial port
+is present). If the OS is not Windows or my board is not an ESP32-2432S024C, stop
+and tell me what is untested. Otherwise ask me ALL of these in one message, and
+suggest a default for each:
+  1. Which AI tools do I use? (T3, Claude Code, Codex, OpenCode, OpenRouter,
+     CLIProxyAPI proxy, Antigravity/Gemini)
+  2. Home screen: Proxy view (needs CLIProxyAPI) or the classic Console?
+  3. Automatic night dimming? If yes, my city or lat/long and timezone.
+  4. Screen orientation and screensaver preferences (scenes, how long until it starts).
+  5. Do I want the System page (CPU/RAM/GPU) and the companion face?
+  6. Should the service start automatically when I log in?
 
-## Development and verification
+STEP 2 - Build it. After I answer, do everything without asking again: install
+missing tools and Python packages, create service/aimon.config.json from the
+example using my answers, build and flash the firmware, start the service, and
+install the logon task only if I said yes.
 
-Service tests use fixtures and make no network requests:
+STEP 3 - Prove it works. Run scripts/service.ps1 status, then capture the display
+with scripts/screenshot.py and show me the image. If something fails, diagnose the
+root cause, fix it, and retry. Never print or commit API keys or tokens; refer
+to them by name. Do not run the test suite unless I ask.
+
+Finish with a short summary: what you installed, where the config lives, and the
+three commands I need to restart, check and stop the service.
+````
+
+### Open it up and make it yours
+
+Scene Studio is a small local app for editing profiles, playlists and screensaver scenes, previewing them, and sending them to the display. Double-click `Scene Studio.cmd`, or read the [Studio guide](docs/STUDIO.md).
+
+![Animated preview of the built-in scenes](docs/img/scenes-preview.gif)
+
+*Preview from the firmware's own renderer, not hardware footage.*
+
+Want to go further? Ask your agent. A few starters:
+
+````text
+Read docs/UI.md and docs/ASSETS.md. Add a new screensaver scene in the style of
+<describe it>, add it to my profile's playlist, preview it in Studio, and show me a
+framebuffer capture. Ask me first if you need art I haven't given you.
+````
+
+````text
+Read docs/PROTOCOL.md and docs/DATA_SOURCES.md. Add a new data source for <tool or
+API> to the service so its quota shows as a tile on the display. Keep unknown
+distinct from zero, never print credentials, and show me a capture when it works.
+````
+
+````text
+Read docs/UI.md. Change the Messages card so that <what you want>. Rebuild, flash,
+and show me a framebuffer capture before and after.
+````
+
+## How it works
+
+```text
+T3 caches + local transcripts + OpenCode history + optional proxy
+                              |
+                       Python service (PC)
+                              |
+                compact JSON over USB serial
+                              |
+                 ESP32 draws it on the screen
+```
+
+The service reads your local data read-only and pushes small updates to the screen every few seconds. It never forces a request to a provider and never guesses a refill. The ESP32 holds no credentials and only draws what it's sent. Details are in [data sources and freshness](docs/DATA_SOURCES.md) and the [protocol](docs/PROTOCOL.md).
+
+### Reading the display
+
+- Rings show what's **left**. Full means plenty.
+- `--` means unknown. `due` means a reset time has passed. `STALE`, or an amber footer dot, means the data has aged. A red footer dot is a source error.
+- Cost figures are API-equivalent estimates, **not** what your subscription charges you.
+
+## Privacy and limits
+
+The screen gets display numbers, not prompts, transcripts or credentials. The service reads local histories and databases without modifying them. Optional OpenRouter polling uses an API key you already have; the [data-source guide](docs/DATA_SOURCES.md) explains that one exception.
+
+The service's HTTP API has no authentication and is meant for localhost only. Wi-Fi use is untested on real hardware. The local caches this reads can change format when those tools update, so a tool update can break a reading until the service catches up. A reset countdown is only as fresh as the data behind it, and manual-reset expiry dates aren't shown because no source we can read reports them.
+
+## Docs
+
+| Guide | What's inside |
+| --- | --- |
+| [Setup](docs/SETUP.md) | Fresh-machine install, configuration, running, troubleshooting |
+| [Hardware](docs/HARDWARE.md) | Board identity, pinout, touch, orientation |
+| [Studio](docs/STUDIO.md) | Profiles, playlists, scenes, live display |
+| [UI](docs/UI.md) | Layouts, configuration, extension points |
+| [Data sources](docs/DATA_SOURCES.md) | What is collected, how often, and its limits |
+| [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, localhost routes |
+| [Brightness](docs/BRIGHTNESS.md) | Automatic backlight by sunrise and sunset |
+| [Companion](docs/MINT.md) | The animated face and its behavior |
+| [Assets](docs/ASSETS.md) | Image, GIF and scene pipeline |
+| [Tests](docs/TEST_REPORT.md) | What was verified and what wasn't |
+| [Releases](https://github.com/zdhoward/AIUsageMonitor/releases) | Release notes, newest first |
+
+## Contributing
+
+Bug reports, board variants and new data sources are all welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. If you report a hardware issue, include your board and controller. To run the service tests (fixtures only, no network):
 
 ```powershell
 Push-Location service
@@ -102,47 +165,8 @@ python -m unittest discover -s tests -t .
 Pop-Location
 ```
 
-Capture the connected display after starting the service:
+## License and credits
 
-```powershell
-python scripts/screenshot.py --feed --out build/dashboard.png
-```
+[MIT](LICENSE), Copyright (c) 2026 Zach Howard. Third-party libraries and asset packs keep their own licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md). The optional city scenes use layers by Luis Zuno / Ansimuz (CC0); [get the optional scene pack](https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.14.1).
 
-The release verification includes 49 passing service tests, 20 Studio tests and browser checks of settings persistence and scene controls. Firmware builds and USB framebuffer captures verify the documented board and rendered layout. Physical comfort, logon execution and optional Wi-Fi have separate limits documented in the [test report](docs/TEST_REPORT.md).
-
-## Documentation
-
-| Guide | Contents |
-| --- | --- |
-| [Setup](docs/SETUP.md) | Fresh-machine installation, configuration, running and troubleshooting |
-| [Hardware](docs/HARDWARE.md) | Board identity, GPIO pinout, buses, touch and orientation |
-| [Brightness](docs/BRIGHTNESS.md) | Location-based automatic backlight, configuration and troubleshooting |
-| [Data sources](docs/DATA_SOURCES.md) | What is collected, refresh timing and integration limitations |
-| [Protocol and API](docs/PROTOCOL.md) | Serial framing, payloads, commands and localhost routes |
-| [UI](docs/UI.md) | Renderer layout, configuration and extension points |
-| [MINT companion](docs/MINT.md) | Grobot face, emotions, PC behavior, local reactions and verification limits |
-| [Assets](docs/ASSETS.md) | Image, GIF and scene pipeline, local asset rules, and theme customization |
-| [Third-party licensing](docs/THIRD_PARTY.md) | Component inventory, license audit, pack verification, and optional acquisition |
-| [Third-party notices](THIRD_PARTY_NOTICES.md) | Preserved upstream notices, attributions, and binary distribution obligations |
-| [Image and animation research](docs/IMAGE_ANIMATION_RESEARCH.md) | Candidate authoring, conversion and playback workflow for future visual assets |
-| [Visual pages implementation plan](.tickets/T-008.md) | Navigation and MINT implemented; automatic idle/wake behavior is documented in [Screensaver](docs/SCREENSAVER.md). Scenes/assets and broader measurements remain follow-up work |
-| [Tests](docs/TEST_REPORT.md) | Verified behavior, evidence and untested assumptions |
-| [Contributing](CONTRIBUTING.md) | Development and validation expectations |
-| [Project log](docs/PROJECT_LOG.md) | Implementation decisions and milestones |
-| [Release preparation](docs/PUBLIC_RELEASE.md) | Owner review and remaining publication decisions |
-
-## Privacy and limitations
-
-The firmware receives display metadata and aggregate measurements, not prompts, transcript text or credentials. The collector reads local histories and databases without modifying them. Optional OpenRouter access uses an existing API key from the environment or OpenCode's auth file; [the data-source guide](docs/DATA_SOURCES.md) explains that exception.
-
-The HTTP API is unauthenticated and intended for localhost. Optional LAN/Wi-Fi operation needs deliberate network configuration and has not been tested on hardware. Local application cache/database schemas may change. Similar-looking ESP32 display boards can use different controllers or pins.
-
-## License
-
-[MIT](LICENSE), Copyright (c) 2026 Zach Howard.
-
-Third-party dependencies, adapted code, and asset packs retain their own licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for full license texts and binary distribution obligations, and [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md) for detailed audit records.
-
-This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads.
-
-Powered by [SunriseSunset.io](https://sunrisesunset.io) for automatic backlight sun times (visible attribution link under service terms).
+This is an independent project, not affiliated with or endorsed by the AI providers or tools it reads. Sunrise and sunset times for automatic brightness are powered by [SunriseSunset.io](https://sunrisesunset.io).
