@@ -350,12 +350,13 @@ class CpamcSource:
         now = time.time()
         with self._lock:
             if not self._ok_at and not self._accounts:
-                return {"t": "proxy", "ts": int(now), "up": 0, "age": 0, "attn": 1, "g": []}
+                return {"t": "proxy", "ts": int(now), "tz": time.localtime(now).tm_gmtoff or 0, "up": 0, "age": 0, "attn": 1, "g": []}
             groups = pool_groups(self._accounts, self._live, self.profiles, now)
             up = self._up
             age = int(now - self._ok_at) if self._ok_at else 0
         attn = (not up) or any(g["a"] for g in groups)
-        result = {"t": "proxy", "ts": int(now), "up": int(up), "age": age, "attn": int(attn), "g": groups}
+        result = {"t": "proxy", "ts": int(now), "tz": time.localtime(now).tm_gmtoff or 0,
+                  "up": int(up), "age": age, "attn": int(attn), "g": groups}
         # Preserve valid JSON and aggregate data if an unusually large fleet exceeds
         # the firmware's line buffer. Missing q means aggregate-only legacy mode.
         if len(json.dumps(result, separators=(",", ":")).encode()) > 4095:

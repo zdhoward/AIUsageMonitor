@@ -137,6 +137,7 @@ struct ProxyData {
   int32_t age = -1;    // seconds since the last good poll, -1 unknown
   bool attn = false;   // global danger flag
   uint32_t ts = 0;     // epoch at receive time, 0 unknown
+  int32_t tz = 0;      // local UTC offset in seconds (header clock)
   ProxyGroup g[6];
   uint8_t ng = 0;
 };
