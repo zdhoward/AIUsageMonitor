@@ -8,7 +8,7 @@ A small, always-visible AI usage dashboard for your desk. An ESP32 touchscreen s
 
 Built to sit beneath a monitor and answer a quick question: how much allowance is left, and when does it reset?
 
-The [v1.15.0 release](docs/RELEASE_1.15.0.md) adds the CLIProxyAPI Console proxy Home view with live per-account quota sectors, provider totals and reset countdowns. Each account occupies an equal section of the session and weekly rings, with wider gaps between sections. Successful current probes clear stale account warnings.
+The [v1.16.0 release](docs/RELEASE_1.16.0.md) adds a local date and time to the Proxy header and a clearer, larger Messages card (24HR BURN PILE and MANUAL RESETS). It builds on the [v1.15.0 Proxy Home](docs/RELEASE_1.15.0.md): live per-account quota sectors, provider totals and reset countdowns, with each account in an equal section of the session and weekly rings.
 
 ![Proxy Home with two accounts per provider and segmented quota rings](docs/img/display-proxy.png)
 

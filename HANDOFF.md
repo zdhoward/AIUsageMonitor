@@ -21,7 +21,10 @@
 - Fixed: `git filter-repo --mailmap` rewrite of remote branches and tags; force-pushed `main` (`ac27eb6`), v1.14.1, v1.15.0, v1.15.1. All main commits now use `3210164+zdhoward@users.noreply.github.com`. Global CLAUDE.md/AGENTS.md/GEMINI.md now forbid overriding commit identity; synced.
 - Caution: local T3 worktree branches still hold pre-rewrite history; rebase onto new `main` before merging or pushing any of them.
 
-# Current handoff — v1.15.1 patch (2026-11-03)
+# Current handoff — v1.16.0 (2026-11-06)
+- v1.16.0 released: Proxy header clock (`ts` + new `tz`), redesigned Messages card. Firmware 1.16.0 flashed to COM6, service restarted. Open: manual-reset expiry dates have no known data source (counts only); no test covers `tz`. Tests deferred.
+
+# Previous handoff — v1.15.1 patch (2026-11-03)
 - v1.15.1 released (service-only): 5h forced to 0% left when 7d exhausted (tiles + proxy rings), Antigravity earliest-reset fix. 51 tests pass, service restarted, ESP32 acking. No open PRs. Next: owner visually confirms the Codex ring on the device; firmware still 1.15.0.
 
 - Owner authorized public GitHub release and accepted the installed account-sector spacing. Release target is `v1.15.0` on `main`; release URL: https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.15.0. No open PRs at wrap-up.
