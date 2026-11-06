@@ -624,6 +624,29 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class ProxyLineClockTests(unittest.TestCase):
+    """The proxy line carries `ts` and the local UTC offset `tz` for the header clock."""
+
+    def _source(self, ok_at: float) -> "cpamc.CpamcSource":
+        src = cpamc.CpamcSource.__new__(cpamc.CpamcSource)  # skip key/profile loading
+        src.key, src.profiles = "k", {}
+        src._lock = __import__("threading").Lock()
+        src._accounts, src._live, src._up, src._ok_at = [], {}, True, ok_at
+        return src
+
+    def test_line_includes_epoch_and_local_offset(self):
+        line = self._source(time.time()).line()
+        self.assertEqual(line["t"], "proxy")
+        self.assertAlmostEqual(line["ts"], time.time(), delta=5)
+        self.assertEqual(line["tz"], time.localtime(line["ts"]).tm_gmtoff or 0)
+
+    def test_down_line_still_has_clock(self):
+        src = self._source(0.0)
+        line = src.line()
+        self.assertEqual(line["up"], 0)
+        self.assertIn("tz", line)
+
+
 class ProxyExhaustionTests(unittest.TestCase):
     def test_codex_seven_day_zero_left_forces_five_hour_zero_left(self):
         accounts = [{"auth_index": "a1", "provider": "codex"}, {"auth_index": "a2", "provider": "codex"}]

@@ -83,6 +83,7 @@ class UpdaterCase(unittest.TestCase):
         self.assertEqual(run(self.root, "status", "--porcelain"), "")  # no half-merged tree
         self.assertEqual((self.root / "app.txt").read_text(encoding="utf-8"), "mine\n")
         self.assertIn("app.txt", updater.agent_prompt(res["conflicts"]))
+        self.assertEqual(updater.backups(self.root), [])  # no stale tag for "Undo" to land on
 
     def test_dirty_tree_blocks_unless_saved_first(self):
         self.upstream_commit("new.txt", "n\n", "add feature")

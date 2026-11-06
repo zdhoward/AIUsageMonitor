@@ -178,7 +178,20 @@ See [BRIGHTNESS](BRIGHTNESS.md) for automatic backlight configuration, sunrise/s
 
 Windows needs the IANA `tzdata` package from `service/requirements.txt` for `zoneinfo`. Invalid enabled brightness configuration fails startup clearly. `--once` uses valid cached schedules or duty 80 without solar HTTP or a brightness worker. Disabling automatic brightness omits `bl`/`bl_ms` and needs no solar network/cache access.
 
-Tap and release anywhere to cycle the four available views. Holds of 1.5 seconds or longer are ignored. Console/Details sleep after 30 seconds without usage changes and wake on a change; Face/Images are exempt. A tap while asleep wakes the same view. Screensaver is absent from navigation. See [UI.md](UI.md) for comparison rules and policy details.
+Tap and release anywhere to cycle the pages in your profile; hold for 0.7 seconds to jump home. Console and Details sleep after 60 seconds without usage changes and wake on a change. The page order, timeouts and wake rules are in [UI.md](UI.md) and the [screensaver notes](SCREENSAVER.md).
+
+## Keeping your setup up to date
+
+Do your customising on your own branch so new releases merge in cleanly:
+
+```powershell
+git switch -c my-setup                       # once; never edit main
+Copy-Item profiles\default.json profiles\my.json   # your own profile
+.\scripts\build.ps1 -Profile my
+.\scripts\doctor.ps1                         # checks branch, remotes, secrets, config
+```
+
+To update, open Scene Studio's **Updates** tab (check, preview conflicts, update with a backup, undo), or follow [the update recipe](recipes/update.md) by hand or with your AI agent. Config, keys and art are git-ignored and never touched. See [customise safely](recipes/customise-safely.md).
 
 ## Screenshots and checks
 
@@ -189,7 +202,7 @@ python scripts/screenshot.py --feed --next 1 --out build/other-view.png
 
 `--next 1` advances from the current view, so it is not an absolute “details” selector. `--rot N` changes rotation until reboot. Screenshots capture the device's RGB332 framebuffer, enlarged 2× by default; `--scale 1` preserves native dimensions. The helper pauses/resumes the service around serial access.
 
-From `service/`, run `python -m unittest discover -s tests -t .` for the 22 fixture-based tests. See the [test report](TEST_REPORT.md) for hardware evidence and remaining assumptions.
+From `service/`, run `python -m unittest discover -s tests -t .` for the 56 fixture-based service tests, and from the repo root `python -m unittest discover -s studio/tests -t .` for the 29 Studio tests. See the [test report](TEST_REPORT.md) for hardware evidence and remaining assumptions.
 
 ## Troubleshooting
 

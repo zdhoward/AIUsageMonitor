@@ -123,9 +123,14 @@ def apply(root: Path, log: Log, commit_first: bool = False) -> dict:
     git(root, "tag", tag)
     log(f"Backup tag {tag}\n")
 
+    def fail(result: dict) -> dict:
+        # Nothing changed, so drop the tag: a stale one would make "Undo" restore the current state.
+        git(root, "tag", "-d", tag)
+        return {"ok": False, **result}
+
     err = fetch(root)
     if err:
-        return {"ok": False, "error": err, "backup": tag}
+        return fail({"error": err})
     log("Fetched upstream\n")
 
     branch = s["branch"]
@@ -134,7 +139,7 @@ def apply(root: Path, log: Log, commit_first: bool = False) -> dict:
     else:
         ff = git(root, "fetch", UPSTREAM, f"{TRUNK}:{TRUNK}")  # fast-forwards local main, refuses otherwise
         if ff.returncode != 0:
-            return {"ok": False, "backup": tag, "error": "Could not fast-forward `main`: " + (ff.stderr.strip() or "unknown error")[-300:]}
+            return fail({"error": "Could not fast-forward `main`: " + (ff.stderr.strip() or "unknown error")[-300:]})
         log("main is up to date with upstream\n")
         r = git(root, "merge", "--no-edit", TRUNK)
     log(r.stdout)
@@ -143,9 +148,8 @@ def apply(root: Path, log: Log, commit_first: bool = False) -> dict:
         git(root, "merge", "--abort")
         log("Merge stopped and undone: your files are as they were.\n")
         if files:
-            return {"ok": False, "conflicts": files, "backup": tag,
-                    "error": "Your changes overlap with the update in: " + ", ".join(files)}
-        return {"ok": False, "backup": tag, "error": "Merge failed: " + (r.stderr.strip() or r.stdout.strip())[-300:]}
+            return fail({"conflicts": files, "error": "Your changes overlap with the update in: " + ", ".join(files)})
+        return fail({"error": "Merge failed: " + (r.stderr.strip() or r.stdout.strip())[-300:]})
 
     log("Merged\n")
     req = root / "service" / "requirements.txt"

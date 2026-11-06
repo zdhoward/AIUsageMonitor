@@ -2,9 +2,12 @@
 .SYNOPSIS
   Quick safety check before or after a change: branch, remote, secrets, config, tools.
   Read-only. Exits 1 if any FAIL is found.
+.PARAMETER Maintainer
+  Allow working directly on main (for the project maintainer only).
 .EXAMPLE
   .\scripts\doctor.ps1
 #>
+param([switch]$Maintainer)  # project maintainer: working on main is expected
 $ErrorActionPreference = 'Continue'
 Set-Location (Join-Path $PSScriptRoot '..')
 $fail = 0
@@ -17,6 +20,7 @@ function Report($level, $msg) {
 # Branch: customisations belong on my-setup, never on main.
 $branch = (git rev-parse --abbrev-ref HEAD 2>$null)
 if (-not $branch) { Report FAIL 'not inside a git repository' }
+elseif ($branch -eq 'main' -and $Maintainer) { Report OK "branch: main (maintainer mode)" }
 elseif ($branch -eq 'main') { Report FAIL "on 'main'. Run: git switch -c my-setup   (or git switch my-setup)" }
 else { Report OK "branch: $branch" }
 

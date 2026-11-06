@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-06: Safe-update flow, agent guide and Studio Updates tab
+
+- Added `AGENTS.md` (rules for any AI agent; `CLAUDE.md` and `GEMINI.md` point to it), `docs/recipes/` (customise safely, update, add a card, add a scene, add a data source, fit another screen size) and `scripts/doctor.ps1` (branch, upstream, secrets, config, tools; `-Maintainer` allows `main`). Decision: users keep a local clone with a `my-setup` branch and their own profile, `main` mirrors upstream, and updates are `merge main` into the branch. No fork needed; stash rejected because it turns into conflicts mid-change.
+- README setup prompt gained a Step 0 for the branch flow, plus an update prompt. Resize decision: stretch header, footer and cards to the screen and lay content out inside them; scenes and city art stay authored at 320x240.
+- Scene Studio **Updates** tab (`studio/updater.py`, `studio/web/updates.js`): check, conflict preview by trial merge, update with a backup tag, abort-and-hand-to-agent on conflict, flash and service restart, undo.
+- Fixes: backup tag left behind by failed updates; first character lost in the dirty-file list; no test covered the proxy `tz`, now added. Docs updated: SETUP, STUDIO, CONTRIBUTING, TEST_REPORT, README, update recipe.
+- Tests run this session: service 56 OK, Studio 29 OK, third-party check PASS. Not released or version-bumped.
+
 ## 2026-11-06: v1.16.0 release
 
 - Messages card UI pass (large rows, colour headings, even spacing). Proxy header now shows local date and time from `ts` plus a new `tz` offset sent by the service. Manual-reset expiry dates are unavailable from any source we can read (Codex `wham/usage` and T3's cache give counts only). Released as v1.16.0; tests deferred.

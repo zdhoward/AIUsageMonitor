@@ -21,7 +21,7 @@ A PC service (`service/`, Python) reads local AI-usage data and sends compact JS
 ## Prove every change
 
 ```powershell
-.\scripts\doctor.ps1                      # branch, remotes, secrets, config
+.\scripts\doctor.ps1                      # branch, remotes, secrets, config (-Maintainer allows main)
 .\scripts\build.ps1 -Profile my           # compiles; use your profile name
 .\scripts\flash.ps1
 python scripts\screenshot.py --feed --out build\check.png   # then LOOK at the image
