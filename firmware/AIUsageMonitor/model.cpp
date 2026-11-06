@@ -357,6 +357,7 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
   p.age = doc["age"] | -1;
   p.attn = (doc["attn"] | 0) == 1;
   p.ts = doc["ts"] | (uint32_t)0;
+  p.tz = doc["tz"] | (int32_t)0;
   for (JsonObjectConst g : doc["g"].as<JsonArrayConst>()) {
     if (p.ng >= 6) break;
     ProxyGroup& d = p.g[p.ng++];

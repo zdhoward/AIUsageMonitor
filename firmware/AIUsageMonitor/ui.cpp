@@ -1027,6 +1027,11 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
     ly += rowH;
   };
 
+  // Spread leftover height evenly: above the first heading, between sections, below the last.
+  const int used = 2 * headH + (max(1, n) + max(1, min(nRes, resRows))) * rowH;
+  const int gap = min(8, max(0, avail - used) / 3);
+  ly += gap;
+
   heading("24HR BURN PILE", C_GREEN);
   if (!n) note(epoch ? "All clear" : "No clock yet");
   const int shown = total > n ? n - 1 : n;  // last row becomes "+N more"
@@ -1042,6 +1047,7 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
     note(b);
   }
 
+  ly += gap;
   heading("MANUAL RESETS", C_AMBER);
   if (!nRes) note("None banked");
   const int resShown = nRes > resRows ? resRows - 1 : nRes;
@@ -1078,6 +1084,19 @@ static void drawProxy(const Model&, uint32_t now, const ViewDef&, int) {
   text(b, pad, 2, 2, C_TEXT);
   g.fillCircle(W - pad - 4, 11, 4, down ? C_RED : C_GREEN);
   if (p.attn) dangerIcon(W - pad - 24, 5);
+  const uint32_t clock = proxyEpoch(now);
+  if (clock) {
+    static const char* const DAY[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    static const char* const MON[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    const time_t local = (time_t)((int64_t)clock + p.tz);
+    struct tm t;
+    gmtime_r(&local, &t);
+    char d[32];
+    snprintf(d, sizeof d, "%s, %s %d, %d %d:%02d %s", DAY[t.tm_wday], MON[t.tm_mon], t.tm_mday,
+             t.tm_year + 1900, t.tm_hour % 12 ? t.tm_hour % 12 : 12, t.tm_min, t.tm_hour < 12 ? "AM" : "PM");
+    text(d, W - pad - (p.attn ? 32 : 12), 6, 1, C_MUTED, TR_DATUM, W - 2 * pad - 100);
+  }
   g.drawFastHLine(pad, 20, W - 2 * pad, C_PANEL);
 
   const int fy = H - 18, top = 22, bottom = fy - 2;
