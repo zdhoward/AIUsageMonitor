@@ -2,6 +2,8 @@
 
 Goal: bring in upstream changes, keep your customisations, and end with a working display.
 
+Scene Studio's **Updates** tab does steps 1 to 6 for you when the merge is clean; this recipe is the manual path and the one to follow when Studio reports conflicts.
+
 Do the steps in order. Stop and ask the user if a conflict touches `firmware/AIUsageMonitor/ui.cpp` and you cannot tell what both sides intended.
 
 1. **Check state.** Run `.\scripts\doctor.ps1`. You must be on `my-setup` with a clean tree. If the tree is dirty, commit your work first (`git add -A` then `git commit -m "Save work before update"`).

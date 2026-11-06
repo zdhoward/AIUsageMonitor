@@ -391,6 +391,21 @@ h3 .hint { text-transform: none; letter-spacing: 0; margin-left: 6px; }
   padding: 12px 14px; border-radius: 11px; background: var(--panel2);
 }
 #cfgBrightnessBody.off { opacity: .4; pointer-events: none; }
+/* updates */
+.nav-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--pink);
+  box-shadow: 0 0 10px var(--pink); }
+#tab-updates .card { margin-bottom: 16px; }
+.upd-list { margin: 0 0 14px; padding: 0 0 0 18px; color: var(--text); font-size: 13.5px; }
+.upd-list li { margin: 3px 0; }
+.upd-list.mono { font: 12.5px ui-monospace, Consolas, monospace; }
+.upd-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.upd-log { margin: 0; max-height: 220px; overflow: auto; padding: 12px; border-radius: 10px; background: var(--panel2);
+  font: 12px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+#updPrompt { width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--panel2); font: 12.5px/1.45 ui-monospace, Consolas, monospace; resize: vertical; }
+#updRollback { margin-top: 12px; }
+#updMerge.warn { color: var(--sun); }
+#updMerge.good { color: var(--ok); }
 @media (max-width: 1050px) {
   #tab-settings .grid2, #tab-settings .grid3 { grid-template-columns: 1fr; }
   #tab-settings .settings-head { flex-wrap: wrap; }

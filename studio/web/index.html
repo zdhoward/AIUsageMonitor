@@ -19,6 +19,7 @@
     <button class="nav" data-tab="library"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Library</button>
     <button class="nav" data-tab="device"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Display</button>
     <button class="nav" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
+    <button class="nav" data-tab="updates"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>Updates<span class="nav-dot" id="updateDot" hidden></span></button>
   </nav>
   <div class="side-foot">
     <label class="mini">Profile</label>
@@ -139,6 +140,60 @@
           <button class="btn ghost wide" id="saveLib">Save to library</button>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Updates -->
+  <section class="tab" id="tab-updates">
+    <div class="card settings-head">
+      <div>
+        <h2 id="updTitle">Updates</h2>
+        <p class="hint" id="updSub">Checks the project's GitHub for a newer release. Your config, keys and art are never touched.</p>
+      </div>
+      <div class="settings-actions">
+        <button class="btn ghost" id="updCheck">Check for updates</button>
+      </div>
+    </div>
+    <div id="updNotice" class="settings-notice" hidden></div>
+
+    <div class="card" id="updAvail" hidden>
+      <div class="card-head"><h2 id="updAvailTitle"></h2><span class="hint" id="updMerge"></span></div>
+      <ul class="upd-list" id="updList"></ul>
+      <label class="check" id="updSaveRow" hidden><input type="checkbox" id="updSaveFirst"> <span id="updSaveText"></span></label>
+      <div class="upd-actions">
+        <button class="btn primary" id="updApply">Update now</button>
+        <span class="hint">A backup tag is made first, so you can undo it.</span>
+      </div>
+    </div>
+
+    <div class="card" id="updConflict" hidden>
+      <div class="card-head"><h2>Your changes overlap with the update</h2></div>
+      <p class="hint">Nothing was changed. Files in conflict:</p>
+      <ul class="upd-list mono" id="updConflictFiles"></ul>
+      <p class="hint pad">Your AI agent can merge these, keeping your edits and the new code. Copy this prompt into it:</p>
+      <textarea id="updPrompt" rows="4" readonly></textarea>
+      <button class="btn ghost wide" id="updCopy">Copy prompt</button>
+    </div>
+
+    <div class="card" id="updDone" hidden>
+      <div class="card-head"><h2>Updated</h2><span class="hint" id="updDoneVer"></span></div>
+      <p class="hint">Finish the update so the display and service match the new code.</p>
+      <div class="upd-actions">
+        <button class="btn primary" id="updFlash">Rebuild &amp; flash display</button>
+        <button class="btn ghost" id="updService">Restart service</button>
+      </div>
+      <p class="hint pad">Studio itself is still running the old code. Close it and reopen <b>Scene Studio.cmd</b> to load the new version.</p>
+    </div>
+
+    <div class="card" id="updLogCard" hidden>
+      <div class="card-head"><h2 id="updStep">Working…</h2></div>
+      <pre class="upd-log" id="updLog"></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Undo</h2><span class="hint" id="updBackupInfo"></span></div>
+      <p class="hint">Return to how things were just before the last update. You will need to rebuild and flash afterwards.</p>
+      <button class="btn ghost danger" id="updRollback">Undo last update</button>
     </div>
   </section>
 
@@ -369,5 +424,6 @@
 <script src="scene.js"></script>
 <script src="playlists.js"></script>
 <script src="settings.js"></script>
+<script src="updates.js"></script>
 </body>
 </html>

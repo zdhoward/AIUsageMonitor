@@ -101,7 +101,7 @@ Scene Studio is a small local app for editing profiles, playlists and screensave
 
 ### Keep getting updates
 
-Your changes live on your own `my-setup` branch, and your config, keys and art stay out of Git, so new releases merge in without touching them. When a release comes out, paste this into your agent:
+Your changes live on your own `my-setup` branch, and your config, keys and art stay out of Git, so new releases merge in without touching them. Scene Studio has an **Updates** tab that checks for releases, previews conflicts, updates with a backup and can undo it. If you'd rather have your agent do it, paste this:
 
 ````text
 Update AI Usage Monitor to the latest release by following

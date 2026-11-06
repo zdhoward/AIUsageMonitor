@@ -18,6 +18,7 @@ const TABS = {
   library: ["Library", "Everything worth keeping. Captures remember the profile and code version that made them."],
   device: ["Display", "See what the display shows right now, and step through its pages."],
   settings: ["Service Settings", "Hardware serial link, auto-brightness and background refresh cadence."],
+  updates: ["Updates", "Take new releases without losing your profile, config, keys or art."],
 };
 
 let state = { profiles: {}, library: [] };
@@ -355,10 +356,11 @@ document.querySelectorAll(".nav").forEach((b) => (b.onclick = () => {
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === `tab-${b.dataset.tab}`));
   [$("#title").textContent, $("#subtitle").textContent] = TABS[b.dataset.tab];
   const topActions = $(".top .actions");
-  if (topActions) topActions.style.display = b.dataset.tab === "settings" ? "none" : "";
+  if (topActions) topActions.style.display = ["settings", "updates"].includes(b.dataset.tab) ? "none" : "";
   // The Display tab is empty until a capture; take the first one on arrival.
   if (b.dataset.tab === "device" && !$("#screen img")) capture();
   if (b.dataset.tab === "settings" && window.loadServiceSettings) window.loadServiceSettings();
+  if (b.dataset.tab === "updates" && window.openUpdates) window.openUpdates();
 }));
 window.onbeforeunload = () => (dirty || (window.hasUnsavedSettings && window.hasUnsavedSettings()) ? true : undefined);
 
