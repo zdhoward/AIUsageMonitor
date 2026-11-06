@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import profile_gen  # noqa: E402
 import scenes  # noqa: E402
-from studio import service_settings  # noqa: E402
+from studio import service_settings, updater  # noqa: E402
 from studio.native_host import LiveLink, NativeHost  # noqa: E402
 
 WEB = Path(__file__).with_name("web")
@@ -165,6 +165,45 @@ def run_job(kind: str, profile: str) -> str:
             job["size"] = {"bytes": int(m.group(1)), "percent": int(m.group(2))}
     threading.Thread(target=work, daemon=True).start()
     return jid
+
+
+update_lock = threading.Lock()
+
+
+def run_update(commit_first: bool) -> str:
+    """Apply an upstream update as a pollable job; only one runs at a time."""
+    jid = uuid.uuid4().hex[:8]
+    job = jobs[jid] = {"id": jid, "kind": "update", "state": "running", "log": "", "step": "Updating"}
+    if not update_lock.acquire(blocking=False):
+        job.update(state="failed", result={"ok": False, "error": "An update is already running."})
+        return jid
+
+    def work():
+        try:
+            def log(line: str) -> None:
+                job["log"] += line
+            res = updater.apply(ROOT, log, commit_first)
+            if res.get("conflicts"):
+                res["prompt"] = updater.agent_prompt(res["conflicts"])
+            job["result"] = res
+            job["state"] = "done" if res["ok"] else "failed"
+        except Exception as e:  # keep the job pollable whatever git did
+            job["result"] = {"ok": False, "error": str(e)}
+            job["state"] = "failed"
+        finally:
+            update_lock.release()
+    threading.Thread(target=work, daemon=True).start()
+    return jid
+
+
+def restart_service() -> dict:
+    ps = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/service.ps1", "restart"]
+    try:
+        r = subprocess.run(ps, cwd=ROOT, capture_output=True, text=True, errors="replace", timeout=60,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": r.returncode == 0, "log": (r.stdout + r.stderr)[-600:]}
 
 
 # ---------------------------------------------------------------- library
@@ -372,6 +411,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(service_settings.get_service_settings())
             except ValueError as e:
                 return self.send_json({"error": str(e)}, 400)
+        if path == "/api/update/status":
+            return self.send_json(updater.status(ROOT))
         if path == "/api/native":
             return self.send_json({"ids": native.ids, "building": native.building, "error": native.last_error,
                                    "live": live.last_reply})
@@ -412,6 +453,14 @@ class Handler(SimpleHTTPRequestHandler):
                     "message": "Settings saved. Restart the AI Usage Monitor service to apply changes."
                 })
             b = self.body()
+            if path == "/api/update/check":
+                return self.send_json(updater.status(ROOT, check=True))
+            if path == "/api/update/apply":
+                return self.send_json({"job": run_update(bool(b.get("commit_first")))})
+            if path == "/api/update/rollback":
+                return self.send_json(updater.rollback(ROOT))
+            if path == "/api/update/restart-service":
+                return self.send_json(restart_service())
             if path.startswith("/api/profiles/"):
                 pid = path.rsplit("/", 1)[1]
                 if not SLUG.match(pid):

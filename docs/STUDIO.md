@@ -44,6 +44,15 @@ This opens the studio interface at `http://127.0.0.1:8798` (built with vanilla J
    - Configure hardware serial link, background poll cadence, and automatic brightness.
    - Reads defaults from the service `Settings` model and writes to `service/aimon.config.json`.
 
+7. **Updates**
+   - **Check for updates** fetches the project's GitHub and lists what is new. A dot beside the tab appears when a release is waiting; Studio checks once when it opens.
+   - It previews whether the update overlaps your own edits, using a trial merge that changes nothing.
+   - **Update now** tags a backup (`backup/pre-update-<time>`), fast-forwards `main`, merges it into your branch and installs Python packages. If your uncommitted changes are in the way, tick *Save my changes first*.
+   - A conflicting merge is aborted, so nothing is left half-done. Studio lists the files and gives a prompt to paste into your AI agent, which follows [update.md](recipes/update.md).
+   - After an update, **Rebuild & flash display** and **Restart service** finish the job. Studio itself keeps running old code until you reopen it.
+   - **Undo last update** resets your branch to the latest backup tag. It refuses while you have uncommitted changes.
+   - It needs a git checkout with an `origin` remote. Your config, keys and art are git-ignored and never touched. Logic lives in `studio/updater.py`; see [customise-safely](recipes/customise-safely.md).
+
 ---
 
 ## Service Settings & Hardening
