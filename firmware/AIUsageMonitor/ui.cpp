@@ -839,7 +839,7 @@ static void drawProxyTile(const ProxyGroup& gr, uint32_t epoch, int x, int y, in
   const int top = y + 19, bottom = y + h - 33;
   const int cx = x + w / 2, cy = (top + bottom) / 2;
   const int r = min((bottom - top) / 2, 24);
-  drawProxyArc(cx, cy, r, 4, ow, gr.c, 0);
+  if (ow || !iw) drawProxyArc(cx, cy, r, 4, ow, gr.c, 0);  // single weekly window: inner ring only
   drawProxyArc(cx, cy, r - 9, 4, iw, gr.c, UI_WEEKLY_COLOR);
   drawGridLine(x, y + h - 32, w, so, C_TEXT, 0, 0, ow ? ow->v : nullptr);
   drawGridLine(x, y + h - 17, w, si, UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : C_TEXT, UI_WEEKLY_COLOR, 0,
@@ -861,8 +861,9 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
   }
   proxyTitle(gr, cd >= 0, x, y, w - reserve);
   const int n = max<int>(gr.np, 1), colW = (w - 8) / n;
-  const int r = min(18, colW / 2 - 4);
-  const int cy = y + 19 + r + 3;
+  // Rings shrink with the tile so the two percentage lines stay inside the panel.
+  const int r = min(min(18, colW / 2 - 4), (h - 62) / 2);
+  const int cy = y + 19 + r + 2;
   for (int i = 0; i < gr.np; ++i) {
     const ProxyWin *ow, *iw;
     proxySplit(gr.p[i], ow, iw);
@@ -870,9 +871,9 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
     const WinData* so = proxyWin(ow, epoch, od);
     const WinData* si = proxyWin(iw, epoch, id);
     const int cx = x + 4 + colW * i + colW / 2;
-    drawProxyArc(cx, cy, r, 3, ow, gr.c, 0);
+    if (ow || !iw) drawProxyArc(cx, cy, r, 3, ow, gr.c, 0);  // a weekly-only pool has no outer ring
     drawProxyArc(cx, cy, r - 7, 3, iw, gr.c, UI_WEEKLY_COLOR);
-    text(gr.p[i].l, cx, cy + r + 4, 2, C_TEXT, TC_DATUM, colW - 2);
+    text(gr.p[i].l, cx, cy + r + 2, 2, C_TEXT, TC_DATUM, colW - 2);
     const WinData* win[2] = {so, si};
     for (int k = 0; k < 2; ++k) {
       char b[14];
@@ -888,7 +889,7 @@ static void drawProxyMulti(const ProxyGroup& gr, uint32_t epoch, int x, int y, i
         snprintf(b, sizeof b, "%s %d%%", win[k]->l, left);
         c = k && UI_WEEKLY_COLOR ? UI_WEEKLY_COLOR : leftColor(left);
       }
-      text(b, cx, cy + r + 22 + k * 10, 1, c, TC_DATUM, colW - 2);
+      text(b, cx, cy + r + 19 + k * 10, 1, c, TC_DATUM, colW - 2);
     }
   }
 }
