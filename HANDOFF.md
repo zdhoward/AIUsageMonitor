@@ -1,3 +1,6 @@
+# Catchup (2026-11-07)
+- Inventory only; no code changed. Ledger in `tasks/todo.md`: 3 auto (T-033.1 clipping, T-033.3 Argon ring, `tz`/`rc` unit tests), 9 owner, 6 blocked. Auto work not started because delegation pools were exhausted and firmware changes need flash plus capture.
+
 # Handoff — safe-update flow, agent guide, Studio Updates tab (2026-11-06) — CURRENT
 - Done: `AGENTS.md` + `docs/recipes/*` + `scripts/doctor.ps1` for agent-guided customising and updates; users work on a `my-setup` branch with `profiles/my.json`, `main` mirrors upstream. Studio **Updates** tab backed by `studio/updater.py` (check, trial-merge preview, backup tag, abort on conflict with an agent prompt, flash/restart, undo). Fixed a stale-backup-tag bug and added the missing `tz` test. Docs updated (README, SETUP, STUDIO, CONTRIBUTING, TEST_REPORT, PROJECT_LOG). Released as **v1.17.0** (tag + GitHub release, notes in docs/RELEASE_1.17.0.md). Firmware is unchanged and still reports 1.16.0 (`FW_VERSION` deliberately not bumped, nothing was reflashed).
 - Validation: service 56 OK, Studio 29 OK, third-party check PASS (run this session). UI checked visually for the Updates tab only in its idle state.
