@@ -1,5 +1,9 @@
 # Project log
 
+## 2026-11-07: Catchup and T-033 polish
+
+- Inventoried all open items into `tasks/todo.md` (3 auto, 9 owner, 6 blocked). Fixed T-033.1 (Antigrav multi-tile `7d` line clipped: rings now shrink with tile height) and T-033.3 (weekly-only pools draw only the inner ring), flashed to COM6, capture `build/t033-fix.png`. Added `ProxyResetCreditTests`; a `tz` test already existed. Tests not run (deferred). Firmware version still 1.16.0.
+
 ## 2026-11-06: Safe-update flow, agent guide and Studio Updates tab
 
 - Added `AGENTS.md` (rules for any AI agent; `CLAUDE.md` and `GEMINI.md` point to it), `docs/recipes/` (customise safely, update, add a card, add a scene, add a data source, fit another screen size) and `scripts/doctor.ps1` (branch, upstream, secrets, config, tools; `-Maintainer` allows `main`). Decision: users keep a local clone with a `my-setup` branch and their own profile, `main` mirrors upstream, and updates are `merge main` into the branch. No fork needed; stash rejected because it turns into conflicts mid-change.
