@@ -660,3 +660,17 @@ class ProxyExhaustionTests(unittest.TestCase):
         five = g[0]["p"][0]["w"][0]
         self.assertEqual(five["l"], "5h")
         self.assertEqual([q[0] for q in five["q"]], [0, 60])
+
+
+class ProxyResetCreditTests(unittest.TestCase):
+    def _accounts(self, n):
+        return [{"auth_index": f"a{i}", "provider": "codex"} for i in range(n)]
+
+    def test_banked_resets_sent_per_account_in_sector_order(self):
+        live = {"a0": {"windows": [], "rc": 2}, "a1": {"windows": [], "rc": 0}}
+        g = cpamc.pool_groups(self._accounts(2), live, {"codex": {}}, NOW)
+        self.assertEqual(g[0]["rc"], [2, 0])
+
+    def test_unknown_for_all_accounts_omits_rc(self):
+        g = cpamc.pool_groups(self._accounts(2), {"a0": {"windows": []}, "a1": {"windows": []}}, {"codex": {}}, NOW)
+        self.assertNotIn("rc", g[0])

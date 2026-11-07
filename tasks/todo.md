@@ -37,4 +37,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 - The Testing rule applies: no suites run, and the unit tests in A3 stay unrun.
 
 ## Status
-- A1-A3 not started: implementer and reviewer slots report all pools exhausted, and the firmware work needs a flash and capture to verify.
+- A1 done: Antigrav multi tile rings shrink with tile height; the `7d` line is inside the panel (`build/t033-fix.png`).
+- A2 done: a weekly-only pool (Argon) and single-window tiles draw only the inner ring (same capture).
+- A3 done: `ProxyResetCreditTests` added for `rc`. A `tz` test already existed (the handoff was stale). Not run: deferred to the testing phase.
+- First catchup pass stopped early because a stale pool-status HEALTH FAIL was read as a hard block; the work was done inline instead. No reviewer pass (slot unavailable); diff is small and checked against the capture.
