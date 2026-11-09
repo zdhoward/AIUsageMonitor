@@ -347,3 +347,8 @@
 - The tile's cooldown was the soonest 0% window of any pool, from the cross-account average, so it disagreed with the 24HR BURN PILE. It is now Flash's soonest per-account 7d cooldown, countdown only; the Cl/GPT pool is labelled Claude; Argon's next reset sits in its 5h slot.
 - The direct Antigrav probe also reads `retrieveUserQuotaSummary` (agy `/usage`). T3's login is a different account from the CPAMC ones, so the console cards remain 5h-only; the Proxy view has the real numbers.
 - Verified: live CPAMC buckets vs agy `/usage`, framebuffer captures, 54 service tests. Firmware-only commits ran no tests.
+
+## 2026-11-09 — Harden pass
+- Service suite ran in an owner-declared phase: 58 tests OK. Secret and unsafe-call scans clean. Firmware not rebuilt.
+- Owner's "Argon shows a reset time, Flash and Claude don't" is by design: the countdown draws only for a weekly window at 0% left with a reset time. Report: `docs/release/HARDEN_2026-11-09.md`.
+- Open: O5 (0.41% rounds to 0% and counts as a cooldown).
