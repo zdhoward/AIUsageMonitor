@@ -21,6 +21,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 | O7 | Review README tone and claims | owner review |
 | O8 | Reflash firmware or bump `FW_VERSION` (still 1.16.0) | release decision |
 | O9 | Decide retiring the dead Console T3-cache sources | design decision |
+| O10 | 29 local `t3/*` worktree branches (16 unmerged, pre-rewrite history, 0 open PRs, `origin/t3/optional-pages-screensaver` remote) | decide: delete stale worktrees/branches (`git worktree remove`, `git branch -D`) or keep; never merge without rebasing onto new `main` |
 
 ## blocked
 | # | Item | Blocker |
@@ -40,4 +41,5 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 - A1 done: Antigrav multi tile rings shrink with tile height; the `7d` line is inside the panel (`build/t033-fix.png`).
 - A2 done: a weekly-only pool (Argon) and single-window tiles draw only the inner ring (same capture).
 - A3 done: `ProxyResetCreditTests` added for `rc`. A `tz` test already existed (the handoff was stale). Not run: deferred to the testing phase.
+- Re-sweep 2026-11-10: main == origin/main, tree clean, no open issues/PRs, no TODO/FIXME; no new auto items. Added O10.
 - First catchup pass stopped early because a stale pool-status HEALTH FAIL was read as a hard block; the work was done inline instead. No reviewer pass (slot unavailable); diff is small and checked against the capture.
