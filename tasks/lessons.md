@@ -14,3 +14,4 @@
 
 - 2026-11-10: Do not call a provider quota reading "matching" without cross-checking CPAMC `cooldowns`/429 status. Google reported Argon 100
 - 2026-11-10: Do not call a provider quota reading "matching" without cross-checking CPAMC `cooldowns`/429 status. Google reported Argon 100 percent while both accounts were in quota cooldown; a 429 cooldown outranks the quota endpoint. Say so plainly when an earlier claim was wrong.
+- 2026-11-10: CPAMC account priorities (reset-ordered routing, dry-run + scheduled apply) are NOT managed in this repo; that automation lives in the Global-Project-Management project. When the owner asks about CPAMC priorities, read live /v0/management/auth-files (higher number is tried first) and coordinate with the GPM thread instead of building a second tool here.
