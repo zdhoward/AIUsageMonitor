@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-11-10: P-Gemini check and Argon cooldown fix
+
+- Owner saw no P-Gemini usage on the display. Verified P-Gemini works (CPAMC log: `gemini-3.8-flash-high` served by the first Antigravity account), but Google's `retrieveUserQuotaSummary` and `fetchAvailableModels` both report Flash at 100% remaining on both accounts, so the display is faithful to a flat source. Argon was also 100% there while CPAMC held 429 `quota` cooldowns on `gemini-4-argon-high` for both accounts (owner confirmed 0%).
+- Fix (service only): `cpamc.apply_cooldowns` plus profile key `cooldown_pools` (`{"argon": "argon"}` in `antigravity.json`) zero a pool while a quota cooldown is active. Service restarted; capture `build/argon-cooldown.png` shows Argon 7d 0%. Added `ProxyCooldownTests` (not run, deferred). Firmware untouched (1.16.0).
+- Open: Flash stays 100% unless CPAMC reports a Flash cooldown; add models to `cooldown_pools` if wanted. Alternative: show CPAMC per-account request counts.
+
 ## 2026-11-07: Catchup and T-033 polish
 
 - Inventoried all open items into `tasks/todo.md` (3 auto, 9 owner, 6 blocked). Fixed T-033.1 (Antigrav multi-tile `7d` line clipped: rings now shrink with tile height) and T-033.3 (weekly-only pools draw only the inner ring), flashed to COM6, capture `build/t033-fix.png`. Added `ProxyResetCreditTests`; a `tz` test already existed. Tests not run (deferred). Firmware version still 1.16.0.
