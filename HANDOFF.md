@@ -1,3 +1,10 @@
+# Wrap-up (2026-11-10, CPAMC priorities check) — CURRENT
+- Done: read-only check of Codex routing in CPAMC. Order is correct: soonest-resetting Plus account has the highest priority (20), the later-resetting one is the fallback (10). No repo or CPAMC changes from this thread.
+- Finding: Antigravity and xAI accounts have no priority set; Claude order looked stale (two accounts cooling down). Owner wants every active account ranked so fallbacks are ordered too.
+- Decision: priorities are owned by the GPM reset-priority job, not this repo. Sent GPM thread 389a2047-6d78-4c2c-ba0e-74a6e9d2b36a the gaps and asked it to cover all providers, rank cooldown accounts, and apply the pending Claude changes. It was still working (building a script) at wrap-up.
+- Open: confirm what GPM changed (re-read live priorities, all active accounts should have one). Next scheduled apply was 06:00 on 2026-11-11.
+- No open PRs; no firmware or service changes.
+
 # Wrap-up (2026-11-10) — CURRENT
 - Done: P-Gemini verified working (CPAMC log shows `gemini-3.8-flash-high` on the first Antigravity account). Display Flash 100% is faithful: Google's quota endpoints report Flash 100% on both accounts despite use. Argon read 100% while both accounts hold 429 quota cooldowns (really 0%): fixed with `cpamc.apply_cooldowns` + `cooldown_pools` in `service/aimon/profiles/antigravity.json`. Service restarted, capture `build/argon-cooldown.png` shows Argon 7d 0%. Commit `87825da` on main (pushed). Firmware untouched (1.16.0).
 - Tests: `ProxyCooldownTests` and `ProxyResetCreditTests` written, not run (deferred to testing phase).
