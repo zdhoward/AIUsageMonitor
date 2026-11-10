@@ -662,6 +662,23 @@ class ProxyExhaustionTests(unittest.TestCase):
         self.assertEqual([q[0] for q in five["q"]], [0, 60])
 
 
+class ProxyCooldownTests(unittest.TestCase):
+    def test_quota_cooldown_zeroes_mapped_pool_despite_full_quota(self):
+        wins = [{"pool": "argon", "label": "7d", "rem": 100.0, "reset": NOW + 9, "len": 604800},
+                {"pool": "flash", "label": "5h", "rem": 100.0, "reset": NOW + 9, "len": 18000}]
+        cd = [{"reason": "quota", "model_key": "gemini-4-argon-high",
+               "retry_at": "2099-01-01T00:00:00.123456789Z"}]
+        out = cpamc.apply_cooldowns(wins, cd, {"argon": "argon"}, NOW)
+        self.assertEqual([w["rem"] for w in out], [0.0, 100.0])
+        self.assertGreater(out[0]["reset"], NOW)
+
+    def test_expired_or_non_quota_cooldown_ignored(self):
+        wins = [{"pool": "argon", "label": "7d", "rem": 100.0, "reset": 0, "len": 604800}]
+        cd = [{"reason": "quota", "model_key": "gemini-4-argon-high", "retry_at": "2000-01-01T00:00:00Z"},
+              {"reason": "other", "model_key": "gemini-4-argon-high", "retry_at": "2099-01-01T00:00:00Z"}]
+        self.assertEqual(cpamc.apply_cooldowns(wins, cd, {"argon": "argon"}, NOW)[0]["rem"], 100.0)
+
+
 class ProxyResetCreditTests(unittest.TestCase):
     def _accounts(self, n):
         return [{"auth_index": f"a{i}", "provider": "codex"} for i in range(n)]

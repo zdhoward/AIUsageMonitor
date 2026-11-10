@@ -177,6 +177,25 @@ def _exhaust_short_windows(wins: list[dict]) -> list[dict]:
     return [dict(w, rem=0.0) if w["pool"] in dead and w["label"] in ("5h", "session") else w for w in wins]
 
 
+def apply_cooldowns(wins: list[dict], cooldowns, pool_map: dict, now: float) -> list[dict]:
+    """An active quota cooldown on a model means that pool is exhausted, whatever the quota
+    endpoint says (Google reports 100% for Argon while CPAMC holds a 429 cooldown)."""
+    hit = {}
+    for c in cooldowns or []:
+        if c.get("reason") != "quota":
+            continue
+        until = _epoch(c.get("retry_at"))
+        if until <= now:
+            continue
+        for needle, pool in (pool_map or {}).items():
+            if needle in str(c.get("model_key") or ""):
+                hit[pool] = max(hit.get(pool, 0), until)
+    if not hit:
+        return wins
+    return [dict(w, rem=0.0, reset=max(w.get("reset") or 0, hit[w["pool"]])) if w["pool"] in hit else w
+            for w in wins]
+
+
 def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) -> list[dict]:
     """accounts: auth-files entries. live: auth_index -> windows (or None on failure)."""
     by_provider: dict[str, list] = {}
@@ -201,7 +220,8 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
             wins = entry.get("windows")
             if wins is None:
                 wins = header_windows(prov, (a.get("quota") or {}).get("signals") or {})
-            per_acc.append(_exhaust_short_windows(wins or []))
+            wins = apply_cooldowns(wins or [], a.get("cooldowns"), prof.get("cooldown_pools"), now)
+            per_acc.append(_exhaust_short_windows(wins))
         out_pools = []
         for pl in pools[:3]:
             labels = []

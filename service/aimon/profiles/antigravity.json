@@ -12,6 +12,7 @@
     {"pool": "argon", "label": "7d", "path": "groups[*].buckets[*]", "match": {"bucketId": "gemini-argon-wtu-weekly"}, "remaining": "remainingFraction", "scale": 1, "reset": "resetTime", "length_s": 604800}
   ],
   "tile": {"layout": "multi", "span": 2, "pools": [{"id": "flash", "label": "Flash"}, {"id": "3p", "label": "Claude"}, {"id": "argon", "label": "Argon"}]},
+  "cooldown_pools": {"argon": "argon"},
   "fallback": "cooldowns",
   "notes": "Verified 2026-10-30 on 2 accounts. A missing remainingFraction means 0. Fall back to the daily endpoint if the Gemini group is missing (CPAMC #499)."
 }
