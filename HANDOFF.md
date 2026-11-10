@@ -1,3 +1,9 @@
+# Wrap-up (2026-11-10) — CURRENT
+- Done: P-Gemini verified working (CPAMC log shows `gemini-3.8-flash-high` on the first Antigravity account). Display Flash 100% is faithful: Google's quota endpoints report Flash 100% on both accounts despite use. Argon read 100% while both accounts hold 429 quota cooldowns (really 0%): fixed with `cpamc.apply_cooldowns` + `cooldown_pools` in `service/aimon/profiles/antigravity.json`. Service restarted, capture `build/argon-cooldown.png` shows Argon 7d 0%. Commit `87825da` on main (pushed). Firmware untouched (1.16.0).
+- Tests: `ProxyCooldownTests` and `ProxyResetCreditTests` written, not run (deferred to testing phase).
+- Open: Flash/Google quota may be unreliable for newer models; optional: add Flash models to `cooldown_pools`, or show per-account request counts. Owner list unchanged (10 items in `tasks/todo.md`, incl. stale `t3/*` worktrees).
+- No open PRs; tree clean after wrap-up commit.
+
 # Catchup (2026-11-07)
 - Done: T-033.1 (Antigrav `7d` line no longer clipped) and T-033.3 (weekly-only pool draws only the inner ring) in `ui.cpp`; built, flashed to COM6, capture `build/t033-fix.png` inspected. Added `ProxyResetCreditTests` (`rc`); the `tz` test already existed. Tests not run (deferred). Firmware version not bumped.
 - Done: T-033.1 and T-033.3 in `ui.cpp` (flashed, capture `build/t033-fix.png`); `rc` tests added. Re-swept 2026-11-10: nothing new to automate. Ledger in `tasks/todo.md`: 0 auto, 10 owner (adds O10: stale `t3/*` worktrees), 6 blocked.

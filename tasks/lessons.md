@@ -11,3 +11,6 @@
 - **A health line is not a block.** A catchup run stopped with automatable work open because the session hook said "all pools exhausted" (a stale week-old status file). When delegation lanes look unavailable, do the auto items inline and say why; only owner-only items may remain at report time.
 - **Check the repo before trusting a handoff "open" note.** The "no test covers `tz`" item had been fixed in v1.17.0; grep tests before queueing work from handoff text.
 - **Narrow a drawing change to the case that needs it.** Skip the outer ring only when a tile has just a weekly window (`ow || !iw`); pools with neither window still draw their dashed placeholder.
+
+- 2026-11-10: Do not call a provider quota reading "matching" without cross-checking CPAMC `cooldowns`/429 status. Google reported Argon 100
+- 2026-11-10: Do not call a provider quota reading "matching" without cross-checking CPAMC `cooldowns`/429 status. Google reported Argon 100 percent while both accounts were in quota cooldown; a 429 cooldown outranks the quota endpoint. Say so plainly when an earlier claim was wrong.
