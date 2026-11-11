@@ -146,8 +146,8 @@ class SerialLink:
                     stats = self.sys.sample()
                     if stats:
                         ser.write((json.dumps(stats, separators=(",", ":")) + "\n").encode("utf-8"))
-                if self.get_proxy and now >= next_proxy:  # Proxy page: own line every 10s
-                    next_proxy = now + 10.0
+                if self.get_proxy and now >= next_proxy:  # Proxy page: own line every 3s
+                    next_proxy = now + 3.0
                     proxy = self.get_proxy()
                     if proxy:
                         encoded = (json.dumps(proxy, separators=(",", ":")) + "\n").encode("utf-8")

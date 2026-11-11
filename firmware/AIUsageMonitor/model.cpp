@@ -370,6 +370,11 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
       const int n = v | -1;
       d.rc[d.nrc++] = n < 0 ? -1 : min(n, 99);
     }
+    uint8_t nrx = 0;
+    for (JsonVariantConst v : g["rx"].as<JsonArrayConst>()) {
+      if (nrx >= 8) break;
+      d.rx[nrx++] = v | (uint32_t)0;
+    }
     for (JsonObjectConst pl : g["p"].as<JsonArrayConst>()) {
       if (d.np >= 3) break;
       ProxyPool& pool = d.p[d.np++];

@@ -28,7 +28,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 |---|---|---|
 | B1 | Updates tab update-available and conflict panels untested | needs a v1.17.1+ upstream release |
 | B2 | Resize recipe on a non-320x240 board | needs that hardware |
-| B3 | Manual-reset expiry dates | no data source exists |
+| B3 | Manual-reset expiry dates | done 2026-11-11 via `wham/rate-limit-reset-credits` |
 | B4 | Console Antigrav/Argon cards 5h-only | T3's stored login differs from the CPAMC accounts; needs a source decision (see O9) |
 | B5 | `add-card.md` small-model gap test | model lanes exhausted (HEALTH FAIL, all pools) |
 | B6 | Backlog tickets T-018 audio visualizer, T-019 stock ticker, T-026 weather, T-008/T-009 MINT | feature work not scheduled by the owner |

@@ -25,7 +25,7 @@ from .. import log
 BASE = "http://127.0.0.1:8317"
 PROFILE_DIR = Path(__file__).resolve().parents[1] / "profiles"
 ENV_FILE = Path(__file__).resolve().parents[2] / ".cpamc.env"
-ACCOUNTS_EVERY_S = 30.0
+ACCOUNTS_EVERY_S = 5.0  # local auth-files call only; live quota probes stay on LIVE_EVERY_S
 LIVE_EVERY_S = 300.0
 # Display order; the double-wide multi tile packs onto row 2.
 ORDER = ["claude", "codex", "xai", "antigravity"]
@@ -263,6 +263,9 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
         credits = [(live.get(a.get("auth_index")) or {}).get("rc", -1) for a in accs]
         if len(accs) <= 8 and any(c >= 0 for c in credits):
             group["rc"] = credits
+            expiry = [int((live.get(a.get("auth_index")) or {}).get("rx") or 0) for a in accs]
+            if any(expiry):
+                group["rx"] = expiry  # soonest banked-reset expiry per account, epoch s, 0 unknown
         groups.append(group)
     return groups[:6]
 
@@ -288,6 +291,25 @@ class CpamcSource:
                                      headers={"Authorization": "Bearer " + self.key, "Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.load(r)
+
+    def _credit_expiry(self, acc: dict, req: dict, url: str) -> int | None:
+        """Soonest expiry (epoch s) of this account's available banked resets; None on failure.
+
+        Read-only GET. Never call the sibling /consume endpoint: it spends a reset."""
+        payload = {"auth_index": acc["auth_index"], "method": "GET", "url": url, "header": req["header"]}
+        try:
+            out = self._call("POST", "/v0/management/api-call", payload)
+            if out.get("status_code") != 200:
+                return None
+            body = out.get("body")
+            body = json.loads(body) if isinstance(body, str) else body
+            times = [_epoch(c.get("expires_at")) for c in body.get("credits", [])
+                     if isinstance(c, dict) and c.get("status") == "available"]
+        except Exception as e:
+            log.warn("cpamc.credit_expiry_error", err=type(e).__name__)
+            return None
+        times = [t for t in times if t > 0]
+        return int(min(times)) if times else 0
 
     def _live_one(self, acc: dict, prof: dict) -> dict:
         req = prof["request"]
@@ -319,6 +341,10 @@ class CpamcSource:
                 credits = _get(body, prof.get("reset_credits"))
                 if isinstance(credits, int):
                     res["rc"] = credits  # banked manual limit resets
+                    if credits > 0 and prof.get("reset_credits_url"):
+                        expiry = self._credit_expiry(acc, req, prof["reset_credits_url"])
+                        if expiry is not None:
+                            res["rx"] = expiry
                 return res
         return {"windows": None}
 
@@ -344,6 +370,8 @@ class CpamcSource:
                 res = self._live_one(a, prof)
                 if res.get("windows") is None and not res.get("auth_failed") and idx in live:
                     res = {**live[idx], "probe_ok": False}  # retain quota, not proof of current health
+                if res.get("rc", 0) > 0 and "rx" not in res and "rx" in live.get(idx, {}):
+                    res["rx"] = live[idx]["rx"]  # expiry lookup failed this round; keep the last one
                 live[idx] = res
                 self._live_at[idx] = now
         with self._lock:

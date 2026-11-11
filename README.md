@@ -154,7 +154,7 @@ The service reads your local data read-only and pushes small updates to the scre
 
 The screen gets display numbers, not prompts, transcripts or credentials. The service reads local histories and databases without modifying them. Optional OpenRouter polling uses an API key you already have; the [data-source guide](docs/DATA_SOURCES.md) explains that one exception.
 
-The service's HTTP API has no authentication and is meant for localhost only. Wi-Fi use is untested on real hardware. The local caches this reads can change format when those tools update, so a tool update can break a reading until the service catches up. A reset countdown is only as fresh as the data behind it, and manual-reset expiry dates aren't shown because no source we can read reports them.
+The service's HTTP API has no authentication and is meant for localhost only. Wi-Fi use is untested on real hardware. The local caches this reads can change format when those tools update, so a tool update can break a reading until the service catches up. A reset countdown is only as fresh as the data behind it, and the manual-reset expiry date comes from Codex's reset-credits endpoint, so it only appears for accounts that report it.
 
 ## Docs
 
