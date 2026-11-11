@@ -41,7 +41,7 @@
 # Handoff addendum — Proxy Messages card (2026-11-03)
 - Done: last Proxy grid cell (under System) is a MESSAGES card. **24HR BURN PILE** lists accounts with quota left in their full-reset window (pool's longest, 7d/30d) resetting within 24 h, soonest first. **MANUAL RESETS** lists accounts with banked resets (`Codex1 x2`). Commits `aa527cf`, `0ee0c16`, `0711c64`; flashed to COM6, service restarted, framebuffer `build/messages-card.png` inspected.
 - Data: service reads `rate_limit_reset_credits.available_count` from Codex `wham/usage` (profile key `reset_credits`) and sends per-group `rc` array (sector order, -1 unknown) on the proxy line. Counts available, not `applicable_available_count` (owner OK).
-- Limit: no expiry/earned date for banked resets exists in Codex `wham/usage` or T3's cache; owner accepted count-only. Claude reports no manual resets.
+- Update 2026-11-11: banked-reset expiry now shown. `wham/usage` has counts only, but Codex `wham/rate-limit-reset-credits` (read-only GET via CPAMC `api-call`; never call `/consume`) lists each credit with `expires_at`. The service sends the soonest per account as `g[].rx` and the Messages card shows `expires M/D`. Proxy account poll is now 5 s and the proxy line is sent every 3 s. Firmware flashed to COM6, service restarted, capture `build/manual-reset-expiry.png`. Tests not run. Claude reports no manual resets.
 - Deferred: automated tests (owner testing phase); no test yet for `rc` in `pool_groups`. Firmware version not bumped.
 
 # Handoff addendum — commit identity cleanup (2026-11-03)
@@ -77,7 +77,7 @@
 
 ## Done
 - The Proxy view is the default home (firmware merged in `2e7fb8c`, service `fdca048`, xAI text and hide `14083cf` and later). Flashed to COM6, service restarted, live data confirmed by framebuffer capture (Claude, Codex, Antigrav multi tile, System card). Console stays selectable.
-- Data: `service/aimon/sources/cpamc.py` polls `/v0/management/auth-files` every 30s and live usage per account through `/v0/management/api-call` every 5 min, using `service/aimon/profiles/*.json`. Keys live in gitignored `service/.cpamc.env` (CPAMC_API_KEY, CPAMC_MANAGEMENT_KEY). Serial `proxy` line every 10s; contract in .tickets/T-028.md.
+- Data: `service/aimon/sources/cpamc.py` polls `/v0/management/auth-files` every 5s and live usage per account through `/v0/management/api-call` every 5 min, using `service/aimon/profiles/*.json`. Keys live in gitignored `service/.cpamc.env` (CPAMC_API_KEY, CPAMC_MANAGEMENT_KEY). Serial `proxy` line every 3s; contract in .tickets/T-028.md.
 - Design, research and endpoint evidence: docs/CPAMC_HOME.md. Terms: GLOSSARY.md (Proxy group, Provider profile, Usage window).
 - Rate-limit/quota states never raise the danger flag. xAI is hidden (`"hidden": true`) because it reports no limit.
 

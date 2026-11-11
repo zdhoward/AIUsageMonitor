@@ -925,6 +925,7 @@ struct ProxyMsg {
   int32_t secs;  // seconds to reset (sort key)
   int8_t left;   // remaining percent
   char who[12];
+  uint32_t exp;  // manual resets: soonest expiry epoch, 0 unknown
 };
 
 // Keeps the `cap` soonest notices in `out`; `total` counts all of them.
@@ -997,6 +998,7 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
       ProxyMsg& m = res[nRes++];
       m.secs = 0;
       m.left = gr.rc[i];
+      m.exp = gr.rx[i];
       if (gr.nrc > 1) snprintf(m.who, sizeof m.who, "%.8s%d", gr.n, i + 1);
       else strlcpy(m.who, gr.n, sizeof m.who);
     }
@@ -1029,7 +1031,9 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   };
 
   // Spread leftover height evenly: above the first heading, between sections, below the last.
-  const int used = 2 * headH + (max(1, n) + max(1, min(nRes, resRows))) * rowH;
+  int expLines = 0;  // small "expires" lines under reset rows
+  for (int i = 0; i < min(nRes, resRows); ++i) expLines += res[i].exp ? 1 : 0;
+  const int used = 2 * headH + (max(1, n) + max(1, min(nRes, resRows))) * rowH + expLines * 9;
   const int gap = min(8, max(0, avail - used) / 3);
   ly += gap;
 
@@ -1055,6 +1059,15 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   for (int i = 0; i < resShown; ++i) {
     snprintf(b, sizeof b, "x%d", res[i].left);
     row(res[i].who, b, nullptr, C_AMBER);
+    if (res[i].exp && ly + 9 <= y + h - 2) {  // local date the soonest reset expires
+      const time_t local = (time_t)((int64_t)res[i].exp + gProxy.tz);
+      struct tm t;
+      gmtime_r(&local, &t);
+      char ex[16];
+      snprintf(ex, sizeof ex, "expires %d/%d", t.tm_mon + 1, t.tm_mday);
+      text(ex, x + 6, ly - 1, 1, C_MUTED, TL_DATUM, w - 12);
+      ly += 9;
+    }
   }
   if (resShown < nRes) {
     snprintf(b, sizeof b, "+%d more", nRes - resShown);

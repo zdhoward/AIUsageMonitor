@@ -129,6 +129,7 @@ struct ProxyGroup {
   uint8_t np = 0;
   int8_t rc[8];       // banked manual resets per account (sector order), -1 unknown
   uint8_t nrc = 0;
+  uint32_t rx[8] = {0};  // soonest banked-reset expiry per account, epoch s, 0 unknown
 };
 struct ProxyData {
   bool valid = false;

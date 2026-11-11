@@ -134,7 +134,7 @@ The API has **no authentication**. Keep it bound to localhost unless deliberatel
 
 ## Proxy line (T-028)
 
-A separate `{"t":"proxy",...}` line about every 30 s, parsed like `sys` (no `@ACK`). A malformed line leaves the last good data in place.
+A separate `{"t":"proxy",...}` line about every 3 s (account data re-polled every 5 s), parsed like `sys` (no `@ACK`). A malformed line leaves the last good data in place.
 
 ```json
 {"t":"proxy","up":1,"age":12,"attn":0,"ts":1793380000,
@@ -148,4 +148,4 @@ A separate `{"t":"proxy",...}` line about every 30 s, parsed like `sys` (no `@AC
 
 Each window may include `q`, an array of `[remaining, reset_epoch]` pairs in the same anonymous account order across all windows and pools in a group. The first element corresponds to account 1, clockwise from the top; `-1` is unknown and reset `0` is unknown. Order follows CPAMC's opaque auth index and can change if accounts are added, removed, or reidentified. No identifiers are sent. `r` averages known values and `z` is the earliest future reset; neither implies a refill after a deadline. At most eight accounts have sector detail. To stay within the 4095-byte line limit the service may omit `q` for whole groups, starting at the end; firmware then renders the aggregate. Old payloads without `q` remain valid and older firmware ignores it.
 
-A group may include `rc`, an array of banked manual limit resets per account in the same order as `q` (`-1` unknown, at most eight). The service fills it from a profile's `reset_credits` path (Codex: `rate_limit_reset_credits.available_count`). Providers report counts only, no dates. Older firmware ignores it.
+A group may include `rc`, an array of banked manual limit resets per account in the same order as `q` (`-1` unknown, at most eight). The service fills it from a profile's `reset_credits` path (Codex: `rate_limit_reset_credits.available_count`). `wham/usage` reports counts only. On the `proxy` line (`g[].rx`), the service adds the soonest expiry per account as epoch seconds (`0` unknown), read from Codex `wham/rate-limit-reset-credits`. Older firmware ignores it.

@@ -8,6 +8,7 @@
   ],
   "tile": {"layout": "rings", "pools": [{"id": "main", "label": "Codex"}]},
   "reset_credits": "rate_limit_reset_credits.available_count",
+  "reset_credits_url": "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits",
   "fallback": "headers",
   "notes": "Verified 2026-10-30 on Plus (5h + 7d). Free accounts report one 30-day window; labels come from length_s."
 }
