@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-11-11: Proxy refresh rate and manual-reset expiry dates
+
+- Owner reported the Proxy page not updating enough. CPAMC account poll 30 s to 5 s (`ACCOUNTS_EVERY_S`), proxy serial line 10 s to 3 s; live quota probes stay at 5 min.
+- Owner saw manual reset expiry dates in the CPAMC dashboard. Source: Codex `wham/rate-limit-reset-credits` (read-only GET via CPAMC `api-call`; never `/consume`). Service sends the soonest `expires_at` per account as `g[].rx`; firmware shows `expires M/D` under the Messages card reset row. The earlier "no source exists" conclusion was wrong: it only checked `wham/usage`.
+- Flashed to COM6, service restarted, capture `build/manual-reset-expiry.png`. Tests not run. Open: `screenshot.py --show` lacks `proxy`; only the soonest expiry per account is shown; firmware version not bumped.
+
 ## 2026-11-10: P-Gemini check and Argon cooldown fix
 
 - Owner saw no P-Gemini usage on the display. Verified P-Gemini works (CPAMC log: `gemini-3.8-flash-high` served by the first Antigravity account), but Google's `retrieveUserQuotaSummary` and `fetchAvailableModels` both report Flash at 100% remaining on both accounts, so the display is faithful to a flat source. Argon was also 100% there while CPAMC held 429 `quota` cooldowns on `gemini-4-argon-high` for both accounts (owner confirmed 0%).
