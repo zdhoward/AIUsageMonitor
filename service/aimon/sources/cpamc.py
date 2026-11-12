@@ -6,8 +6,9 @@ in `aimon/profiles/*.json` (see that README). Quota is pooled per proxy group:
 sum(remaining) / (100 * accounts). The result is the compact `proxy` serial
 line described in docs/PROTOCOL.md.
 
-The management key comes from CPAMC_MANAGEMENT_KEY or the gitignored
-`service/.cpamc.env`. Keys, tokens, response bodies and account emails are
+The management key (CPAMC_MANAGEMENT_KEY) and an optional address override
+(CPAMC_URL, default http://127.0.0.1:8317) come from the environment or the
+gitignored `service/.cpamc.env`. Keys, tokens, response bodies and account emails are
 never logged.
 """
 from __future__ import annotations
@@ -32,13 +33,23 @@ ORDER = ["claude", "codex", "xai", "antigravity"]
 NAMES = {"claude": "Claude", "codex": "Codex", "xai": "xAI", "antigravity": "Antigrav"}
 
 
-def load_key() -> str:
-    key = os.environ.get("CPAMC_MANAGEMENT_KEY", "")
-    if not key and ENV_FILE.exists():
+def _setting(name: str) -> str:
+    """Environment variable first, then the gitignored `service/.cpamc.env`."""
+    val = os.environ.get(name, "")
+    if not val and ENV_FILE.exists():
         for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-            if line.startswith("CPAMC_MANAGEMENT_KEY="):
-                key = line.split("=", 1)[1].strip()
-    return key
+            if line.startswith(name + "="):
+                val = line.split("=", 1)[1].strip()
+    return val
+
+
+def load_key() -> str:
+    return _setting("CPAMC_MANAGEMENT_KEY")
+
+
+def load_base() -> str:
+    """CPAMC address. Set CPAMC_URL (env or `.cpamc.env`) when it is not on this PC."""
+    return (_setting("CPAMC_URL") or BASE).rstrip("/")
 
 
 def load_profiles(directory: Path = PROFILE_DIR) -> dict:
@@ -273,8 +284,8 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
 class CpamcSource:
     """Background poller. `line()` returns the latest `proxy` serial message."""
 
-    def __init__(self, base: str = BASE):
-        self.base = base
+    def __init__(self, base: str | None = None):
+        self.base = base or load_base()
         self.key = load_key()
         self.profiles = load_profiles()
         self._accounts: list[dict] = []

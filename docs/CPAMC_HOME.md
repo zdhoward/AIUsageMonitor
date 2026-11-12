@@ -17,7 +17,7 @@ Console as the default Home. The Console stays selectable and configurable.
 - **Danger icon:** only for things the owner must act on (expired or invalid
   auth, disabled account, proxy unreachable, config errors). Exhausted quota
   doesn't count, because waiting resolves it.
-- **Data source:** CPAMC management API at `http://127.0.0.1:8317/`, using an
+- **Data source:** CPAMC management API at `http://127.0.0.1:8317/` by default (override with `CPAMC_URL` in the gitignored `service/.cpamc.env`, e.g. for a CPAMC on another machine), using an
   API key kept out of the repo (env var / gitignored dotfile).
 
 ## Open questions for research
