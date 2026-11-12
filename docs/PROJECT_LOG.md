@@ -364,3 +364,8 @@
 - Service suite ran in an owner-declared phase: 58 tests OK. Secret and unsafe-call scans clean. Firmware not rebuilt.
 - Owner's "Argon shows a reset time, Flash and Claude don't" is by design: the countdown draws only for a weekly window at 0% left with a reset time. Report: `docs/release/HARDEN_2026-11-09.md`.
 - Open: O5 (0.41% rounds to 0% and counts as a cooldown).
+
+## 2026-11-11 — CPAMC moved to Tailscale
+- CPAMC (CLIProxyAPI) now binds to the owner's Tailscale address instead of loopback. The proxy source takes its base URL from `CPAMC_URL` (environment or the gitignored `service/.cpamc.env`), defaulting to `http://127.0.0.1:8317`, so no private address is tracked.
+- The management key had been rotated that day; the stored key returned 401 until replaced. Traffic is plain HTTP inside the WireGuard tunnel; the proxy must stay bound to the Tailscale interface, not a public one.
+- Verified by a live management call (12 accounts) and 5 s polling in `logs/aimon.log` after a service restart. Tests deferred; firmware untouched.
