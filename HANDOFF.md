@@ -1,4 +1,12 @@
-# Wrap-up (2026-11-10, CPAMC priorities check) — CURRENT
+# Wrap-up (2026-11-12, CPAMC moved to Tailscale) — CURRENT
+- Done: CPAMC now runs on this PC bound to the owner's Tailscale IP (not 127.0.0.1). The service reads its address from `CPAMC_URL` (env var or the gitignored `service/.cpamc.env`; default stays `http://127.0.0.1:8317`) via `cpamc.load_base()` / `_setting()`. Docs: one line in `docs/CPAMC_HOME.md`. The real address is in no tracked file.
+- Validation: management API returns 12 auth entries over the Tailscale address; after `scripts/service.ps1 restart` the log shows `cpamc.poll accounts=12` every 5 s, no source errors, ESP32 acking on COM6. No tests run (deferred); no firmware change (1.16.0).
+- Cause of the 401: the proxy's management key hash changed on 2026-11-11 (restart 5:36 PM), so the old key was stale. A first key supplied was a proxy API key (works on `/v1/models`, not management); the second was the management key. `CPAMC_MANAGEMENT_KEY` in `.cpamc.env` is updated. `management-key.txt` in the CPAMC folder is stale: do not trust it.
+- Commit status: code and doc edits are committed and pushed by this wrap-up (diff scanned: no IP, key or personal data).
+- Open: the session-start HEALTH hook still probes `127.0.0.1:8317` and will report FAIL (hook config is outside this repo; point it at `CPAMC_URL`). Optional: a unit test for `load_base` (env var beats file beats default). Earlier open item from 2026-11-10 still stands: confirm GPM's priority changes.
+- Next: owner decides whether to cut a patch release (service-only change; firmware unchanged).
+
+# Wrap-up (2026-11-10, CPAMC priorities check)
 - Done: read-only check of Codex routing in CPAMC. Order is correct: soonest-resetting Plus account has the highest priority (20), the later-resetting one is the fallback (10). No repo or CPAMC changes from this thread.
 - Finding: Antigravity and xAI accounts have no priority set; Claude order looked stale (two accounts cooling down). Owner wants every active account ranked so fallbacks are ordered too.
 - Decision: priorities are owned by the GPM reset-priority job, not this repo. Sent GPM thread 389a2047-6d78-4c2c-ba0e-74a6e9d2b36a the gaps and asked it to cover all providers, rank cooldown accounts, and apply the pending Claude changes. It was still working (building a script) at wrap-up.
