@@ -95,7 +95,18 @@ Edit that local JSON file before starting the service. It is Git-ignored. The ex
 
 Other settings and exact defaults live in [config.py](../service/aimon/config.py). `AIMON_<UPPERCASE_SETTING>` environment variables override the JSON file, for example `$env:AIMON_SERIAL_PORT = 'COM6'`. Environments of background/logon processes may differ from the terminal you use for setup.
 
-T3 must have written provider status caches for quota readings. Claude and Codex transcript roots are discovered from T3 provider-instance settings, with standard home-directory fallbacks. A missing price table at `~/.t3/userdata/usage-model-rates.json` leaves affected token costs unpriced. No login refresh or direct subscription usage request is performed by this service.
+T3 must have written provider status caches for quota readings. Claude and Codex transcript roots are discovered from T3 provider-instance settings, with standard home-directory fallbacks. A missing price table at `~/.t3/userdata/usage-model-rates.json` leaves affected token costs unpriced. These Console sources need no switches: T3, Claude Code, Codex and OpenCode are found automatically. Only Antigravity (`antigravity_enabled`) and OpenRouter (`openrouter_enabled`) have toggles.
+
+### Proxy view (CLIProxyAPI)
+
+The Proxy home page reads the CLIProxyAPI management API, not `aimon.config.json`. Create the Git-ignored `service/.cpamc.env` with:
+
+```text
+CPAMC_MANAGEMENT_KEY=<your management key>
+CPAMC_URL=http://127.0.0.1:8317
+```
+
+`CPAMC_URL` is optional; set it only when the proxy runs elsewhere. Environment variables with the same names override the file. Then list `proxy` in your profile's `pages`. Details: [CPAMC_HOME](CPAMC_HOME.md).
 
 ### Console account names
 

@@ -45,7 +45,12 @@ if (Test-Path 'profiles/my.json') { Report OK 'personal profile profiles/my.json
 if (Test-Path 'docs/MY_CHANGES.md') { Report OK 'docs/MY_CHANGES.md ledger exists' } else { Report WARN 'docs/MY_CHANGES.md missing (create it when you first edit a tracked file)' }
 
 # Tools.
-if (Get-Command python -ErrorAction SilentlyContinue) { Report OK ("python: " + (python --version 2>&1)) } else { Report FAIL 'python not found' }
+if (Get-Command python -ErrorAction SilentlyContinue) {
+  Report OK ("python: " + (python --version 2>&1))
+  python -c "import serial, tzdata, psutil" 2>$null
+  if ($LASTEXITCODE -eq 0) { Report OK 'python packages: pyserial, tzdata, psutil' }
+  else { Report WARN 'python packages missing. Run: python -m pip install -r service/requirements.txt' }
+} else { Report FAIL 'python not found' }
 $cli = Join-Path $env:LOCALAPPDATA 'Programs\Arduino IDE\resources\app\lib\backend\resources\arduino-cli.exe'
 if ((Test-Path $cli) -or (Get-Command arduino-cli -ErrorAction SilentlyContinue)) { Report OK 'arduino-cli found' } else { Report WARN 'arduino-cli not found (needed to build firmware)' }
 
