@@ -28,9 +28,9 @@ It's free, MIT-licensed and a hobby project. It works well for me and I'd love f
 
 - An **ESP32-2432S024C**: an ESP32 with a built-in 2.4" touchscreen. No wiring, just a USB **data** cable (some cables only charge).
 - A PC. It's built and tested on **Windows** (the helper scripts are PowerShell). Linux and macOS are not tested.
-- At least one source of usage data. The service reads what your local tools already record: [T3](docs/DATA_SOURCES.md) caches, Claude and Codex transcripts, OpenCode history, and optionally your OpenRouter key.
+- At least one source of usage data: a [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) proxy, [T3](docs/DATA_SOURCES.md) caches, Claude and Codex transcripts, OpenCode history, or an OpenRouter key.
 
-This is a board-specific project, not a universal usage API. Look-alike boards can use different controllers or pins, so check the [hardware notes](docs/HARDWARE.md) before buying or adapting anything.
+Look-alike boards can use different controllers or pins, so check the [hardware notes](docs/HARDWARE.md) before buying one.
 
 ## Get it running
 
@@ -133,7 +133,7 @@ and show me a framebuffer capture before and after.
 ## How it works
 
 ```text
-T3 caches + local transcripts + OpenCode history + optional proxy
+CLIProxyAPI proxy + T3 caches + local transcripts + OpenCode history
                               |
                        Python service (PC)
                               |
@@ -142,7 +142,7 @@ T3 caches + local transcripts + OpenCode history + optional proxy
                  ESP32 draws it on the screen
 ```
 
-The service reads your local data read-only and pushes small updates to the screen every few seconds. It never forces a request to a provider and never guesses a refill. The ESP32 holds no credentials and only draws what it's sent. Details are in [data sources and freshness](docs/DATA_SOURCES.md) and the [protocol](docs/PROTOCOL.md).
+The service reads your local data read-only, asks the proxy for quota (which never spends any), and pushes small updates to the screen every few seconds. It never guesses a refill. The ESP32 holds no credentials and only draws what it's sent. Details are in [data sources and freshness](docs/DATA_SOURCES.md) and the [protocol](docs/PROTOCOL.md).
 
 ### Reading the display
 
@@ -154,7 +154,7 @@ The service reads your local data read-only and pushes small updates to the scre
 
 The screen gets display numbers, not prompts, transcripts or credentials. The service reads local histories and databases without modifying them. Optional OpenRouter polling uses an API key you already have; the [data-source guide](docs/DATA_SOURCES.md) explains that one exception.
 
-The service's HTTP API has no authentication and is meant for localhost only. Wi-Fi use is untested on real hardware. The local caches this reads can change format when those tools update, so a tool update can break a reading until the service catches up. A reset countdown is only as fresh as the data behind it, and the manual-reset expiry date comes from Codex's reset-credits endpoint, so it only appears for accounts that report it.
+The service's HTTP API has no authentication and is meant for localhost only. Wi-Fi is untested on real hardware. When one of your AI tools updates, a reading can break until the service catches up.
 
 ## Docs
 
