@@ -15,7 +15,7 @@ You do not need a fork. Clone, branch, work. If you want an off-machine backup, 
 
 1. **Check the start state.** Run `.\scripts\doctor.ps1`. Expect a warning about `main` or a missing profile; that is fine.
 2. **Create your branch.** `git switch -c my-setup`. Check: `git branch --show-current` prints `my-setup`.
-3. **Create your profile.** Copy `profiles/default.json` to `profiles/my.json` and edit the copy (pages, order, screensaver). Never edit `default.json`. Check: `python scripts\profile_gen.py my` prints no error. Then always build with `.\scripts\build.ps1 -Profile my`.
+3. **Create your profile.** Copy `profiles/default.json` to `profiles/my.json` and edit the copy (pages, order, screensaver); an unchanged copy is also valid. Never edit `default.json`. Check: `python scripts\profile_gen.py my` exits with code 0 and prints `wrote ...profile_gen.h`. `skipped (missing src/...)` and `art not installed` warnings are expected when your art is not installed. Then always build with `.\scripts\build.ps1 -Profile my`.
 4. **Create the ledger.** Create `docs/MY_CHANGES.md` with the heading `# My changes` and a table with columns File, What and why, Date. Commit it with the profile: `git add profiles/my.json docs/MY_CHANGES.md` then `git commit -m "Add my profile and change ledger"`.
 5. **Optional backup.** Create an empty **private** repository on your own account, then `git remote add backup <its URL>` and `git push -u backup my-setup`. Do not push to `origin`; it is upstream.
 6. **Re-run `doctor.ps1`.** It should report branch `my-setup` and no FAIL lines.
