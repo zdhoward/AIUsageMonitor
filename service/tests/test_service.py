@@ -693,6 +693,20 @@ class ProxyResetCreditTests(unittest.TestCase):
         self.assertNotIn("rc", g[0])
 
 
+class ProxyPercentTests(unittest.TestCase):
+    """A sliver of quota (0.41%) is usable, not a 0% cooldown; only a true 0 is exhausted."""
+
+    def test_sliver_shows_one_percent(self):
+        self.assertEqual(cpamc._pct(0.41), 1)
+        self.assertEqual(cpamc._pct(0.5), 1)
+
+    def test_true_zero_stays_zero(self):
+        self.assertEqual(cpamc._pct(0.0), 0)
+
+    def test_normal_values_round(self):
+        self.assertEqual(cpamc._pct(42.6), 43)
+
+
 class ProxyAddressTests(unittest.TestCase):
     """CPAMC_URL: env var beats `.cpamc.env`, which beats the loopback default."""
 

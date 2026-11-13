@@ -188,6 +188,12 @@ def _exhaust_short_windows(wins: list[dict]) -> list[dict]:
     return [dict(w, rem=0.0) if w["pool"] in dead and w["label"] in ("5h", "session") else w for w in wins]
 
 
+def _pct(rem: float) -> int:
+    """Whole percent left. Any quota left shows at least 1%, so the display never reads a
+    usable window (e.g. 0.41%) as a 0% cooldown; only a true 0 is exhausted."""
+    return 1 if 0 < rem < 1 else round(rem)
+
+
 def apply_cooldowns(wins: list[dict], cooldowns, pool_map: dict, now: float) -> list[dict]:
     """An active quota cooldown on a model means that pool is exhausted, whatever the quota
     endpoint says (Google reports 100% for Argon while CPAMC holds a 429 cooldown)."""
@@ -246,7 +252,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                 rems, resets, known, texts, detail = [], [], False, [], []
                 for wins in per_acc:
                     hit = next((w for w in wins if w["pool"] == pl["id"] and w["label"] == lab), None)
-                    detail.append([round(hit["rem"]) if hit and hit["rem"] is not None else -1,
+                    detail.append([_pct(hit["rem"]) if hit and hit["rem"] is not None else -1,
                                    int(hit["reset"]) if hit and hit["reset"] else 0])
                     if hit is None or hit["rem"] is None:
                         if hit and hit.get("text"):
@@ -260,7 +266,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                     if hit["reset"] > now:
                         resets.append(hit["reset"])
                 vals = [r for r in rems if r is not None]
-                r = round(sum(vals) / len(vals)) if known and vals else -1
+                r = _pct(sum(vals) / len(vals)) if known and vals else -1
                 win = {"l": lab, "r": r, "z": int(min(resets)) if resets else 0}
                 if len(accs) <= 8:
                     win["q"] = detail
