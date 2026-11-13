@@ -691,3 +691,25 @@ class ProxyResetCreditTests(unittest.TestCase):
     def test_unknown_for_all_accounts_omits_rc(self):
         g = cpamc.pool_groups(self._accounts(2), {"a0": {"windows": []}, "a1": {"windows": []}}, {"codex": {}}, NOW)
         self.assertNotIn("rc", g[0])
+
+
+class ProxyAddressTests(unittest.TestCase):
+    """CPAMC_URL: env var beats `.cpamc.env`, which beats the loopback default."""
+
+    def _base(self, env: dict, file_text: str | None) -> str:
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".cpamc.env"
+            if file_text is not None:
+                env_file.write_text(file_text, encoding="utf-8")
+            with mock.patch.dict("os.environ", env, clear=True), mock.patch.object(cpamc, "ENV_FILE", env_file):
+                return cpamc.load_base()
+
+    def test_default_is_loopback(self):
+        self.assertEqual(self._base({}, None), cpamc.BASE)
+
+    def test_file_beats_default_and_trailing_slash_is_dropped(self):
+        self.assertEqual(self._base({}, "OTHER=x\nCPAMC_URL=http://10.0.0.5:8317/\n"), "http://10.0.0.5:8317")
+
+    def test_env_beats_file(self):
+        self.assertEqual(self._base({"CPAMC_URL": "http://10.0.0.9:8317"}, "CPAMC_URL=http://10.0.0.5:8317\n"),
+                         "http://10.0.0.9:8317")
