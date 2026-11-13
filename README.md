@@ -65,22 +65,25 @@ profile (profiles/my.json), so I can take new releases from upstream later. Log 
 tracked file you edit in docs/MY_CHANGES.md. Run scripts/doctor.ps1 when done.
 
 STEP 1 - Check, then ask. Before changing anything, verify what you can yourself
-(OS, Python version, whether arduino-cli is installed, whether a CH340 serial port
-is present). If the OS is not Windows or my board is not an ESP32-2432S024C, stop
-and tell me what is untested. Otherwise ask me ALL of these in one message, and
-suggest a default for each:
+(OS, Python version, whether arduino-cli is on PATH or bundled with Arduino IDE 2,
+whether a CH340 serial port is present). If the OS is not Windows or there is no
+CH340 port, stop and tell me what is untested. The board model cannot be detected
+over USB, so ask me to confirm it is an ESP32-2432S024C. Ask that and ALL of these
+in one message, and suggest a default for each:
   1. Which AI tools do I use? (T3, Claude Code, Codex, OpenCode, OpenRouter,
      CLIProxyAPI proxy, Antigravity/Gemini)
   2. Home screen: Proxy view (needs CLIProxyAPI) or the classic Console?
   3. Automatic night dimming? If yes, my city or lat/long and timezone.
   4. Screen orientation and screensaver preferences (scenes, how long until it starts).
-  5. Do I want the System page (CPU/RAM/GPU) and the companion face?
+  5. Do I want the System page (CPU/RAM/GPU) and the companion face as pages?
+     (Each one I want goes in `pages` in profiles/my.json.)
   6. Should the service start automatically when I log in?
 
 STEP 2 - Build it. After I answer, do everything without asking again: install
 missing tools and Python packages, create service/aimon.config.json from the
-example using my answers, build and flash the firmware, start the service, and
-install the logon task only if I said yes.
+example using my answers (for the proxy, create service/.cpamc.env as docs/SETUP.md
+describes and ask me for the management key), build and flash the firmware, start
+the service, and install the logon task only if I said yes.
 
 STEP 3 - Prove it works. Run scripts/service.ps1 status, then capture the display
 with scripts/screenshot.py and show me the image. If something fails, diagnose the
