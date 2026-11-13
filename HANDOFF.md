@@ -1,4 +1,10 @@
-# Wrap-up (2026-11-12, CPAMC moved to Tailscale) — CURRENT
+# Catchup (2026-11-13) — CURRENT
+- Done: removed all 29 stale `t3/*` worktrees and local branches (28 merged into `main`; `t3/optional-pages-screensaver` is a superseded draft kept on `origin`). Backup: bundle of every branch plus 13 uncommitted-diff patches in the sibling folder `AIUsageMonitor-worktree-backup-20261113/` (next to the repo). Only `main` remains.
+- Done: confirmed GPM's CPAMC priorities (read-only): every active account is ranked. Added `ProxyAddressTests` for `load_base` (not run, deferred). Haiku followed `add-card.md` to a green build (not flashed); its gaps are fixed in `add-card.md` and `customise-safely.md`.
+- Stale notes dropped: the HEALTH hook already probes the Tailscale address; P-Gemini is working.
+- Ledger `tasks/todo.md`: 0 auto, 10 owner (O1-O5, O7-O9, O11 Flash/Claude cooldown rule, O12 remote branch and backup-folder deletion), 4 blocked. Firmware untouched (1.16.0).
+
+# Wrap-up (2026-11-12, CPAMC moved to Tailscale)
 - Done: CPAMC now runs on this PC bound to the owner's Tailscale IP (not 127.0.0.1). The service reads its address from `CPAMC_URL` (env var or the gitignored `service/.cpamc.env`; default stays `http://127.0.0.1:8317`) via `cpamc.load_base()` / `_setting()`. Docs: one line in `docs/CPAMC_HOME.md`. The real address is in no tracked file.
 - Validation: management API returns 12 auth entries over the Tailscale address; after `scripts/service.ps1 restart` the log shows `cpamc.poll accounts=12` every 5 s, no source errors, ESP32 acking on COM6. No tests run (deferred); no firmware change (1.16.0).
 - Cause of the 401: the proxy's management key hash changed on 2026-11-11 (restart 5:36 PM), so the old key was stale. A first key supplied was a proxy API key (works on `/v1/models`, not management); the second was the management key. `CPAMC_MANAGEMENT_KEY` in `.cpamc.env` is updated. `management-key.txt` in the CPAMC folder is stale: do not trust it.

@@ -40,7 +40,7 @@ Log this edit in `docs/MY_CHANGES.md`.
    ```
 
    If all six cells are full the card is simply skipped. To make room, remove the System or Messages line, or raise `cols`/`rows` (and check the card text still fits; see [resize](resize-display.md)).
-4. **Build.** `.\scripts\build.ps1 -Profile my`. Fix the first error and rebuild. Check: the output contains a `build ok` line. It is not the last line; compiler warnings (such as `TOUCH_CS pin not defined`) and the size report follow it and are expected. If it reports `profile error` for `profiles\my.json`, do step 3 of [customise safely](customise-safely.md).
+4. **Build.** `.\scripts\build.ps1 -Profile my`. Fix the first error and rebuild. Check: the output contains a `build ok -> ...` line. It may appear before or after the compiler warnings (such as `TOUCH_CS pin not defined`) and the size report; those are expected. If it reports `profile error` for `profiles\my.json`, do step 3 of [customise safely](customise-safely.md).
 5. **Flash and look.** `.\scripts\flash.ps1`, then `python scripts\screenshot.py --feed --out build\card.png`. Open the image. Check: the card is in its cell, text does not touch the edges, nothing overlaps.
 6. **Check portrait.** Build once with `-Rotation 0`, capture again, and confirm the card still fits. Rebuild without the override afterwards.
 7. **Commit** on `my-setup` and add the ledger row.
