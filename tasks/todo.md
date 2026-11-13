@@ -22,7 +22,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 
 ## Answered 2026-11-13 (see GOALS.md "Owner answers")
 - O1 keep the account count; O2 no next provider (T-033 closed).
-- O3 README setup prompt: dry run on a clean clone, stopping before flash, delegated to Gemini Flash (in progress; gaps get fixed in the docs).
+- O3 done: Gemini Flash ran the README setup prompt on a clean clone up to the build (build ok, doctor all OK on `my-setup`; flash, service and logon task skipped). Its 7 gaps are fixed: proxy setup (`.cpamc.env`) in SETUP.md and the prompt, arduino-cli via Arduino IDE 2, board confirmation asked, System/companion map to `pages`, doctor FAIL on `main` documented as expected, doctor now checks Python packages.
 - O5 done: any quota left shows at least 1% (`cpamc._pct`, commit `4d6bb60`, service restarted); `ProxyPercentTests` added, not run.
 - O7 done: README trimmed (commit `15f753a`).
 - O8 policy: patches ship on `main` with no tag; minor versions get a tag and a release. No release needed now.
