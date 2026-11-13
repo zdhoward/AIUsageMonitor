@@ -2,11 +2,15 @@
 
 ## 2026-11-13: Catchup (worktree cleanup, recipe gap test)
 
-- Removed all 29 stale `t3/*` worktrees and local branches; 28 were merged into `main`, and the superseded draft `t3/optional-pages-screensaver` stays on `origin`. A verified bundle and 13 uncommitted-diff patches are kept in the sibling folder `AIUsageMonitor-worktree-backup-20261113/`.
+- Removed all 29 stale `t3/*` worktrees and local branches; 28 were merged into `main`. After the owner's go-ahead, the superseded draft branch was deleted from `origin` and both sibling backup folders were deleted, once every art file was confirmed present in `assets/`.
 - Confirmed (read-only) that every active CPAMC account has a priority after the GPM job ran.
 - Added `ProxyAddressTests` (`CPAMC_URL` precedence); compiles, not run (deferred).
 - Haiku followed `docs/recipes/add-card.md` steps 1-4 to a green build (not flashed). Fixed the gaps it hit: a prerequisites line, the model-card length, a full two-row sample, a position-neutral `build ok` check, the missing-profile hint, and the `profile_gen` check in `customise-safely.md`. A Sonnet review confirmed the sample matches `ui.cpp`.
 - The public push guard rejected an intermediate commit that held a local drive path; the unpushed commits were squashed before pushing. Firmware untouched (1.16.0).
+- Owner answers: keep the account count (T-033 closed), no next provider, patch fixes ship on `main` untagged (minor versions get a tag and release; recorded in GOALS.md), Flash/Claude cooldowns unchanged.
+- Any quota left now shows at least 1%; only a true 0 is a cooldown (`ProxyPercentTests`, not run). Service restarted.
+- Gemini Flash dry-ran the README setup prompt on a clean clone to a green build (no flash). Fixed its 7 gaps in README, SETUP.md (new "Proxy view" section for `.cpamc.env`), customise-safely.md and `doctor.ps1` (Python package check, verified live).
+- The push guard caught an account name in HANDOFF; it was amended out before pushing.
 
 ## 2026-11-11: Proxy refresh rate and manual-reset expiry dates
 
