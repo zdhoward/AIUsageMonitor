@@ -19,3 +19,7 @@
 - 2026-11-12: **A 401 after a move may be a rotated key, not a routing fault.** Probe `/v1/models` (API key) and `/v0/management/*` separately and compare config hash against a backup (equality only, never print secrets) before concluding. The CPAMC config stores a bcrypt hash, so the plaintext cannot be recovered: request it with `request_secret` and say which key is needed (management key, not the API key).
 - 2026-11-12: **Heredocs to inline interpreters are blocked by a hook.** Write a small `.py` file with the Write tool (outside the repo) and run it by path; do not build scripts with `printf` (escapes get mangled).
 - 2026-11-13: **Never write a local drive path into tracked notes, even in an intermediate commit.** The public push guard scans every commit, not the final diff, so a path fixed in a later commit still blocks the push. Name backup folders as "the sibling folder `<name>`".
+
+## 2026-11-13: account names are personal data in a public repo
+- The pre-push scan looked for `@gmail` only; an account name without the domain (written in HANDOFF to point the owner at an account) still tripped the public-push guard.
+- Rule: in tracked files, refer to accounts by position or role ("third Claude account on the display"), never by name. Scan the outgoing diff for the bare names too, not just email domains.
