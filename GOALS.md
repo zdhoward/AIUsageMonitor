@@ -1,5 +1,13 @@
 # Accepted display decisions
 
+## Owner answers (2026-11-13)
+
+- Versioning: patch fixes are pushed to `main` whenever they are ready, with no tag or GitHub release. Minor versions get a tag and a release.
+- Proxy header `PROXY (n)` keeps counting accounts (T-033.2 closed). No next provider is planned (T-033.4 closed).
+- Quota left in a window is usable: any amount above 0 shows at least 1%, and only a true 0 is a cooldown.
+- Cooldown handling for the Flash and Claude pools stays as it is; the owner sees no problem.
+- README stays simple and user-facing.
+
 ## Proxy account sectors (2026-11-02)
 
 - Keep provider totals and the earliest upcoming reset, and divide each pool's session and weekly rings into equal clockwise sectors for its active accounts. Preserve individual measurements, distinguish unknown from zero, and never infer a refill from a passed deadline. Account order is stable and anonymous; support older aggregate-only payloads.
