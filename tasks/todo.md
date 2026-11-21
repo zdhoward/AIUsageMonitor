@@ -14,7 +14,7 @@ Verification: the installed commit-msg hook rejected the AI fixture (exit 1)
 and accepted a human fixture (exit 0). The push handler rejected the original
 history and accepted the cleaned 207-commit history; chained-hook stdin and
 failure propagation passed. Reinstallation preserved the original public push
-guard. The cleaned tip has an identical tree; all rewritten objects were
+guard. The attribution-only variant has an identical tree; all rewritten objects were
 verified. Doctor passed required checks. No firmware build, flash, or application
 suite was run because this change only affects Git metadata and safeguards.
 
@@ -29,6 +29,8 @@ The publication privacy check found historical machine paths in setup notes
 and a current scheduled-task description. A second prepared branch redacts
 those paths; its current-file diff was limited to that description. This
 privacy-safe variant passed the publication guard and is the published history.
+Wrap-up: no open PRs, successful attribution CI on 2ffac7a, main and my-setup
+synced. Current handoff is HANDOFF.md; historical release tags remain unchanged.
 
 Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), TODO/FIXME grep (none), `git worktree list`, live CPAMC `auth-files` (read-only). No DECISIONS.md exists; GOALS.md and docs hold no answers for the owner items below.
 

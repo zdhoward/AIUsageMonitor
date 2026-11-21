@@ -10,6 +10,11 @@ reachable commit, including merges and incoming branches.
 
 Audit with `python scripts/attribution_guard.py check HEAD`.
 
+Before preparing a rewrite, run the installed public push guard over the full
+source history. Previously published commits are scanned again after a rewrite;
+a clean tip diff is insufficient. Resolve any historical privacy findings in
+the prepared branch, then rerun both guards before publishing.
+
 To prepare historical cleanup, run
 `python scripts/attribution_guard.py prepare SOURCE NEW_BRANCH`. This creates a
 separate branch that removes AI co-author trailers, preserves all file trees,

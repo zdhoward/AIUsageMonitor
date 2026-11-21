@@ -1,4 +1,33 @@
-# Antigravity endpoint, Neon pool, live-quota rotation (2026-11-21) — CURRENT
+# Contributor attribution cleanup (2026-11-21) - CURRENT
+
+- Objective complete: removed 124 AI co-author trailers from main and added
+  commit-message/push guards plus a full-history CI attribution audit.
+- Accepted decision: owner explicitly approved replacing published main using
+  an exact force-with-lease. Release tags remain unchanged. Legitimate human
+  identities, credit and dates were preserved.
+- Published state before this documentation wrap-up: `2ffac7a` on main.
+  Local main and my-setup match origin/main; worktree was clean. The original
+  refs are backed up in the ignored `build/attribution-before.bundle`.
+- Validation: 210 main commits pass the attribution audit; both push guards and
+  GitHub attribution CI passed. GitHub's contributor API lists only zdhoward.
+  Commit-msg fixtures rejected AI and accepted human credit. Push-handler
+  fixtures verified dirty-history rejection, clean-history acceptance, retained
+  hook stdin and failure propagation. Doctor passed. No app suites, firmware
+  build or flash were needed; app behavior is unchanged.
+- Privacy: publication guard exposed historical machine paths. Those were
+  redacted in setup notes and the task description; the current code diff was
+  limited to that description. The unchanged privacy guard then passed.
+- Continuation: use my-setup for edits. Other clones must resync to rewritten
+  main before contributing; install attribution hooks after cloning. Old tags
+  retain historical attribution and must not be merged back into main.
+  Historical short commit IDs below may refer to the backed-up history.
+- No open PRs or pending approval for this task. Prior backlog remains in
+  tasks/todo.md (O4/O9 and blocked B1/B2/B6); it was not reopened by this task.
+- Retro: check full-source privacy before preparing a rewrite; use Git's bundled
+  shell when sh is absent from PATH. Recipe updated, shell fallback verified.
+  No delegation, lane promotion or measured cost saving claimed.
+
+# Previous: Antigravity endpoint, Neon pool, live-quota rotation (2026-11-21)
 - Objective: owner reported auth not rotating and Antigravity monitoring breaking; wants Neon usage visible.
 - Done (`bc64d18`, pushed): Antigravity profile reads `daily-cloudcode-pa` first (CPAMC serves its traffic there; the primary endpoint reports a different quota and lacks Neon). First multi-tile pool relabelled **Neon** = shared Gemini Models bucket (Neon, Hydrogen, 3.8 Flash; Neon has no own quota). Neon/Hydrogen/3.8 Flash quota cooldowns mark that pool spent. Profile window field `missing` (Antigravity: 0) so a spent bucket reads 0% not `--`. `cpamc.window_missing` warns once per change when a profile bucket disappears.
 - Done outside this repo (`~/.agents` `4b7a272`, pushed): `tools/cpa_reset_priority.py` ranks from live CPAMC quota via this repo's profiles and reader (`service/aimon/sources/cpamc.py`; keep `CpamcSource._live_one`, `read_windows`, `apply_cooldowns` signatures stable or update that tool). Antigravity ranks by Claude/GPT (`3p`) weekly (owner choice); any 0% window or quota cooldown ranks last. Task `CPA-Reset-Priority` now hourly.

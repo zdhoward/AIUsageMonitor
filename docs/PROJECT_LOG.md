@@ -1,5 +1,24 @@
 # Project log
 
+## 2026-11-21: Contributor attribution cleanup
+
+- Removed 124 AI co-author trailers from published main after owner approval,
+  using an exact force-with-lease. Original refs backed up locally; historical
+  release tags preserved. Human identities and dates remain intact.
+- Added scripts/attribution_guard.py, installed commit-message and push guards,
+  preserved/chained the public privacy hook, and added GitHub's full-history
+  Contributor attribution workflow. Other clones must resync and install hooks.
+- Publication guard found older machine paths in setup notes and the scheduled
+  task description. Prepared a sanitized history; current behavior is unchanged.
+- Verified 210 commits on main, both push guards, dirty/clean push handling,
+  AI/human commit-message fixtures, chained-hook stdin/failure propagation,
+  doctor and successful CI. GitHub's contributor API lists only the owner.
+  Published completion notes at 2ffac7a; no app suite/build/flash or release tag.
+- Wrap-up: no open PRs; handoff and task ledger reconciled. Earlier backlog
+  remains. Retro applied a full-history privacy preflight to the recipe; shell
+  fallback was already verified. Exact serving identity/cost remain unverified;
+  no router change or model promotion is supported by this session.
+
 ## 2026-11-21: Antigravity endpoint, Neon pool, live-quota rotation
 
 - Cause of drifting Antigravity numbers: the profile read Google's primary quota endpoint, but CPAMC serves Antigravity through `daily-cloudcode-pa`, which reports a different quota (first account Claude/GPT weekly 49% there vs 64% on the primary) and is the only one that lists Neon. Profile now reads daily first.

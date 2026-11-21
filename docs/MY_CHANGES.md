@@ -10,3 +10,5 @@
 | tasks/lessons.md | Record the recurring AI credit problem and prevention. | 2026-11-21 |
 | docs/MY_CHANGES.md | Track this maintenance change. | 2026-11-21 |
 | scripts/service.ps1 | Remove a machine path from the scheduled-task description so the privacy guard permits publication. | 2026-11-21 |
+| HANDOFF.md | Record published cleanup, validation, backup and continuation; retain earlier backlog. | 2026-11-21 |
+| docs/PROJECT_LOG.md | Record cleanup outcome and retrospective. | 2026-11-21 |
