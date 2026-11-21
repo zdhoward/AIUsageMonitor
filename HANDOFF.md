@@ -1,4 +1,11 @@
-# Catchup (2026-11-13) — CURRENT
+# Antigravity endpoint, Neon pool, live-quota rotation (2026-11-21) — CURRENT
+- Objective: owner reported auth not rotating and Antigravity monitoring breaking; wants Neon usage visible.
+- Done (`bc64d18`, pushed): Antigravity profile reads `daily-cloudcode-pa` first (CPAMC serves its traffic there; the primary endpoint reports a different quota and lacks Neon). First multi-tile pool relabelled **Neon** = shared Gemini Models bucket (Neon, Hydrogen, 3.8 Flash; Neon has no own quota). Neon/Hydrogen/3.8 Flash quota cooldowns mark that pool spent. Profile window field `missing` (Antigravity: 0) so a spent bucket reads 0% not `--`. `cpamc.window_missing` warns once per change when a profile bucket disappears.
+- Done outside this repo (`~/.agents` `4b7a272`, pushed): `tools/cpa_reset_priority.py` ranks from live CPAMC quota via this repo's profiles and reader (`service/aimon/sources/cpamc.py`; keep `CpamcSource._live_one`, `read_windows`, `apply_cooldowns` signatures stable or update that tool). Antigravity ranks by Claude/GPT (`3p`) weekly (owner choice); any 0% window or quota cooldown ranks last. Task `CPA-Reset-Priority` now hourly.
+- Validation: dry run and the 07:05 hourly run: all 8 accounts `src=live`, order unchanged (already correct). Service restarted; capture `build/neon-check.png` shows Neon 100/100, Claude 7d 75%, Argon 100%. No firmware change (1.16.0). Tests not run (deferred).
+- Open: none from this session. Still open from earlier: O4 (third Claude account 7d 0%, check `/usage`), O9 (Console Antigrav/Argon cards read T3's other Google login).
+
+# Catchup (2026-11-13)
 - Done: removed all 29 stale `t3/*` worktrees and local branches (28 merged into `main`; the superseded draft `t3/optional-pages-screensaver` was later deleted from `origin` too). The backup folders (worktree bundle, and the 2026-10-25 art backup after every art file was confirmed present in `assets/`) were deleted on the owner's say-so. Only `main` remains, locally and on `origin`.
 - Done: confirmed GPM's CPAMC priorities (read-only): every active account is ranked. Added `ProxyAddressTests` for `load_base` (not run, deferred). Haiku followed `add-card.md` to a green build (not flashed); its gaps are fixed in `add-card.md` and `customise-safely.md`.
 - Stale notes dropped: the HEALTH hook already probes the Tailscale address; P-Gemini is working.
