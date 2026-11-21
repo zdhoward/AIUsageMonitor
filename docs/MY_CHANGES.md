@@ -9,3 +9,4 @@
 | tasks/todo.md | Record contributor cleanup plan and verification. | 2026-11-21 |
 | tasks/lessons.md | Record the recurring AI credit problem and prevention. | 2026-11-21 |
 | docs/MY_CHANGES.md | Track this maintenance change. | 2026-11-21 |
+| scripts/service.ps1 (prepared history only) | Remove a machine path from the scheduled-task description so the privacy guard permits publication. | 2026-11-21 |

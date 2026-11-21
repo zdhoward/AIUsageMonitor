@@ -14,6 +14,8 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+import os
 
 ROOT = Path(__file__).resolve().parents[1]
 AI = re.compile(
@@ -116,7 +118,33 @@ def hook(name, args):
     return 0
 
 
-def prepare(source, branch):
+def private_tree(tree):
+    """Redact machine paths in historical setup notes and a task description."""
+    replacements = []
+    for path in ("HANDOFF.md", "docs/HARDWARE.md", "scripts/service.ps1"):
+        entry = git("ls-tree", tree, "--", path).decode().strip()
+        if not entry:
+            continue
+        mode, _, blob = entry.split("\t")[0].split()
+        raw = git("cat-file", "blob", blob)
+        clean = re.sub(rb"(?i)\b[A-Z]:[\\/][^\s`'\"<>)]*", b"<local-path>", raw)
+        if clean != raw:
+            new_blob = git("hash-object", "-w", "--stdin", data=clean).decode().strip()
+            replacements.append((mode, new_blob, path))
+    if not replacements:
+        return tree
+    with tempfile.TemporaryDirectory() as temp:
+        env = dict(os.environ, GIT_INDEX_FILE=str(Path(temp) / "index"))
+        def indexed(*args):
+            return subprocess.run(["git", *args], cwd=ROOT, env=env,
+                                  capture_output=True, check=True).stdout
+        indexed("read-tree", tree)
+        for mode, blob, path in replacements:
+            indexed("update-index", "--add", "--cacheinfo", mode, blob, path)
+        return indexed("write-tree").decode().strip()
+
+
+def prepare(source, branch, redact_paths=False):
     ref = "refs/heads/" + branch
     git("check-ref-format", ref)
     existing = subprocess.run(["git", "show-ref", "--verify", "--quiet", ref], cwd=ROOT)
@@ -124,6 +152,7 @@ def prepare(source, branch):
         raise ValueError("Cleanup branch already exists or cannot be checked")
     commits = git("rev-list", "--reverse", "--topo-order", source, "--").decode().splitlines()
     mapping = {}
+    trees = {}
     removed = 0
     for sha in commits:
         raw = git("cat-file", "commit", sha)
@@ -136,6 +165,11 @@ def prepare(source, branch):
         for line in headers.split(b"\n"):
             if line.startswith(b"parent "):
                 line = b"parent " + mapping[line[7:].decode()].encode()
+            elif redact_paths and line.startswith(b"tree "):
+                tree = line[5:].decode()
+                if tree not in trees:
+                    trees[tree] = private_tree(tree)
+                line = b"tree " + trees[tree].encode()
             lines.append(line)
         rewritten = b"\n".join(lines) + b"\n\n" + clean
         new_sha = git("hash-object", "-t", "commit", "-w", "--stdin", data=rewritten).decode().strip()
@@ -148,7 +182,8 @@ def prepare(source, branch):
     tip = git("rev-parse", source + "^{commit}").decode().strip()
     git("update-ref", ref, mapping[tip], "0" * len(tip))
     print(f"Prepared {branch}: {len(commits)} commits verified, {removed} AI trailers removed")
-    print("All file trees, human credits, author/committer identities and dates preserved")
+    print("Human credits, author/committer identities and dates preserved")
+    print("File trees preserved" if not redact_paths else "Machine paths redacted in setup notes and task descriptions")
     print("Existing branches, tags and remote history unchanged")
 
 
@@ -161,6 +196,7 @@ def main():
     prep = sub.add_parser("prepare")
     prep.add_argument("source")
     prep.add_argument("branch")
+    prep.add_argument("--redact-local-paths", action="store_true")
     hooks = sub.add_parser("hook")
     hooks.add_argument("name", choices=("commit-msg", "pre-push"))
     hooks.add_argument("args", nargs="*")
@@ -171,7 +207,7 @@ def main():
         elif args.command == "check":
             check_range(args.revision)
         elif args.command == "prepare":
-            prepare(args.source, args.branch)
+            prepare(args.source, args.branch, args.redact_local_paths)
         else:
             return hook(args.name, args.args)
     except (ValueError, OSError, subprocess.CalledProcessError) as exc:

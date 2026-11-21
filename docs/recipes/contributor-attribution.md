@@ -15,6 +15,9 @@ To prepare historical cleanup, run
 separate branch that removes AI co-author trailers, preserves all file trees,
 human credits, identities and dates, and verifies the rewritten commits.
 Existing refs and remote history stay untouched. Signed history is refused.
+If the privacy guard finds historical machine paths, `--redact-local-paths`
+also redacts paths in the setup notes and scheduled-task description. Review
+that tip diff before publishing; attribution-only cleanup preserves every tree.
 
 Publishing rewritten history requires the owner's explicit approval. Back up
 the original refs first, use an exact force-with-lease, and coordinate existing

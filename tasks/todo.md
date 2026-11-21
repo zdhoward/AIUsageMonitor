@@ -19,6 +19,9 @@ verified. Doctor passed required checks. No firmware build, flash, or applicatio
 suite was run because this change only affects Git metadata and safeguards.
 
 Publication: prepared locally; remote main and release tags remain unchanged.
+The publication privacy check found historical machine paths in setup notes
+and a current scheduled-task description. A second prepared branch redacts
+those paths; its current-file diff is limited to that description.
 
 Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), TODO/FIXME grep (none), `git worktree list`, live CPAMC `auth-files` (read-only). No DECISIONS.md exists; GOALS.md and docs hold no answers for the owner items below.
 
