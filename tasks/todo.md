@@ -7,8 +7,8 @@
 - [x] Install commit and push checks, preserving the existing public push guard.
 - [x] Verify rejection of AI credits and acceptance of human credits.
 - [x] Prepare a separate clean-history branch and prove file trees unchanged.
-- [ ] Obtain explicit approval before replacing published history; tags and
-  existing clones require coordination. No firmware/service change is needed.
+- [x] Obtain explicit approval and publish with an exact force-with-lease.
+  Align local main and my-setup with the clean history.
 
 Verification: the installed commit-msg hook rejected the AI fixture (exit 1)
 and accepted a human fixture (exit 0). The push handler rejected the original
@@ -18,10 +18,17 @@ guard. The cleaned tip has an identical tree; all rewritten objects were
 verified. Doctor passed required checks. No firmware build, flash, or application
 suite was run because this change only affects Git metadata and safeguards.
 
-Publication: prepared locally; remote main and release tags remain unchanged.
+Publication: owner approved on 2026-11-21. Replaced remote main with cleaned
+history using an exact force-with-lease; both push guards passed. GitHub's
+attribution workflow passed on the published head, and the contributor API
+lists only the owner. Original refs are backed up in the local ignored bundle
+`build/attribution-before.bundle`. Historical release tags were preserved.
+Other clones must resync before contributing; the history audit rejects an
+incoming branch that restores AI credits.
 The publication privacy check found historical machine paths in setup notes
 and a current scheduled-task description. A second prepared branch redacts
-those paths; its current-file diff is limited to that description.
+those paths; its current-file diff was limited to that description. This
+privacy-safe variant passed the publication guard and is the published history.
 
 Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), TODO/FIXME grep (none), `git worktree list`, live CPAMC `auth-files` (read-only). No DECISIONS.md exists; GOALS.md and docs hold no answers for the owner items below.
 
