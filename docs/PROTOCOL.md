@@ -139,7 +139,7 @@ A separate `{"t":"proxy",...}` line about every 3 s (account data re-polled ever
 ```json
 {"t":"proxy","up":1,"age":12,"attn":0,"ts":1793380000,
  "g":[{"n":"Claude","c":2,"a":0,"ly":"r","p":[{"l":"Claude","w":[{"l":"5h","r":13,"z":1793384800},{"l":"7d","r":25,"z":1793509200}]}]},
-      {"n":"Antigrav","c":2,"a":0,"ly":"m","p":[{"l":"Flash","w":[{"l":"5h","r":100,"z":0},{"l":"7d","r":50,"z":1793641450}]},{"l":"Argon","w":[{"l":"7d","r":50,"z":1793641450}]}]}]}
+      {"n":"Antigrav","c":2,"a":0,"ly":"m","p":[{"l":"Neon","w":[{"l":"5h","r":100,"z":0},{"l":"7d","r":50,"z":1793641450}]},{"l":"Argon","w":[{"l":"7d","r":50,"z":1793641450}]}]}]}
 ```
 
 `up` proxy reachable, `age` seconds since the last good poll, `attn` global danger flag; per group `n` name, `c` active accounts, `a` danger flag, `ly` `r` (normal tile) or `m` (double-wide, one mini ring pair per pool), `p` pools (max 3) each with `w` windows (max 2; the first is the shorter and draws the outer ring). `r` is percent **remaining** 0-100 (-1 unknown), `z` the next reset epoch (0 none). At most 6 groups.

@@ -115,12 +115,17 @@ def label_for(seconds: float) -> str:
     return f"{round(seconds / 86400)}d"
 
 
-def read_windows(profile: dict, body) -> list[dict]:
-    """Profile + one account's response -> [{pool, label, rem (0-100 or None), reset, len}]."""
+def read_windows(profile: dict, body, missing: list | None = None) -> list[dict]:
+    """Profile + one account's response -> [{pool, label, rem (0-100 or None), reset, len}].
+
+    `missing` (optional) collects "pool/label" for profile windows absent from the body,
+    so a renamed or dropped upstream bucket is logged instead of vanishing silently."""
     out = []
     for w in profile.get("windows", []):
         node = _select(body, w["path"], w.get("match"))
         if not isinstance(node, dict):
+            if missing is not None:
+                missing.append(f"{w['pool']}/{w.get('label') or '?'}")
             continue
         if w.get("skip_if") and node.get(w["skip_if"]):
             continue  # e.g. a paused 5h bucket while the weekly is exhausted
@@ -128,6 +133,8 @@ def read_windows(profile: dict, body) -> list[dict]:
         length = float(_get(node, length) or 0) if isinstance(length, str) else float(length or 0)
         if w.get("remaining"):
             raw = _get(node, w["remaining"])
+            if raw is None and "missing" in w:
+                raw = w["missing"]  # e.g. Antigravity drops remainingFraction once a bucket is spent
             rem = None if raw is None else float(raw) * (100 / w.get("scale", 1))
         elif w.get("used"):
             raw = _get(node, w["used"])
@@ -297,6 +304,7 @@ class CpamcSource:
         self._accounts: list[dict] = []
         self._live: dict = {}
         self._live_at: dict = {}
+        self._missing: dict = {}  # (auth_index, url) -> last missing windows, so each change logs once
         self._ok_at = 0.0
         self._up = False
         self._lock = threading.Lock()
@@ -352,7 +360,12 @@ class CpamcSource:
                 body = json.loads(body) if isinstance(body, str) else body
             except ValueError:
                 continue
-            wins = read_windows(prof, body)
+            missing: list[str] = []
+            wins = read_windows(prof, body, missing)
+            key = (acc.get("auth_index"), url)
+            if missing and self._missing.get(key) != missing:
+                log.warn("cpamc.window_missing", provider=acc.get("provider"), windows=",".join(missing))
+            self._missing[key] = missing
             if wins:
                 res = {"windows": wins, "probe_ok": True}
                 credits = _get(body, prof.get("reset_credits"))
