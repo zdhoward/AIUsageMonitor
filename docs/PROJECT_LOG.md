@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-21: Antigravity endpoint, Neon pool, live-quota rotation
+
+- Cause of drifting Antigravity numbers: the profile read Google's primary quota endpoint, but CPAMC serves Antigravity through `daily-cloudcode-pa`, which reports a different quota (first account Claude/GPT weekly 49% there vs 64% on the primary) and is the only one that lists Neon. Profile now reads daily first.
+- The first multi-tile pool is now labelled **Neon**: it is the shared Gemini Models bucket (Gemini 4 Neon, Gemini 4 Hydrogen, Gemini 3.8 Flash). Neon has no separate quota.
+- A spent bucket (Google drops `remainingFraction`) now reads 0% instead of `--`; a missing profile bucket logs `cpamc.window_missing`.
+- Rotation (GPM tool `cpa_reset_priority.py`, outside this repo): ranks from live CPAMC quota instead of last-request headers, Antigravity by Claude/GPT weekly (owner choice), any 0% window or quota cooldown last; task now hourly. First runs: all 8 accounts `src=live`.
+- Evidence: capture `build/neon-check.png` (Neon 100/100, Claude 7d 75%, Argon 100%). No firmware change (labels come from the service). Tests not run (deferred).
+
 ## 2026-11-13: Catchup (worktree cleanup, recipe gap test)
 
 - Removed all 29 stale `t3/*` worktrees and local branches; 28 were merged into `main`. After the owner's go-ahead, the superseded draft branch was deleted from `origin` and both sibling backup folders were deleted, once every art file was confirmed present in `assets/`.

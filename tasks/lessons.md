@@ -23,3 +23,5 @@
 ## 2026-11-13: account names are personal data in a public repo
 - The pre-push scan looked for `@gmail` only; an account name without the domain (written in HANDOFF to point the owner at an account) still tripped the public-push guard.
 - Rule: in tracked files, refer to accounts by position or role ("third Claude account on the display"), never by name. Scan the outgoing diff for the bare names too, not just email domains.
+
+- 2026-11-21: **Read quota from the endpoint the proxy spends against.** Google's primary and daily Antigravity endpoints report different quotas (49% vs 64% on one account); CPAMC routes through daily. Check the CPAMC log for the upstream host before trusting a quota endpoint.
