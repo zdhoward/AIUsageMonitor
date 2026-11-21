@@ -10,3 +10,4 @@ Step-by-step procedures for AI agents (and people). Read [AGENTS.md](../../AGENT
 | [Add a scene](add-scene.md) | Add a screensaver scene |
 | [Add a data source](add-data-source.md) | Show a new tool's quota or activity |
 | [Resize](resize-display.md) | Fit a different screen size or aspect ratio |
+| [Contributor attribution](contributor-attribution.md) | Block AI credits and prepare safe historical cleanup |

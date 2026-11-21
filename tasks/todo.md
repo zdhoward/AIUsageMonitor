@@ -1,5 +1,25 @@
 # Catchup ledger (2026-11-13)
 
+## Contributor attribution cleanup (2026-11-21)
+
+- [x] Inspect live GitHub contributors and historical attribution: API lists only
+  the owner, but 124 reachable commits contain AI co-author trailers.
+- [x] Install commit and push checks, preserving the existing public push guard.
+- [x] Verify rejection of AI credits and acceptance of human credits.
+- [x] Prepare a separate clean-history branch and prove file trees unchanged.
+- [ ] Obtain explicit approval before replacing published history; tags and
+  existing clones require coordination. No firmware/service change is needed.
+
+Verification: the installed commit-msg hook rejected the AI fixture (exit 1)
+and accepted a human fixture (exit 0). The push handler rejected the original
+history and accepted the cleaned 207-commit history; chained-hook stdin and
+failure propagation passed. Reinstallation preserved the original public push
+guard. The cleaned tip has an identical tree; all rewritten objects were
+verified. Doctor passed required checks. No firmware build, flash, or application
+suite was run because this change only affects Git metadata and safeguards.
+
+Publication: prepared locally; remote main and release tags remain unchanged.
+
 Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), TODO/FIXME grep (none), `git worktree list`, live CPAMC `auth-files` (read-only). No DECISIONS.md exists; GOALS.md and docs hold no answers for the owner items below.
 
 ## auto
