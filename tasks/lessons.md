@@ -1,5 +1,11 @@
 # Lessons
 
+- 2026-11-22: **Start integration repairs from the supported setup.** When an
+  owner asks to make a standard proxy integration work, consult official client
+  setup guidance and apply its normal configuration before spending many calls
+  bisecting backend behavior. Keep diagnostics bounded and switch promptly when
+  the owner asks for a simpler documented route.
+
 - 2026-11-22: **Test the workload, not just the quota or tiny reply.** Neon can
   return200 for a tiny exact-model chat while the tool-agent route receives
   Google RESOURCE_EXHAUSTED. Keep availability failures separate from code quality,

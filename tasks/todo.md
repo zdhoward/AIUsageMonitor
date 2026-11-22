@@ -1,5 +1,35 @@
 # Catchup ledger (2026-11-13)
 
+## Neon workload failure investigation (2026-11-22)
+
+- [x] Extract safe captured request structure and source evidence.
+- [x] Isolate endpoint, streaming, tool, prompt-size and output-budget differences with bounded synthetic probes.
+- [x] Apply supported isolated client setup, verify actual tool use, and document limits.
+
+Owner redirected the approach to documented setup over continued reverse
+engineering. Official Codex config supports model_instructions_file. P-Gemini
+shared the same home/default model with P-Codex; now isolated with Gemini default,
+normal Responses provider, existing authentication and a neutral opening persona,
+preserving remaining operating/safety instructions. P-Codex remains unchanged.
+Real Neon tool-agent verification T-037 accepted after parent Sol artifact/activity
+review: Neon read the ticket, created scripts/check_neon_setup.py through
+apply_patch, executed it and obtained exit0. Parent positive rerun passed and a
+missing-home check returned exit1 without exposing secrets. One nonblocking
+review correction renamed a structural 'rules_intact' flag to 'rules_present'
+and clarified it cannot prove semantics or live availability. No broader suite
+or firmware build was needed for this read-only configuration checker.
+The first validation reused the existing pre-change Codex connection and still
+sent old instructions. Stopped that idle provider process (not P-Codex) so the
+second validation loads a fresh client. No further synthetic sweeps after the
+owner's correction; configuration and real-task checks only.
+First organic-output checkpoint: accepted bounded mechanical work; several
+PowerShell quoting/patch invocation attempts preceded success. No implementation
+rescue was needed, beyond the parent's output-label clarification. Keep ordinary
+independent review on subsequent Neon tasks; one success is not promotion or a
+claim of lasting reliability. Earlier request sweeps were excessive; the owner's
+documented-setup correction is recorded in lessons. No new proxy server or
+model-request rewrite was added for Neon.
+
 ## Reset credits, short 5h ETA and CPAMC setup (2026-11-22)
 
 - [x] Verify Claude banked-reset count/expiry sources without consuming a reset.

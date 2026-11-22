@@ -48,3 +48,10 @@
 | tasks/lessons.md | Record workload-specific Neon checks and separate callback authority. | 2026-11-22 |
 | HANDOFF.md | Record installed credits/ETA/callback behavior and explicit validation limits. | 2026-11-22 |
 | docs/PROJECT_LOG.md | Record display verification, CPAMC update and bounded Neon failures. | 2026-11-22 |
+| .tickets/T-037-neon-setup-check.md | Specify real tool-agent acceptance of the supported isolated Neon client configuration. | 2026-11-22 |
+| tasks/lessons.md | Record the owner's correction to start from the documented standard integration. | 2026-11-22 |
+| tasks/todo.md | Track supported Neon setup and actual acceptance evidence. | 2026-11-22 |
+| docs/CPAMC_LOGIN.md | Replace quota guesses with documented client configuration and bounded evidence. | 2026-11-22 |
+| scripts/check_neon_setup.py | Neon-authored read-only setup checker; parent clarified structural-rule validation wording. | 2026-11-22 |
+| HANDOFF.md | Record verified supported Neon configuration, cached-process restart and acceptance limits. | 2026-11-22 |
+| docs/PROJECT_LOG.md | Record accepted real Neon task and owner's process correction. | 2026-11-22 |

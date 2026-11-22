@@ -1,4 +1,24 @@
-# Claude resets, ETA and CPAMC callbacks (2026-11-22) - CURRENT
+# Supported Neon proxy setup (2026-11-22) - CURRENT
+
+- Fixed and verified real tool-agent use. P-Gemini now has its own Codex home,
+  Gemini default and documented model_instructions_file override with neutral
+  opening persona; existing endpoint/auth and remaining operating/safety rules
+  preserved. Other proxy provider configuration unchanged. Shared skills linked.
+- A cached pre-change provider process initially kept sending old instructions;
+  stopped only that idle P-Gemini process, then a fresh task completed normally.
+  Neon read a ticket, created scripts/check_neon_setup.py via apply_patch and
+  ran it with exit0. Parent Sol reviewed file and actual activity, verified positive
+  and missing-home exit0/exit1 behavior, and clarified the structural-rule flag.
+- One accepted organic mechanical output, not a model promotion or a claim of
+  long-term reliability. Pilot/availability records updated; no quota/billing or
+  login change, no new model-request proxy or rewrites. The checker is local
+  structural validation only. Setup references and caveats: docs/CPAMC_LOGIN.md.
+- Owner correction: consult supported integration docs before exhaustive request
+  bisection. Preserve the learned lesson; no more synthetic sweeps needed.
+- Earlier display/callback fixes remain installed. Work stays on my-setup, no
+  public push, release/tag or additional device changes in this configuration task.
+
+# Claude resets, ETA and CPAMC callbacks (2026-11-22) - HISTORY
 
 - Installed Claude reset inventory via read-only cedar_ember=1 usage query,
   existing anonymous rc/rx transport and Messages expiry reminder. All four live

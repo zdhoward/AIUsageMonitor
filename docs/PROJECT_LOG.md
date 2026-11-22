@@ -1,5 +1,16 @@
 # Project log
 
+## 2026-11-22: Supported Neon client setup verified
+
+- Followed owner's correction toward official Codex custom-provider configuration.
+  Isolated P-Gemini, set Gemini default and documented instruction-file override,
+  preserved other provider config, endpoint/auth and remaining operating rules.
+- Restarted cached P-Gemini client; Neon completed real file/tool work and ran
+  its read-only setup checker successfully. Parent independently reviewed artifact
+  and activity, positive/negative checks and clarified one output label.
+- First organic output accepted; prior failures retained, availability marker
+  cleared, no broad promotion or cost claims. Current details: docs/CPAMC_LOGIN.md.
+
 ## 2026-11-22: Claude reset inventory, ETA and callbacks
 
 - Added opt-in read-only Claude reset grants to rc/rx; known no grants on four
