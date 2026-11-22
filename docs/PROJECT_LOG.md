@@ -1,5 +1,19 @@
 # Project log
 
+## 2026-11-22: Session wrapup
+
+- Reconciled completed display/collector, callback and Neon setup work. No open
+  PRs; shared instances In sync; installed service, serial and callback bridge
+  healthy. Reused unchanged build/frame/test evidence rather than rerunning suites.
+- Owner preference now drives eligible implementation/mechanical Neon routing,
+  retaining trust and exhaustion gates;49 targeted router checks passed.
+- Retrospective: documented setup before broad probe sweeps; refresh cached
+  provider processes after config changes; verify real work before clearing
+  availability, then remove stale blocking prose. No measured cost/savings claim.
+- Real OAuth login and longer-term Neon reliability remain unverified; the next
+  model-quality checkpoint is after five reviewed organic outputs. Prior backlog
+  remains unscheduled. No new tag/release or direct main-branch modification.
+
 ## 2026-11-22: Supported Neon client setup verified
 
 - Followed owner's correction toward official Codex custom-provider configuration.

@@ -1,5 +1,18 @@
 # Supported Neon proxy setup (2026-11-22) - CURRENT
 
+- Wrapup: installed service/USB/callback bridge health verified; shared-instance
+  sync reports In sync. No open PRs to merge. Owner's wrapup authorizes pushing
+  the completed my-setup branch; main remains an upstream mirror, with no release
+  tag or version decision. Existing validation is reused for unchanged code.
+- Standing use policy is now enforced in model-router commit532c6c3: both eligible
+  implementation and mechanical lanes choose Neon medium with pilot/scope flags,
+  even when usage meters are unknown. Forty-nine targeted routing/trust checks
+  passed. Real exhaustion, exclusions and independent review remain enforced.
+- Remaining limits: real provider OAuth sign-in untested; sustained Neon reliability
+  awaits ordinary work; fifth organic-output review still pending. Session spend
+  is UNKNOWN: exact-session token lookup did not match; no savings claim. Historical
+  backlog stays in tasks/todo.md; unrelated shared-root work is preserved.
+
 - Fixed and verified real tool-agent use. P-Gemini now has its own Codex home,
   Gemini default and documented model_instructions_file override with neutral
   opening persona; existing endpoint/auth and remaining operating/safety rules
@@ -15,8 +28,8 @@
   structural validation only. Setup references and caveats: docs/CPAMC_LOGIN.md.
 - Owner correction: consult supported integration docs before exhaustive request
   bisection. Preserve the learned lesson; no more synthetic sweeps needed.
-- Earlier display/callback fixes remain installed. Work stays on my-setup, no
-  public push, release/tag or additional device changes in this configuration task.
+- Earlier display/callback fixes remain installed. Work stays on my-setup; no
+  release/tag or additional device changes in this configuration task.
 
 # Claude resets, ETA and CPAMC callbacks (2026-11-22) - HISTORY
 

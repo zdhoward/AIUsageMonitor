@@ -1,5 +1,20 @@
 # Catchup ledger (2026-11-13)
 
+## Session wrapup (2026-11-22)
+
+- [x] Reconcile installed display freshness, Claude resets/ETA, callback bridge
+  and supported Neon configuration with reviewed artifacts and live health.
+- [x] Enforce owner-preferred Neon on both suitable lanes (model-router532c6c3);
+ 49 targeted routing/trust checks passed, scope/exhaustion guards preserved.
+- [x] Confirm no open PRs and shared instances In sync. Record retrospective:
+  start with supported setup, restart stale client connections, and distinguish
+  connection/structural checks from real quota/model readiness.
+- [ ] Push completed wrapup commits using the authorized branch and guards.
+
+Open validation limits are documented, not hidden: no real OAuth login performed,
+one accepted Neon organic output so far, fifth-output checkpoint pending, spend
+UNKNOWN because exact-session lookup did not match. Prior backlog below preserved.
+
 ## Neon workload failure investigation (2026-11-22)
 
 - [x] Extract safe captured request structure and source evidence.

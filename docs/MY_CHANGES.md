@@ -55,3 +55,6 @@
 | scripts/check_neon_setup.py | Neon-authored read-only setup checker; parent clarified structural-rule validation wording. | 2026-11-22 |
 | HANDOFF.md | Record verified supported Neon configuration, cached-process restart and acceptance limits. | 2026-11-22 |
 | docs/PROJECT_LOG.md | Record accepted real Neon task and owner's process correction. | 2026-11-22 |
+| HANDOFF.md | Reconcile routing policy, live health, sync, publication and remaining validation limits at wrapup. | 2026-11-22 |
+| tasks/todo.md | Record wrapup checks and branch publication tracking. | 2026-11-22 |
+| docs/PROJECT_LOG.md | Record wrapup and evidence-based retrospective. | 2026-11-22 |
