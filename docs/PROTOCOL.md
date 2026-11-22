@@ -172,3 +172,23 @@ of USB acknowledgements. `ok` remains service liveness.
 Each window may include `q`, an array of `[remaining, reset_epoch]` pairs in the same anonymous account order across all windows and pools in a group. The first element corresponds to account 1, clockwise from the top; `-1` is unknown and reset `0` is unknown. Order follows CPAMC's opaque auth index and can change if accounts are added, removed, or reidentified. No identifiers are sent. `r` averages known values and `z` is the earliest future reset; neither implies a refill after a deadline. At most eight accounts have sector detail. To stay within the 4095-byte line limit the service may omit `q` for whole groups, starting at the end; firmware then renders the aggregate. Old payloads without `q` remain valid and older firmware ignores it.
 
 A group may include `rc`, an array of banked manual limit resets per account in the same order as `q` (`-1` unknown, at most eight). The service fills it from a profile's `reset_credits` path (Codex: `rate_limit_reset_credits.available_count`). `wham/usage` reports counts only. On the `proxy` line (`g[].rx`), the service adds the soonest expiry per account as epoch seconds (`0` unknown), read from Codex `wham/rate-limit-reset-credits`. Older firmware ignores it.
+
+Claude uses the same `rc`/`rx` fields. Its read-only usage request adds
+`cedar_ember=1`, then parses the `cedar_ember` inventory: sum positive
+`resets_left` for usable, unpaused, unexpired grants and report the earliest known
+`ends_at`. Missing/unreadable inventory is `rc=-1`, never zero. An explicit
+ineligible response with an empty grants list is known zero. Grant identifiers,
+redemption handles and `next_grant_id` are never forwarded or stored. No reset
+is consumed. Reference: [T3's read-only parser](https://github.com/pingdotgg/t3code/blob/main/apps/server/src/provider/claudeResetCredits.ts).
+
+The Messages card puts nearest known reset-credit expiry first; within 24 hours
+it shows a white `expires <duration>`. If rows overflow, `RESETS +N` preserves
+the first real account/expiry row. An expired cached credit prompts `check` /
+`expiry passed` until a refreshed inventory arrives. Unknown inventory shows
+`Unavailable` instead of claiming no credits. A known expiry remains visible even
+if another grant for that account lacks an expiry.
+
+In grid quota rows, known non-expired 5h reset ETAs become white at 30 minutes or
+less (including the exact 1800-second boundary). Percentages and rings keep
+their existing colors; unknown and past deadlines stay muted. Weekly highlighting
+is unchanged. CPAMC setup and callback behavior: [login notes](CPAMC_LOGIN.md).

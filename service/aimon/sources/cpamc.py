@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .. import log
+from .claude_resets import parse_inventory
 
 BASE = "http://127.0.0.1:8317"
 PROFILE_DIR = Path(__file__).resolve().parents[1] / "profiles"
@@ -292,7 +293,7 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                  "ly": "m" if tile.get("layout") == "multi" else "r", "p": out_pools}
         # Banked manual resets per account, in sector order; -1 unknown.
         credits = [(live.get(a.get("auth_index")) or {}).get("rc", -1) for a in accs]
-        if len(accs) <= 8 and any(c >= 0 for c in credits):
+        if len(accs) <= 8 and (any(c >= 0 for c in credits) or prof.get("reset_inventory")):
             group["rc"] = credits
             expiry = [int((live.get(a.get("auth_index")) or {}).get("rx") or 0) for a in accs]
             if any(expiry):
@@ -375,6 +376,8 @@ class CpamcSource:
             self._missing[key] = missing
             if wins and not missing and all(w["rem"] is not None or w.get("text") for w in wins):
                 res = {"windows": wins, "probe_ok": True}
+                if prof.get("reset_inventory"):
+                    res.update(parse_inventory(_get(body, prof["reset_inventory"]), time.time()))
                 credits = _get(body, prof.get("reset_credits"))
                 if isinstance(credits, int):
                     res["rc"] = credits  # banked manual limit resets

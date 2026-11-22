@@ -174,6 +174,25 @@ class QuotaFreshnessTests(unittest.TestCase):
         self.assertEqual(health['proxy']['qs'], 1)
         self.assertTrue(health['ok'])  # liveness is separate
 
+    def test_claude_inventory_is_forwarded_without_identifiers(self):
+        profile = cpamc.load_profiles()['claude']
+        body = {'five_hour': {'utilization': 25}, 'cedar_ember': {'eligible': True, 'grants': [
+            {'id': 'not-for-display', 'resets_left': 2, 'usable_now': True,
+             'ends_at': '2027-01-16T08:00:00Z'}]}}
+        self.src._call = lambda *a, **kw: {'status_code': 200, 'body': body}
+        with patch.object(cpamc.time, 'time', return_value=NOW):
+            result = cpamc.CpamcSource._live_one(self.src, self.accounts[0], profile)
+        self.assertEqual(result['rc'], 2)
+        self.assertGreater(result['rx'], NOW)
+        self.assertNotIn('not-for-display', str(result))
+
+    def test_missing_claude_inventory_keeps_quota_but_unknown_reset_count(self):
+        profile = cpamc.load_profiles()['claude']
+        self.src._call = lambda *a, **kw: {'status_code': 200, 'body': {'five_hour': {'utilization': 25}}}
+        result = cpamc.CpamcSource._live_one(self.src, self.accounts[0], profile)
+        self.assertTrue(result['probe_ok'])
+        self.assertEqual((result['rc'], result['rx']), (-1, 0))
+
 
 if __name__ == '__main__':
     unittest.main()

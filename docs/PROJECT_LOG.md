@@ -1,5 +1,20 @@
 # Project log
 
+## 2026-11-22: Claude reset inventory, ETA and callbacks
+
+- Added opt-in read-only Claude reset grants to rc/rx; known no grants on four
+  accounts, unknown distinct from zero. Prioritized nearest expiry and preserved
+  the first reminder under overflow. Grid5h ETA is white within30m inclusive.
+- Eleven parser,18 integration/freshness,2 prior credit checks passed; built and
+  flashed with boundary/unknown/expired and multi-credit framebuffer evidence.
+- Updated official CPAMC8.1.1 with verified updater/health. Tiny Neon medium chat
+  works, full tool-agent still429 before patches; two attempts recorded blocked,
+  no code-quality claim. Established Sonnet parser and parent integration reviewed.
+- Confirmed hardcoded loopback final callback versus Tailscale listener. Installed
+  narrow loopback-only Claude/Codex callback bridge, no provider redirect changes;
+  eleven fake-upstream checks and real local health/listener checks passed.
+  Real account login remains an owner action, not part of the validation.
+
 ## 2026-11-22: Truthful quota freshness
 
 - Separated quota observation age from account polling; failed/overdue probes

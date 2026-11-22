@@ -604,7 +604,9 @@ static void drawGridLine(int x, int y, int w, const WinData* win, uint16_t label
   resetCaption(cap, sizeof cap, win, elapsed);
   const bool weeklySoon = eqNoCase(win->l, "7d") && win->r >= 0 &&
                           win->r > elapsed && win->r - elapsed < 86400;
-  text(cap, x + w - 5, y + 5, 1, weeklySoon ? TFT_WHITE : C_MUTED, TR_DATUM);
+  const bool sessionSoon = eqNoCase(win->l, "5h") && win->r >= 0 &&
+                           win->r >= elapsed && win->r - elapsed <= 1800;
+  text(cap, x + w - 5, y + 5, 1, weeklySoon || sessionSoon ? TFT_WHITE : C_MUTED, TR_DATUM);
 }
 
 static void drawGridCell(const Model& m, uint32_t now, int idx, int x, int y, int w, int h) {
@@ -1004,9 +1006,11 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   // Accounts holding banked manual resets.
   ProxyMsg res[8];
   int nRes = 0;
+  bool resetsUnknown = false;
   for (uint8_t gi = 0; gi < gProxy.ng && nRes < 8; ++gi) {
     const ProxyGroup& gr = gProxy.g[gi];
     for (uint8_t i = 0; i < gr.nrc && nRes < 8; ++i) {
+      if (gr.rc[i] < 0 || proxyGroupStale(gr, millis())) resetsUnknown = true;
       if (gr.rc[i] <= 0) continue;
       ProxyMsg& m = res[nRes++];
       m.secs = 0;
@@ -1015,6 +1019,16 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
       if (gr.nrc > 1) snprintf(m.who, sizeof m.who, "%.8s%d", gr.n, i + 1);
       else strlcpy(m.who, gr.n, sizeof m.who);
     }
+  }
+  // Show the credits closest to expiry first when the card cannot fit all accounts.
+  for (int i = 1; i < nRes; ++i) {
+    ProxyMsg item = res[i];
+    int j = i;
+    while (j > 0 && item.exp && (!res[j - 1].exp || item.exp < res[j - 1].exp)) {
+      res[j] = res[j - 1];
+      --j;
+    }
+    res[j] = item;
   }
 
   // Two headings plus at least one row each; the burn pile gets first pick.
@@ -1066,25 +1080,32 @@ static void drawProxyMessages(uint32_t epoch, int x, int y, int w, int h) {
   }
 
   ly += gap;
-  heading("MANUAL RESETS", C_AMBER);
-  if (!nRes) note("None banked");
-  const int resShown = nRes > resRows ? resRows - 1 : nRes;
+  if (nRes > resRows) {
+    snprintf(b, sizeof b, "RESETS +%d", nRes - resRows);
+    heading(b, C_AMBER);
+  } else heading("MANUAL RESETS", C_AMBER);
+  if (!nRes) note(resetsUnknown ? "Unavailable" : "None banked");
+  const int resShown = min(nRes, resRows);
   for (int i = 0; i < resShown; ++i) {
-    snprintf(b, sizeof b, "x%d", res[i].left);
+    const bool expiryPassed = epoch && res[i].exp && res[i].exp <= epoch;
+    if (expiryPassed) strlcpy(b, "check", sizeof b);
+    else snprintf(b, sizeof b, "x%d", res[i].left);
     row(res[i].who, b, nullptr, C_AMBER);
     if (res[i].exp && ly + 9 <= y + h - 2) {  // local date the soonest reset expires
       const time_t local = (time_t)((int64_t)res[i].exp + gProxy.tz);
       struct tm t;
       gmtime_r(&local, &t);
       char ex[16];
-      snprintf(ex, sizeof ex, "expires %d/%d", t.tm_mon + 1, t.tm_mday);
-      text(ex, x + 6, ly - 1, 1, C_MUTED, TL_DATUM, w - 12);
+      const bool expiresSoon = epoch && res[i].exp > epoch && res[i].exp - epoch <= 86400;
+      if (expiryPassed) strlcpy(ex, "expiry passed", sizeof ex);
+      else if (expiresSoon) {
+        char duration[10];
+        fmtDurShort(duration, sizeof duration, res[i].exp - epoch);
+        snprintf(ex, sizeof ex, "expires %s", duration);
+      } else snprintf(ex, sizeof ex, "expires %d/%d", t.tm_mon + 1, t.tm_mday);
+      text(ex, x + 6, ly - 1, 1, expiresSoon ? TFT_WHITE : C_MUTED, TL_DATUM, w - 12);
       ly += 9;
     }
-  }
-  if (resShown < nRes) {
-    snprintf(b, sizeof b, "+%d more", nRes - resShown);
-    note(b);
   }
 }
 

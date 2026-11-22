@@ -1,5 +1,13 @@
 # Lessons
 
+- 2026-11-22: **Test the workload, not just the quota or tiny reply.** Neon can
+  return200 for a tiny exact-model chat while the tool-agent route receives
+  Google RESOURCE_EXHAUSTED. Keep availability failures separate from code quality,
+  perform bounded recovery checks after an update, then stop retrying.
+- 2026-11-22: **API host and OAuth callback target are separate.** CPAMC can listen
+  on Tailscale while its final browser hop remains hardcoded to loopback. Verify
+  both listeners before blaming the saved address or replacing provider redirects.
+
 - 2026-11-22: **A successful connection is not a successful quota refresh.**
   Preserve each last-good quota timestamp across failures, expose failed/overdue
   readings on the physical display and in health, and test failure plus recovery.

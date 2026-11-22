@@ -30,3 +30,21 @@
 | tasks/todo.md | Record implementation, verification and Neon pilot outcome. | 2026-11-22 |
 | HANDOFF.md | Record installed freshness behavior, evidence and pilot limitations. | 2026-11-22 |
 | docs/PROJECT_LOG.md | Record the verified fix and blocked Neon attempt. | 2026-11-22 |
+| .tickets/T-035-short-eta.md | Specify the bounded Neon ETA task and boundary behavior. | 2026-11-22 |
+| .tickets/T-036-claude-reset-parser.md | Specify read-only Claude reset inventory parser and pilot. | 2026-11-22 |
+| service/aimon/sources/claude_resets.py | Parse usable reset count and earliest known expiry without identifiers. | 2026-11-22 |
+| service/aimon/profiles/claude.json | Request the opt-in read-only reset inventory with usage. | 2026-11-22 |
+| service/aimon/sources/cpamc.py | Wire Claude inventory into existing per-account reset count/expiry payload. | 2026-11-22 |
+| service/tests/test_claude_resets.py | Cover inventory schema, unknown/zero and expiry boundaries. | 2026-11-22 |
+| service/tests/test_cpamc_freshness.py | Verify inventory integration and unknown counts without affecting quota. | 2026-11-22 |
+| firmware/AIUsageMonitor/ui.cpp | Highlight short 5h ETA, prioritize credit expiry and retain visible overflow reminders. | 2026-11-22 |
+| scripts/cpamc_callback_bridge.py | Forward only local Claude/Codex final OAuth callback hops to configured CPAMC. | 2026-11-22 |
+| scripts/cpamc-callback-bridge.ps1 | Install/remove the headless limited-user callback bridge logon task. | 2026-11-22 |
+| service/tests/test_cpamc_callback_bridge.py | Verify loopback/path isolation, query privacy, no redirects and invalid-target health. | 2026-11-22 |
+| docs/CPAMC_LOGIN.md | Explain provider versus management redirects, installed workaround and Neon evidence. | 2026-11-22 |
+| docs/CPAMC_HOME.md | Link current setup/callback and reset-credit behavior. | 2026-11-22 |
+| docs/PROTOCOL.md | Document Claude rc/rx and short ETA/expiry indicators. | 2026-11-22 |
+| tasks/todo.md | Record supported behavior, exact live results and setup findings. | 2026-11-22 |
+| tasks/lessons.md | Record workload-specific Neon checks and separate callback authority. | 2026-11-22 |
+| HANDOFF.md | Record installed credits/ETA/callback behavior and explicit validation limits. | 2026-11-22 |
+| docs/PROJECT_LOG.md | Record display verification, CPAMC update and bounded Neon failures. | 2026-11-22 |

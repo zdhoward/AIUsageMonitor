@@ -1,4 +1,29 @@
-# Quota freshness warning (2026-11-22) - CURRENT
+# Claude resets, ETA and CPAMC callbacks (2026-11-22) - CURRENT
+
+- Installed Claude reset inventory via read-only cedar_ember=1 usage query,
+  existing anonymous rc/rx transport and Messages expiry reminder. All four live
+  accounts currently report no grants; unknown is not zero. Short nonexpired5h
+  grid ETA turns white at<=30m. Near-expiry credits sort first and remain visible
+  under overflow. Main service and firmware rebuilt/flashed; live data restored.
+- Validation:11 parser,18 freshness/integration,2 prior credit checks passed;
+  hardware30m/31m/unknown/expired frames inspected under build/reset-eta-*.png.
+  Sonnet parser reviewed/refined by parent Sol; independent UI review no blockers.
+- CPAMC official8.1.1 installed by existing verified updater; management1.28.3
+  unchanged/current. Tiny Neon medium chat works but full agent requests still
+  fail upstream RESOURCE_EXHAUSTED429 before patches, before and after update.
+  Two bounded tasks failed, no model code or quality pass; receipts recorded.
+- Owner clarified callback was Claude or Codex. Final management forwarding
+  target is hardcoded loopback despite Tailscale-only API binding. Installed
+  CPAMC Callback Bridge limited-user headless logon task, accepting only the two
+  final callback GET paths on loopback8317; no management/API forwarding or code
+  storage. Eleven offline bridge tests passed; live local health/listeners
+  verified. Real provider login was not attempted. Remote-device browsers still
+  need callback-URL input; see docs/CPAMC_LOGIN.md.
+- Work remains on my-setup; no public push/release or credential changes. Earlier
+  quota freshness fix and prior backlog remain below. The next useful Neon check
+  needs new evidence, not another identical quota/fullness-based retry.
+
+# Quota freshness warning (2026-11-22) - HISTORY
 
 - Completed on `my-setup`: Proxy quota now has independent observation ages and
   immediate failed-refresh/overdue warnings. Retained numbers stay readable;

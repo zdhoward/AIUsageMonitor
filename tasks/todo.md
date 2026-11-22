@@ -1,5 +1,51 @@
 # Catchup ledger (2026-11-13)
 
+## Reset credits, short 5h ETA and CPAMC setup (2026-11-22)
+
+- [x] Verify Claude banked-reset count/expiry sources without consuming a reset.
+- [x] Make known 5h reset ETAs white at 0..1800 seconds; inspect boundary frames.
+- [x] Test exact Neon medium agent route, diagnose 429/update relevance and callback authority.
+- [x] Review, build/flash and verify supported changes; record findings and limits.
+
+Claude's read-only usage request needs cedar_ember=1. Four live accounts returned
+eligible:false and an empty grants list; counts currently zero. Wired parser to
+rc/rx with unknown=-1, no identifiers and no consumption. Known earliest expiry
+stays visible even if another grant lacks a date. The Messages card sorts expiry,
+preserves its first account row under overflow and shows white near-expiry text.
+Unknown inventory says Unavailable; expired cached inventory prompts check.
+
+Verification: 11 parser +18 freshness/integration +2 prior credit checks passed.
+Built/flashed with hash verification; initial COM6 busy resolved by stopping the
+service during flashing and restarting afterward. Inspected real framebuffer
+fixtures at30m white,31m muted,unknown muted,expired muted; six-credit overflow
+showed the earliest Claude expiry with +5 in the heading. Restored healthy live
+feed with Claude rc=[0,0,0,0]. Evidence: build/reset-eta-*.png and build/reset-eta-
+{build,flash}.log. Sonnet parser independently reviewed/refined by parent Sol;
+Sonnet static UI/integration review found0 Important; nits addressed where useful.
+
+Neon exact-medium tiny chat succeeded on CPAMC8.1.0 and8.1.1, but an organic ETA
+agent task failed429 before code, and one post-update parser task also failed429.
+Proxy logs show upstream RESOURCE_EXHAUSTED. No quality pass and no repeated
+probes. Official existing updater installed8.1.1 after a temporary replacement
+PermissionError; authenticated backend/UI checks passed, updater now current.
+No credentials, billing or provider redirects changed. Router/pilot receipts
+record failures and established-model rescue separately; usage costs UNKNOWN.
+
+Claude/Codex callback investigation confirmed a hardcoded127.0.0.1 final management
+hop while CPAMC listens only on Tailscale. Installed a loopback-only callback
+bridge as a limited-user headless logon task. Only the two fixed callback paths
+are forwarded; no management API, client auth/cookies, redirects, query logging
+or code storage. Offline fake-upstream tests and local health/listener checks
+verify forwarding; no real account login was initiated. Another-device browser
+still uses the management page's callback-URL input. Details: docs/CPAMC_LOGIN.md.
+
+Reflection: tiny replies did not predict the full Responses/tool workload. Two
+bounded owner-requested pilots were enough to establish continued unavailability;
+no output means no code-quality verdict. Delegated parser/bridge implementation
+and reviews; coordinator retained architecture, small review fixes and runtime
+verification. Native read-only discovery was unavailable (unknown model) and
+completed inline. No public push, release or new provider account action.
+
 ## Quota stale warning fix / Neon pilot (2026-11-22)
 
 - [x] Implement separate successful-quota age and failed/overdue status with focused offline regressions (Neon attempt failed 429; coordinator implemented).
