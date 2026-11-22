@@ -12,3 +12,5 @@
 | scripts/service.ps1 | Remove a machine path from the scheduled-task description so the privacy guard permits publication. | 2026-11-21 |
 | HANDOFF.md | Record published cleanup, validation, backup and continuation; retain earlier backlog. | 2026-11-21 |
 | docs/PROJECT_LOG.md | Record cleanup outcome and retrospective. | 2026-11-21 |
+| tasks/todo.md | Plan and record the requested Antigravity live reliability check. | 2026-11-22 |
+| docs/MY_CHANGES.md | Track the live-check documentation. | 2026-11-22 |

@@ -1,5 +1,39 @@
 # Catchup ledger (2026-11-13)
 
+## Antigravity live check (2026-11-22)
+
+- [x] Capture the running display and USB/service baseline without restarting it.
+- [x] Compare daily-endpoint quota and CPAMC cooldowns per account; observe at least twelve minutes of refreshes and USB acknowledgements.
+- [x] Capture the final framebuffer and record results and any unresolved limits.
+
+Result: 720 seconds, 25 samples, zero unplanned failures. One expected serial
+pause during the midpoint screenshot made the strict harness exit 1; its only
+failed sample has paused=true. USB ACK age otherwise stayed at or below 4.8s.
+Three per-account quota-probe rounds succeeded; four distinct direct-collector
+check timestamps were observed. Additional daily-only snapshots returned 200
+for both accounts, with no cooldowns. Initial, midpoint and final framebuffers
+were inspected: Neon 5h/7d 100%, shared Claude 5h 100% / 7d 75%, Argon 7d 100%.
+The reported ten-minute outage did not recur during this observation window.
+
+Checks completed while observing: real Neon and Argon requests returned HTTP 200
+and the requested reply. Fresh daily-endpoint readings matched the framebuffer;
+the tiny request usage appeared upstream but rounds to 100% on the display.
+The monitor's local API key returned 401; the existing Codex proxy key succeeded.
+Quota collection uses the separate working management key. No credentials changed.
+
+Reliability finding: an offline reproduction of a failed live quota probe with
+two-hour-old cached 100% quota still produces proxy up=1, age=0, attn=0 after
+successful account-list polling. Health/ACK success alone cannot prove fresh
+Proxy quota. Independent read-only review confirmed this and the possibility
+of falling back from daily to a primary endpoint with different quota.
+This is a demonstrated diagnostic gap, not a reproduced live ten-minute outage.
+Production code and firmware remain unchanged for this requested live check.
+Evidence scripts and redacted results are local under build/antigravity-* and
+build/check_*; no full suite, build or flash was needed. Temporary check scripts
+were kept inline because they only collect bounded diagnostic evidence; the
+quota reliability review was delegated independently.
+
+
 ## Contributor attribution cleanup (2026-11-21)
 
 - [x] Inspect live GitHub contributors and historical attribution: API lists only
