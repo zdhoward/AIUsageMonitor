@@ -13,6 +13,9 @@
 - Real OAuth login and longer-term Neon reliability remain unverified; the next
   model-quality checkpoint is after five reviewed organic outputs. Prior backlog
   remains unscheduled. No new tag/release or direct main-branch modification.
+- Publication complete: my-setup pushed after privacy and attribution guards;
+  private routing, availability, outcome and retrospective commits pushed too.
+  Unrelated uncommitted shared-root work was preserved.
 
 ## 2026-11-22: Supported Neon client setup verified
 

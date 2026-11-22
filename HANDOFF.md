@@ -1,9 +1,10 @@
 # Supported Neon proxy setup (2026-11-22) - CURRENT
 
 - Wrapup: installed service/USB/callback bridge health verified; shared-instance
-  sync reports In sync. No open PRs to merge. Owner's wrapup authorizes pushing
-  the completed my-setup branch; main remains an upstream mirror, with no release
-  tag or version decision. Existing validation is reused for unchanged code.
+  sync reports In sync. No open PRs to merge. Completed my-setup branch published
+  with public privacy and attribution guards passing; main remains an upstream
+  mirror, with no release tag or version decision. Private router and shared-policy
+  commits also pushed. Existing validation is reused for unchanged code.
 - Standing use policy is now enforced in model-router commit532c6c3: both eligible
   implementation and mechanical lanes choose Neon medium with pilot/scope flags,
   even when usage meters are unknown. Forty-nine targeted routing/trust checks

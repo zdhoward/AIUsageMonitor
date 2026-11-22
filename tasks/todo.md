@@ -9,7 +9,9 @@
 - [x] Confirm no open PRs and shared instances In sync. Record retrospective:
   start with supported setup, restart stale client connections, and distinguish
   connection/structural checks from real quota/model readiness.
-- [ ] Push completed wrapup commits using the authorized branch and guards.
+- [x] Push completed wrapup commits using the authorized branch and guards:
+  my-setup published; public privacy and attribution guards passed. Private
+  router/policy/retrospective commits also pushed; unrelated shared edits preserved.
 
 Open validation limits are documented, not hidden: no real OAuth login performed,
 one accepted Neon organic output so far, fifth-output checkpoint pending, spend
