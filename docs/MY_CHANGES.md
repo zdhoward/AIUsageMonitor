@@ -14,3 +14,19 @@
 | docs/PROJECT_LOG.md | Record cleanup outcome and retrospective. | 2026-11-21 |
 | tasks/todo.md | Plan and record the requested Antigravity live reliability check. | 2026-11-22 |
 | docs/MY_CHANGES.md | Track the live-check documentation. | 2026-11-22 |
+| .tickets/T-034-quota-freshness.md | Specify the bounded Neon collector pilot and freshness contract. | 2026-11-22 |
+| service/aimon/sources/cpamc.py | Separate quota observation age from connection polling, retain failed readings as stale, and isolate parser failures per account. | 2026-11-22 |
+| service/aimon/server.py | Expose safe proxy freshness and quota failure in health/status. | 2026-11-22 |
+| service/aimon/profiles/antigravity.json | Keep daily quota authority on failure; allow genuinely optional third-party/Argon buckets. | 2026-11-22 |
+| service/aimon/profiles/claude.json | Allow plans without a weekly window. | 2026-11-22 |
+| service/aimon/profiles/codex.json | Allow valid single-window Free plans. | 2026-11-22 |
+| service/tests/test_cpamc_freshness.py | Cover retained observations, failure/recovery, parser isolation, plans, age and health. | 2026-11-22 |
+| firmware/AIUsageMonitor/model.h | Store separate proxy/group quota freshness with legacy compatibility. | 2026-11-22 |
+| firmware/AIUsageMonitor/model.cpp | Parse optional quota age and stale fields. | 2026-11-22 |
+| firmware/AIUsageMonitor/ui.cpp | Show STALE and true quota age, including independent aging after the stream stops. | 2026-11-22 |
+| profiles/my.json | Preserve the installed default layout on the personal branch when rebuilding. | 2026-11-22 |
+| docs/PROTOCOL.md | Document freshness fields, failure retention, health and optional windows. | 2026-11-22 |
+| tasks/lessons.md | Record the correction that connection activity cannot establish fresh quota. | 2026-11-22 |
+| tasks/todo.md | Record implementation, verification and Neon pilot outcome. | 2026-11-22 |
+| HANDOFF.md | Record installed freshness behavior, evidence and pilot limitations. | 2026-11-22 |
+| docs/PROJECT_LOG.md | Record the verified fix and blocked Neon attempt. | 2026-11-22 |

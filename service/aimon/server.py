@@ -148,11 +148,16 @@ class App:
     def health(self) -> dict:
         st = self.collector.snapshot()
         sl = self.serial
+        proxy = self.cpamc.line()
+        errors = dict(st.errors)
+        if proxy and (not proxy["up"] or proxy.get("qs")):
+            errors["cpamc"] = "proxy unreachable" if not proxy["up"] else "quota stale or unavailable"
         return {
             "ok": True,
             "uptime_s": int(time.time() - self.started),
             "refreshed_at": st.refreshed_at,
-            "source_errors": st.errors,
+            "source_errors": errors,
+            "proxy": proxy,
             "brightness": build_brightness_status(self.brightness),
             "serial": None
             if sl is None
@@ -185,6 +190,7 @@ class App:
                 elif path == "/v1/status":
                     status = build_status(app.collector.snapshot(), time.time())
                     status["brightness"] = build_brightness_status(app.brightness)
+                    status["proxy"] = app.cpamc.line()
                     self._send(200, status)
                 elif path == "/healthz":
                     self._send(200, app.health())

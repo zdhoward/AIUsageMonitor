@@ -4,7 +4,7 @@
               "header": {"Authorization": "Bearer $TOKEN$", "User-Agent": "codex_cli_rs/0.76.0"}},
   "windows": [
     {"pool": "main", "path": "rate_limit.primary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds"},
-    {"pool": "main", "path": "rate_limit.secondary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds"}
+    {"pool": "main", "path": "rate_limit.secondary_window", "used": "used_percent", "scale": 100, "reset": "reset_at", "length_s": "limit_window_seconds", "optional": true}
   ],
   "tile": {"layout": "rings", "pools": [{"id": "main", "label": "Codex"}]},
   "reset_credits": "rate_limit_reset_credits.available_count",

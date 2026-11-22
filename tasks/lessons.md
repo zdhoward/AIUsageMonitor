@@ -1,5 +1,10 @@
 # Lessons
 
+- 2026-11-22: **A successful connection is not a successful quota refresh.**
+  Preserve each last-good quota timestamp across failures, expose failed/overdue
+  readings on the physical display and in health, and test failure plus recovery.
+  Fresh account-list polls and USB ACKs must never make retained numbers look new.
+
 - 2026-11-21: **AI credit returns unless enforced.** Do not add AI author or
   co-author identities. Install the repository attribution hooks, preserve the
   public push guard, and audit incoming history in CI. Check commit messages as

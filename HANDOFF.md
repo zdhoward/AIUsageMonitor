@@ -1,4 +1,24 @@
-# Contributor attribution cleanup (2026-11-21) - CURRENT
+# Quota freshness warning (2026-11-22) - CURRENT
+
+- Completed on `my-setup`: Proxy quota now has independent observation ages and
+  immediate failed-refresh/overdue warnings. Retained numbers stay readable;
+  successful account-list polls and USB ACKs cannot make them fresh. Health/status
+  expose the same safe proxy state. See docs/PROTOCOL.md and tasks/todo.md.
+- Installed service and firmware; personal profile preserves the existing layout.
+  Last-good measurements survive failures including authentication/parser errors;
+  successful quota probes clear warnings. Optional-plan windows are explicit;
+  Antigravity uses the daily quota authority without a mismatching fallback.
+- Validation: 16 freshness + 13 existing Proxy tests; firmware build/verified flash;
+  landscape/portrait STALE and recovery/live frame inspection. Original repro
+  now warns. Evidence remains under ignored build/quota-*.
+- Neon pilot was attempted as requested but failed with HTTP 429 before any code.
+  No quality verdict. Coordinator implemented; independent reviews found and
+  resolved optional-plan and parser-isolation issues. Failure and review receipts
+  recorded. Actual serving effort/token costs UNKNOWN. No promotion inferred.
+- No public push, tag or release. Prior backlog remains below and in tasks/todo.md.
+  Main is untouched; this task followed the supplied personal-branch instructions.
+
+# Contributor attribution cleanup (2026-11-21) - HISTORY
 
 - Objective complete: removed 124 AI co-author trailers from main and added
   commit-message/push guards plus a full-history CI attribution audit.

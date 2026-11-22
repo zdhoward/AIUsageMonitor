@@ -355,6 +355,9 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
   p.rxMillis = millis();
   p.up = (doc["up"] | 0) == 1;
   p.age = doc["age"] | -1;
+  p.hasQuotaAge = doc["qa"].is<int32_t>();
+  p.quotaAge = doc["qa"] | -1;
+  p.quotaStale = (doc["qs"] | 0) == 1;
   p.attn = (doc["attn"] | 0) == 1;
   p.ts = doc["ts"] | (uint32_t)0;
   p.tz = doc["tz"] | (int32_t)0;
@@ -364,6 +367,9 @@ bool parseProxy(const char* json, size_t len, ProxyData& out) {
     copyStr(d.n, sizeof d.n, g["n"]);
     d.c = g["c"] | 0;
     d.a = (g["a"] | 0) == 1;
+    d.hasQuotaAge = g["age"].is<int32_t>();
+    d.quotaAge = g["age"] | -1;
+    d.stale = (g["st"] | 0) == 1;
     d.multi = !strcmp(g["ly"] | "r", "m");
     for (JsonVariantConst v : g["rc"].as<JsonArrayConst>()) {
       if (d.nrc >= 8) break;

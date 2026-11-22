@@ -1,5 +1,38 @@
 # Catchup ledger (2026-11-13)
 
+## Quota stale warning fix / Neon pilot (2026-11-22)
+
+- [x] Implement separate successful-quota age and failed/overdue status with focused offline regressions (Neon attempt failed 429; coordinator implemented).
+- [x] Review collector patch; add visible group STALE, quota-age footer, and proxy health/status.
+- [x] Verify failure and recovery on hardware; build/flash, capture and inspect frames; record pilot review and outcome.
+
+Outcome: 16 focused freshness tests and 13 existing Proxy tests passed. Original
+two-hour-old cached-value repro now warns. Independent Sonnet and native reviews
+caught optional-plan handling and per-account parser exception isolation; both
+were corrected and covered. The final suggestion to exempt unprobeable sources
+was declined: unknown quota must remain visibly unverified. Daily-only Antigravity
+authority is intentional; a different endpoint must not hide a failed refresh.
+
+Firmware built with the personal profile, flashed with hash verification, and
+service restarted. Inspected landscape/portrait failure frames and recovered/live
+frames. An offline failure using real anonymous display values yielded qa=900,
+qs=1 and STALE badges; recovery yielded qa=0, qs=0 with identical quota values.
+Live health reports actual quota age independently of account polls and USB ACKs.
+One framebuffer transfer was short; recapture with a settle interval succeeded.
+Evidence: build/quota-stale-landscape.png, quota-stale-portrait.png,
+quota-recovered.png, quota-live-final.png and quota-freshness-{build,flash}.log.
+
+Neon pilot: exact medium agent route failed at T3's retry limit with HTTP 429,
+before patch/reply/tool execution. No model code exists to review and no quality
+pass is claimed. Availability attempt recorded (BLOCKED), exact raw IDs retained
+locally, missing usage/serving settings UNKNOWN. Coordinator rescue and review
+disposition recorded separately; global pilot notes/availability overlay updated.
+No retry loops, credentials changed, release/tag or public push. Temporary
+verification and small review fixes stayed inline; firmware was delegated and
+two independent reviews were used. Reflection: a tiny high-route reply proves
+neither the exact medium route nor sustained tool-agent readiness.
+
+
 ## Antigravity live check (2026-11-22)
 
 - [x] Capture the running display and USB/service baseline without restarting it.

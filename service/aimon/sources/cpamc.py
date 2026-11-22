@@ -28,6 +28,7 @@ PROFILE_DIR = Path(__file__).resolve().parents[1] / "profiles"
 ENV_FILE = Path(__file__).resolve().parents[2] / ".cpamc.env"
 ACCOUNTS_EVERY_S = 5.0  # local auth-files call only; live quota probes stay on LIVE_EVERY_S
 LIVE_EVERY_S = 300.0
+QUOTA_STALE_S = LIVE_EVERY_S + 60.0
 # Display order; the double-wide multi tile packs onto row 2.
 ORDER = ["claude", "codex", "xai", "antigravity"]
 NAMES = {"claude": "Claude", "codex": "Codex", "xai": "xAI", "antigravity": "Antigrav"}
@@ -124,7 +125,7 @@ def read_windows(profile: dict, body, missing: list | None = None) -> list[dict]
     for w in profile.get("windows", []):
         node = _select(body, w["path"], w.get("match"))
         if not isinstance(node, dict):
-            if missing is not None:
+            if missing is not None and not w.get("optional"):
                 missing.append(f"{w['pool']}/{w.get('label') or '?'}")
             continue
         if w.get("skip_if") and node.get(w["skip_if"]):
@@ -234,6 +235,11 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
         prof = profiles.get(prov, {})
         tile = prof.get("tile", {})
         pools = tile.get("pools") or [{"id": "main", "label": NAMES.get(prov, prov.title())}]
+        observed = [(live.get(a.get("auth_index")) or {}).get("checked_at") for a in accs]
+        age = int(max(0, now - min(observed))) if all(observed) else -1
+        stale = age < 0 or age > QUOTA_STALE_S or (bool(prof.get("request")) and any(
+                not (live.get(a.get("auth_index")) or {}).get("probe_ok") for a in accs
+            ))
         attn = any(
             entry.get("auth_failed") or (needs_attention(a) and not entry.get("probe_ok"))
             for a in accs for entry in [live.get(a.get("auth_index")) or {}]
@@ -281,7 +287,8 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
                     win["v"] = texts[0][:8]  # raw figure for a provider without a limit
                 ws.append(win)
             out_pools.append({"l": pl["label"], "w": ws})
-        group = {"n": NAMES.get(prov, prov.title()), "c": len(accs), "a": int(bool(attn)),
+        group = {"n": NAMES.get(prov, prov.title()), "c": len(accs), "a": int(bool(attn or stale)),
+                 "age": age, "st": int(stale),
                  "ly": "m" if tile.get("layout") == "multi" else "r", "p": out_pools}
         # Banked manual resets per account, in sector order; -1 unknown.
         credits = [(live.get(a.get("auth_index")) or {}).get("rc", -1) for a in accs]
@@ -366,7 +373,7 @@ class CpamcSource:
             if missing and self._missing.get(key) != missing:
                 log.warn("cpamc.window_missing", provider=acc.get("provider"), windows=",".join(missing))
             self._missing[key] = missing
-            if wins:
+            if wins and not missing and all(w["rem"] is not None or w.get("text") for w in wins):
                 res = {"windows": wins, "probe_ok": True}
                 credits = _get(body, prof.get("reset_credits"))
                 if isinstance(credits, int):
@@ -397,13 +404,21 @@ class CpamcSource:
             if a.get("disabled") or not prof or not idx:
                 continue
             if now - self._live_at.get(idx, 0) >= LIVE_EVERY_S:
-                res = self._live_one(a, prof)
-                if res.get("windows") is None and not res.get("auth_failed") and idx in live:
-                    res = {**live[idx], "probe_ok": False}  # retain quota, not proof of current health
+                try:
+                    res = self._live_one(a, prof)
+                except Exception as e:
+                    log.warn("cpamc.probe_failed", provider=a.get("provider"), err=type(e).__name__)
+                    res = {"windows": None}
+                if res.get("probe_ok") and res.get("windows"):
+                    res["checked_at"] = time.time()
+                else:
+                    # A failed probe retains the measurement, never its claim of freshness.
+                    res = {**live.get(idx, {}), "probe_ok": False,
+                           "auth_failed": bool(res.get("auth_failed"))}
                 if res.get("rc", 0) > 0 and "rx" not in res and "rx" in live.get(idx, {}):
                     res["rx"] = live[idx]["rx"]  # expiry lookup failed this round; keep the last one
                 live[idx] = res
-                self._live_at[idx] = now
+                self._live_at[idx] = time.time()
         with self._lock:
             self._accounts, self._live, self._up, self._ok_at = accounts, live, up, now
         log.event("cpamc.poll", accounts=len(accounts))
@@ -428,13 +443,18 @@ class CpamcSource:
         now = time.time()
         with self._lock:
             if not self._ok_at and not self._accounts:
-                return {"t": "proxy", "ts": int(now), "tz": time.localtime(now).tm_gmtoff or 0, "up": 0, "age": 0, "attn": 1, "g": []}
+                return {"t": "proxy", "ts": int(now), "tz": time.localtime(now).tm_gmtoff or 0,
+                        "up": 0, "age": 0, "qa": -1, "qs": 1, "attn": 1, "g": []}
             groups = pool_groups(self._accounts, self._live, self.profiles, now)
             up = self._up
             age = int(now - self._ok_at) if self._ok_at else 0
         attn = (not up) or any(g["a"] for g in groups)
+        ages = [g["age"] for g in groups]
+        quota_age = max(ages) if ages and all(age >= 0 for age in ages) else -1
+        quota_stale = (not up) or any(g["st"] for g in groups)
         result = {"t": "proxy", "ts": int(now), "tz": time.localtime(now).tm_gmtoff or 0,
-                  "up": int(up), "age": age, "attn": int(attn), "g": groups}
+                  "up": int(up), "age": age, "qa": quota_age, "qs": int(quota_stale),
+                  "attn": int(attn), "g": groups}
         # Preserve valid JSON and aggregate data if an unusually large fleet exceeds
         # the firmware's line buffer. Missing q means aggregate-only legacy mode.
         if len(json.dumps(result, separators=(",", ":")).encode()) > 4095:

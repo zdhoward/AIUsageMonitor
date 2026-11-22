@@ -715,7 +715,18 @@ static void drawConsole(const Model& m, uint32_t now, const ViewDef&, int) {
 // colours shared with the Console grid), multi-pool groups double-wide with a
 // mini ring pair per pool, a System card in the next free slot.
 
-#define PROXY_STALE_MS 90000UL  // proxy line is sent about every 30 s
+#define PROXY_STALE_MS 90000UL  // transport timeout; independent of quota age
+#define PROXY_QUOTA_STALE_S 360 // service polls quota every 300s, plus 60s grace
+
+static bool proxyLinkDown(uint32_t now) {
+  return !gProxy.up || now - gProxy.rxMillis > PROXY_STALE_MS;
+}
+
+static bool proxyGroupStale(const ProxyGroup& gr, uint32_t now) {
+  const uint32_t elapsed = (now - gProxy.rxMillis) / 1000;
+  return proxyLinkDown(now) || gr.stale || (gr.hasQuotaAge &&
+      (gr.quotaAge < 0 || (int64_t)gr.quotaAge + elapsed > PROXY_QUOTA_STALE_S));
+}
 
 // Red warning triangle, 13x12, top-left at (x, y).
 static void dangerIcon(int x, int y) {
@@ -778,16 +789,18 @@ static int32_t proxyCooldown(const ProxyGroup& gr, uint32_t epoch, char* from = 
   return best;
 }
 
-// Group name, `xN` account count and the danger icon.
+// Staleness takes the account-count/icon space so narrow titles stay readable.
 static void proxyTitle(const ProxyGroup& gr, bool cooling, int x, int y, int w) {
   char b[8];
-  const int reserve = (gr.c ? 20 : 0) + (gr.a ? 16 : 0);
+  const bool stale = proxyGroupStale(gr, millis());
+  const int reserve = stale ? 36 : (gr.c ? 20 : 0) + (gr.a ? 16 : 0);
   const int nw = text(gr.n, x + 6, y + 2, 2, cooling ? C_AMBER : C_TEXT, TL_DATUM, w - 10 - reserve);
-  if (gr.c) {
+  if (stale) text("STALE", x + w - 6, y + 7, 1, C_AMBER, TR_DATUM);
+  else if (gr.c) {
     snprintf(b, sizeof b, "x%u", gr.c);
     text(b, x + 9 + nw, y + 7, 1, C_MUTED);
   }
-  if (gr.a) dangerIcon(x + w - 17, y + 3);
+  if (gr.a && !stale) dangerIcon(x + w - 17, y + 3);
 }
 
 // Angles start at the top and wrap at 360. Each anonymous account owns one
@@ -1089,14 +1102,17 @@ static void drawProxy(const Model&, uint32_t now, const ViewDef&, int) {
     return;
   }
   const int32_t elapsed = (int32_t)((now - p.rxMillis) / 1000);
-  const bool down = !p.up || now - p.rxMillis > PROXY_STALE_MS;
+  const bool down = proxyLinkDown(now);
+  bool quotaStale = p.quotaStale || (p.hasQuotaAge && p.quotaAge >= 0 &&
+      (int64_t)p.quotaAge + elapsed > PROXY_QUOTA_STALE_S);
+  for (uint8_t i = 0; i < p.ng; ++i) quotaStale |= proxyGroupStale(p.g[i], now);
 
   int accounts = 0;
   for (uint8_t i = 0; i < p.ng; ++i) accounts += p.g[i].c;
   char b[28];
   snprintf(b, sizeof b, "PROXY (%d)", accounts);
   text(b, pad, 2, 2, C_TEXT);
-  g.fillCircle(W - pad - 4, 11, 4, down ? C_RED : C_GREEN);
+  g.fillCircle(W - pad - 4, 11, 4, down ? C_RED : quotaStale ? C_AMBER : C_GREEN);
   if (p.attn) dangerIcon(W - pad - 24, 5);
   const uint32_t clock = proxyEpoch(now);
   if (clock) {
@@ -1158,14 +1174,16 @@ static void drawProxy(const Model&, uint32_t now, const ViewDef&, int) {
   }
 
   char d[10];
-  if (p.age < 0) strlcpy(b, "Updated --", sizeof b);
+  const int32_t age = p.hasQuotaAge ? p.quotaAge : p.age;
+  if (age < 0) strlcpy(d, "--", sizeof d);
   else {
-    const int32_t s = p.age + elapsed;
+    const int32_t s = (int32_t)min<int64_t>(INT32_MAX, (int64_t)age + elapsed);
     if (s < 60) snprintf(d, sizeof d, "%lds", (long)s);
     else fmtDur(d, sizeof d, s);
-    snprintf(b, sizeof b, "Updated %s", d);
   }
-  drawFooterLine(pad, fy, b, down ? C_RED : C_GREEN);
+  if (p.hasQuotaAge) snprintf(b, sizeof b, quotaStale || down ? "STALE quota %s" : "Quota %s", d);
+  else snprintf(b, sizeof b, "Updated %s", d);
+  drawFooterLine(pad, fy, b, down ? C_RED : quotaStale ? C_AMBER : C_GREEN);
 }
 
 // ---------------------------------------------------------------- detail sections

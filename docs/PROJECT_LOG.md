@@ -1,5 +1,16 @@
 # Project log
 
+## 2026-11-22: Truthful quota freshness
+
+- Separated quota observation age from account polling; failed/overdue probes
+  retain readings with STALE badges, quota-age footer and health/status warning.
+- Independent reviews caught optional-plan and parser-isolation defects, fixed
+  before deployment. Sixteen focused freshness and thirteen existing Proxy tests
+  passed. Built/flashed and inspected landscape, portrait, failure and recovery.
+- Requested Neon medium pilot failed HTTP 429 before a patch. Recorded blocked
+  availability, no quality pass; coordinator completed collector, native worker
+  firmware, with independent reviews. No release or public publication.
+
 ## 2026-11-21: Contributor attribution cleanup
 
 - Removed 124 AI co-author trailers from published main after owner approval,

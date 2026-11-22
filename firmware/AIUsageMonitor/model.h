@@ -124,6 +124,9 @@ struct ProxyGroup {
   char n[10];  // group name
   uint8_t c = 0;      // active accounts
   bool a = false;     // needs the owner's attention
+  bool stale = false; // last quota refresh failed or observation is overdue
+  bool hasQuotaAge = false;
+  int32_t quotaAge = -1; // oldest successful quota observation, -1 unknown
   bool multi = false; // "m": double-wide tile, one mini ring set per pool
   ProxyPool p[3];
   uint8_t np = 0;
@@ -136,6 +139,9 @@ struct ProxyData {
   uint32_t rxMillis = 0;
   bool up = false;     // proxy reachable
   int32_t age = -1;    // seconds since the last good poll, -1 unknown
+  bool hasQuotaAge = false; // false for legacy proxy payloads
+  int32_t quotaAge = -1;    // oldest successful quota observation, -1 unknown
+  bool quotaStale = false;
   bool attn = false;   // global danger flag
   uint32_t ts = 0;     // epoch at receive time, 0 unknown
   int32_t tz = 0;      // local UTC offset in seconds (header clock)
