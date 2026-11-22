@@ -12,8 +12,12 @@
   the retag date. Old tags are backed up in the ignored
   `build/tags-before-retag.bundle`; GitHub releases remain attached.
 - Published state before this documentation wrap-up: `2ffac7a` on main.
-  Local main and my-setup match origin/main; worktree was clean. The original
-  refs are backed up in the ignored `build/attribution-before.bundle`.
+  The original refs are backed up in the ignored
+  `build/attribution-before.bundle`.
+- Repo state: the owner's checkout has only `main` (the owner is upstream, so
+  the `my-setup` flow in AGENTS.md/docs is for end users, not this checkout).
+  The my-setup and attribution-* branches were deleted after their work was
+  confirmed on main. All 27 tags are published and match local.
 - Validation: 210 main commits pass the attribution audit; both push guards and
   GitHub attribution CI passed. GitHub's contributor API lists only zdhoward.
   Commit-msg fixtures rejected AI and accepted human credit. Push-handler
@@ -23,9 +27,11 @@
 - Privacy: publication guard exposed historical machine paths. Those were
   redacted in setup notes and the task description; the current code diff was
   limited to that description. The unchanged privacy guard then passed.
-- Continuation: use my-setup for edits. Other clones must resync to rewritten
-  main before contributing; install attribution hooks after cloning. Old tags
-  retain historical attribution and must not be merged back into main.
+- Continuation: edit on main in the owner's checkout. Other clones must resync
+  to rewritten main and re-fetch tags (`git fetch --tags --force`) before
+  contributing; install attribution hooks after cloning. The pre-rewrite
+  history exists only in the ignored build/*.bundle backups and must not be
+  merged back.
   Historical short commit IDs below may refer to the backed-up history.
 - No open PRs or pending approval for this task. Prior backlog remains in
   tasks/todo.md (O4/O9 and blocked B1/B2/B6); it was not reopened by this task.
