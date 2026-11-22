@@ -3,8 +3,12 @@
 ## 2026-11-21: Contributor attribution cleanup
 
 - Removed 124 AI co-author trailers from published main after owner approval,
-  using an exact force-with-lease. Original refs backed up locally; historical
-  release tags preserved. Human identities and dates remain intact.
+  using an exact force-with-lease. Original refs backed up locally, and
+  human identities and dates remain intact.
+- Follow-up: moved all 27 release tags onto the clean history and removed AI
+  trailers from two tag messages. Force-pushed the 18 published tags with exact
+  leases (v1.2.0-v1.4.2 were never published). Old tags are in the ignored
+  `build/tags-before-retag.bundle`; GitHub releases stay attached.
 - Added scripts/attribution_guard.py, installed commit-message and push guards,
   preserved/chained the public privacy hook, and added GitHub's full-history
   Contributor attribution workflow. Other clones must resync and install hooks.

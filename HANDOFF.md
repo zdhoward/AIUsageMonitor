@@ -3,8 +3,14 @@
 - Objective complete: removed 124 AI co-author trailers from main and added
   commit-message/push guards plus a full-history CI attribution audit.
 - Accepted decision: owner explicitly approved replacing published main using
-  an exact force-with-lease. Release tags remain unchanged. Legitimate human
-  identities, credit and dates were preserved.
+  an exact force-with-lease. Legitimate human identities, credit and dates
+  were preserved.
+- Tags follow-up (owner approved): all 27 release tags moved to their cleaned
+  twins (only 1-2 lines of path redaction differ). AI trailers were dropped from
+  two tag messages. The 18 published tags were force-pushed with exact leases;
+  v1.2.0-v1.4.2 were never published and stay local. Annotated tags now carry
+  the retag date. Old tags are backed up in the ignored
+  `build/tags-before-retag.bundle`; GitHub releases remain attached.
 - Published state before this documentation wrap-up: `2ffac7a` on main.
   Local main and my-setup match origin/main; worktree was clean. The original
   refs are backed up in the ignored `build/attribution-before.bundle`.

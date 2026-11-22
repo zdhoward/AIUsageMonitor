@@ -22,7 +22,11 @@ Publication: owner approved on 2026-11-21. Replaced remote main with cleaned
 history using an exact force-with-lease; both push guards passed. GitHub's
 attribution workflow passed on the published head, and the contributor API
 lists only the owner. Original refs are backed up in the local ignored bundle
-`build/attribution-before.bundle`. Historical release tags were preserved.
+`build/attribution-before.bundle`.
+- [x] Retag (owner approved): all 27 tags moved to their clean twins, AI
+  trailers removed from tag messages, and the 18 published tags force-pushed with
+  exact leases. Remote tags match local; 6 releases remain attached. Backup:
+  `build/tags-before-retag.bundle`.
 Other clones must resync before contributing; the history audit rejects an
 incoming branch that restores AI credits.
 The publication privacy check found historical machine paths in setup notes
@@ -30,7 +34,7 @@ and a current scheduled-task description. A second prepared branch redacts
 those paths; its current-file diff was limited to that description. This
 privacy-safe variant passed the publication guard and is the published history.
 Wrap-up: no open PRs, successful attribution CI on 2ffac7a, main and my-setup
-synced. Current handoff is HANDOFF.md; historical release tags remain unchanged.
+synced. Current handoff is HANDOFF.md; release tags since moved to the clean history.
 
 Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), TODO/FIXME grep (none), `git worktree list`, live CPAMC `auth-files` (read-only). No DECISIONS.md exists; GOALS.md and docs hold no answers for the owner items below.
 
