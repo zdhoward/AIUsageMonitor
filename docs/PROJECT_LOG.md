@@ -7,8 +7,12 @@
   human identities and dates remain intact.
 - Follow-up: moved all 27 release tags onto the clean history and removed AI
   trailers from two tag messages. Force-pushed the 18 published tags with exact
-  leases (v1.2.0-v1.4.2 were never published). Old tags are in the ignored
-  `build/tags-before-retag.bundle`; GitHub releases stay attached.
+  leases. v1.2.0-v1.4.2, previously unpublished, were then pushed too. Old
+  tags are in the ignored `build/tags-before-retag.bundle`; GitHub releases
+  stay attached.
+- Owner checkout consolidated to `main` only (the owner is upstream; the
+  my-setup flow is for end users). The side branches were deleted after their
+  work was confirmed on main.
 - Added scripts/attribution_guard.py, installed commit-message and push guards,
   preserved/chained the public privacy hook, and added GitHub's full-history
   Contributor attribution workflow. Other clones must resync and install hooks.

@@ -26,5 +26,8 @@ that tip diff before publishing; attribution-only cleanup preserves every tree.
 
 Publishing rewritten history requires the owner's explicit approval. Back up
 the original refs first, use an exact force-with-lease, and coordinate existing
-clones and historical release tags. GitHub may cache contributor displays.
+clones. Move every release tag too, or old tags keep the AI-credited commits
+reachable. Bundle the tags, map each to its rewritten twin (same date, author,
+subject), strip AI trailers from tag messages, and check `git ls-remote --tags`
+before pushing with exact per-tag leases. GitHub may cache contributor displays.
 Never hide genuine contributors or replace their identities with the owner's.
