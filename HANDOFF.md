@@ -1,4 +1,83 @@
-# Contributor attribution cleanup (2026-11-21) - CURRENT
+# Supported Neon proxy setup (2026-11-22) - CURRENT
+
+- Wrapup: installed service/USB/callback bridge health verified; shared-instance
+  sync reports In sync. No open PRs to merge. Completed my-setup branch published
+  with public privacy and attribution guards passing; main remains an upstream
+  mirror, with no release tag or version decision. Private router and shared-policy
+  commits also pushed. Existing validation is reused for unchanged code.
+- Standing use policy is now enforced in model-router commit532c6c3: both eligible
+  implementation and mechanical lanes choose Neon medium with pilot/scope flags,
+  even when usage meters are unknown. Forty-nine targeted routing/trust checks
+  passed. Real exhaustion, exclusions and independent review remain enforced.
+- Remaining limits: real provider OAuth sign-in untested; sustained Neon reliability
+  awaits ordinary work; fifth organic-output review still pending. Session spend
+  is UNKNOWN: exact-session token lookup did not match; no savings claim. Historical
+  backlog stays in tasks/todo.md; unrelated shared-root work is preserved.
+
+- Fixed and verified real tool-agent use. P-Gemini now has its own Codex home,
+  Gemini default and documented model_instructions_file override with neutral
+  opening persona; existing endpoint/auth and remaining operating/safety rules
+  preserved. Other proxy provider configuration unchanged. Shared skills linked.
+- A cached pre-change provider process initially kept sending old instructions;
+  stopped only that idle P-Gemini process, then a fresh task completed normally.
+  Neon read a ticket, created scripts/check_neon_setup.py via apply_patch and
+  ran it with exit0. Parent Sol reviewed file and actual activity, verified positive
+  and missing-home exit0/exit1 behavior, and clarified the structural-rule flag.
+- One accepted organic mechanical output, not a model promotion or a claim of
+  long-term reliability. Pilot/availability records updated; no quota/billing or
+  login change, no new model-request proxy or rewrites. The checker is local
+  structural validation only. Setup references and caveats: docs/CPAMC_LOGIN.md.
+- Owner correction: consult supported integration docs before exhaustive request
+  bisection. Preserve the learned lesson; no more synthetic sweeps needed.
+- Earlier display/callback fixes remain installed. Work stays on my-setup; no
+  release/tag or additional device changes in this configuration task.
+
+# Claude resets, ETA and CPAMC callbacks (2026-11-22) - HISTORY
+
+- Installed Claude reset inventory via read-only cedar_ember=1 usage query,
+  existing anonymous rc/rx transport and Messages expiry reminder. All four live
+  accounts currently report no grants; unknown is not zero. Short nonexpired5h
+  grid ETA turns white at<=30m. Near-expiry credits sort first and remain visible
+  under overflow. Main service and firmware rebuilt/flashed; live data restored.
+- Validation:11 parser,18 freshness/integration,2 prior credit checks passed;
+  hardware30m/31m/unknown/expired frames inspected under build/reset-eta-*.png.
+  Sonnet parser reviewed/refined by parent Sol; independent UI review no blockers.
+- CPAMC official8.1.1 installed by existing verified updater; management1.28.3
+  unchanged/current. Tiny Neon medium chat works but full agent requests still
+  fail upstream RESOURCE_EXHAUSTED429 before patches, before and after update.
+  Two bounded tasks failed, no model code or quality pass; receipts recorded.
+- Owner clarified callback was Claude or Codex. Final management forwarding
+  target is hardcoded loopback despite Tailscale-only API binding. Installed
+  CPAMC Callback Bridge limited-user headless logon task, accepting only the two
+  final callback GET paths on loopback8317; no management/API forwarding or code
+  storage. Eleven offline bridge tests passed; live local health/listeners
+  verified. Real provider login was not attempted. Remote-device browsers still
+  need callback-URL input; see docs/CPAMC_LOGIN.md.
+- Work remains on my-setup; no public push/release or credential changes. Earlier
+  quota freshness fix and prior backlog remain below. The next useful Neon check
+  needs new evidence, not another identical quota/fullness-based retry.
+
+# Quota freshness warning (2026-11-22) - HISTORY
+
+- Completed on `my-setup`: Proxy quota now has independent observation ages and
+  immediate failed-refresh/overdue warnings. Retained numbers stay readable;
+  successful account-list polls and USB ACKs cannot make them fresh. Health/status
+  expose the same safe proxy state. See docs/PROTOCOL.md and tasks/todo.md.
+- Installed service and firmware; personal profile preserves the existing layout.
+  Last-good measurements survive failures including authentication/parser errors;
+  successful quota probes clear warnings. Optional-plan windows are explicit;
+  Antigravity uses the daily quota authority without a mismatching fallback.
+- Validation: 16 freshness + 13 existing Proxy tests; firmware build/verified flash;
+  landscape/portrait STALE and recovery/live frame inspection. Original repro
+  now warns. Evidence remains under ignored build/quota-*.
+- Neon pilot was attempted as requested but failed with HTTP 429 before any code.
+  No quality verdict. Coordinator implemented; independent reviews found and
+  resolved optional-plan and parser-isolation issues. Failure and review receipts
+  recorded. Actual serving effort/token costs UNKNOWN. No promotion inferred.
+- No public push, tag or release. Prior backlog remains below and in tasks/todo.md.
+  Main is untouched; this task followed the supplied personal-branch instructions.
+
+# Contributor attribution cleanup (2026-11-21) - HISTORY
 
 - Objective complete: removed 124 AI co-author trailers from main and added
   commit-message/push guards plus a full-history CI attribution audit.

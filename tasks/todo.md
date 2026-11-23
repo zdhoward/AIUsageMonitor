@@ -1,5 +1,165 @@
 # Catchup ledger (2026-11-13)
 
+## Session wrapup (2026-11-22)
+
+- [x] Reconcile installed display freshness, Claude resets/ETA, callback bridge
+  and supported Neon configuration with reviewed artifacts and live health.
+- [x] Enforce owner-preferred Neon on both suitable lanes (model-router532c6c3);
+ 49 targeted routing/trust checks passed, scope/exhaustion guards preserved.
+- [x] Confirm no open PRs and shared instances In sync. Record retrospective:
+  start with supported setup, restart stale client connections, and distinguish
+  connection/structural checks from real quota/model readiness.
+- [x] Push completed wrapup commits using the authorized branch and guards:
+  my-setup published; public privacy and attribution guards passed. Private
+  router/policy/retrospective commits also pushed; unrelated shared edits preserved.
+
+Open validation limits are documented, not hidden: no real OAuth login performed,
+one accepted Neon organic output so far, fifth-output checkpoint pending, spend
+UNKNOWN because exact-session lookup did not match. Prior backlog below preserved.
+
+## Neon workload failure investigation (2026-11-22)
+
+- [x] Extract safe captured request structure and source evidence.
+- [x] Isolate endpoint, streaming, tool, prompt-size and output-budget differences with bounded synthetic probes.
+- [x] Apply supported isolated client setup, verify actual tool use, and document limits.
+
+Owner redirected the approach to documented setup over continued reverse
+engineering. Official Codex config supports model_instructions_file. P-Gemini
+shared the same home/default model with P-Codex; now isolated with Gemini default,
+normal Responses provider, existing authentication and a neutral opening persona,
+preserving remaining operating/safety instructions. P-Codex remains unchanged.
+Real Neon tool-agent verification T-037 accepted after parent Sol artifact/activity
+review: Neon read the ticket, created scripts/check_neon_setup.py through
+apply_patch, executed it and obtained exit0. Parent positive rerun passed and a
+missing-home check returned exit1 without exposing secrets. One nonblocking
+review correction renamed a structural 'rules_intact' flag to 'rules_present'
+and clarified it cannot prove semantics or live availability. No broader suite
+or firmware build was needed for this read-only configuration checker.
+The first validation reused the existing pre-change Codex connection and still
+sent old instructions. Stopped that idle provider process (not P-Codex) so the
+second validation loads a fresh client. No further synthetic sweeps after the
+owner's correction; configuration and real-task checks only.
+First organic-output checkpoint: accepted bounded mechanical work; several
+PowerShell quoting/patch invocation attempts preceded success. No implementation
+rescue was needed, beyond the parent's output-label clarification. Keep ordinary
+independent review on subsequent Neon tasks; one success is not promotion or a
+claim of lasting reliability. Earlier request sweeps were excessive; the owner's
+documented-setup correction is recorded in lessons. No new proxy server or
+model-request rewrite was added for Neon.
+
+## Reset credits, short 5h ETA and CPAMC setup (2026-11-22)
+
+- [x] Verify Claude banked-reset count/expiry sources without consuming a reset.
+- [x] Make known 5h reset ETAs white at 0..1800 seconds; inspect boundary frames.
+- [x] Test exact Neon medium agent route, diagnose 429/update relevance and callback authority.
+- [x] Review, build/flash and verify supported changes; record findings and limits.
+
+Claude's read-only usage request needs cedar_ember=1. Four live accounts returned
+eligible:false and an empty grants list; counts currently zero. Wired parser to
+rc/rx with unknown=-1, no identifiers and no consumption. Known earliest expiry
+stays visible even if another grant lacks a date. The Messages card sorts expiry,
+preserves its first account row under overflow and shows white near-expiry text.
+Unknown inventory says Unavailable; expired cached inventory prompts check.
+
+Verification: 11 parser +18 freshness/integration +2 prior credit checks passed.
+Built/flashed with hash verification; initial COM6 busy resolved by stopping the
+service during flashing and restarting afterward. Inspected real framebuffer
+fixtures at30m white,31m muted,unknown muted,expired muted; six-credit overflow
+showed the earliest Claude expiry with +5 in the heading. Restored healthy live
+feed with Claude rc=[0,0,0,0]. Evidence: build/reset-eta-*.png and build/reset-eta-
+{build,flash}.log. Sonnet parser independently reviewed/refined by parent Sol;
+Sonnet static UI/integration review found0 Important; nits addressed where useful.
+
+Neon exact-medium tiny chat succeeded on CPAMC8.1.0 and8.1.1, but an organic ETA
+agent task failed429 before code, and one post-update parser task also failed429.
+Proxy logs show upstream RESOURCE_EXHAUSTED. No quality pass and no repeated
+probes. Official existing updater installed8.1.1 after a temporary replacement
+PermissionError; authenticated backend/UI checks passed, updater now current.
+No credentials, billing or provider redirects changed. Router/pilot receipts
+record failures and established-model rescue separately; usage costs UNKNOWN.
+
+Claude/Codex callback investigation confirmed a hardcoded127.0.0.1 final management
+hop while CPAMC listens only on Tailscale. Installed a loopback-only callback
+bridge as a limited-user headless logon task. Only the two fixed callback paths
+are forwarded; no management API, client auth/cookies, redirects, query logging
+or code storage. Offline fake-upstream tests and local health/listener checks
+verify forwarding; no real account login was initiated. Another-device browser
+still uses the management page's callback-URL input. Details: docs/CPAMC_LOGIN.md.
+
+Reflection: tiny replies did not predict the full Responses/tool workload. Two
+bounded owner-requested pilots were enough to establish continued unavailability;
+no output means no code-quality verdict. Delegated parser/bridge implementation
+and reviews; coordinator retained architecture, small review fixes and runtime
+verification. Native read-only discovery was unavailable (unknown model) and
+completed inline. No public push, release or new provider account action.
+
+## Quota stale warning fix / Neon pilot (2026-11-22)
+
+- [x] Implement separate successful-quota age and failed/overdue status with focused offline regressions (Neon attempt failed 429; coordinator implemented).
+- [x] Review collector patch; add visible group STALE, quota-age footer, and proxy health/status.
+- [x] Verify failure and recovery on hardware; build/flash, capture and inspect frames; record pilot review and outcome.
+
+Outcome: 16 focused freshness tests and 13 existing Proxy tests passed. Original
+two-hour-old cached-value repro now warns. Independent Sonnet and native reviews
+caught optional-plan handling and per-account parser exception isolation; both
+were corrected and covered. The final suggestion to exempt unprobeable sources
+was declined: unknown quota must remain visibly unverified. Daily-only Antigravity
+authority is intentional; a different endpoint must not hide a failed refresh.
+
+Firmware built with the personal profile, flashed with hash verification, and
+service restarted. Inspected landscape/portrait failure frames and recovered/live
+frames. An offline failure using real anonymous display values yielded qa=900,
+qs=1 and STALE badges; recovery yielded qa=0, qs=0 with identical quota values.
+Live health reports actual quota age independently of account polls and USB ACKs.
+One framebuffer transfer was short; recapture with a settle interval succeeded.
+Evidence: build/quota-stale-landscape.png, quota-stale-portrait.png,
+quota-recovered.png, quota-live-final.png and quota-freshness-{build,flash}.log.
+
+Neon pilot: exact medium agent route failed at T3's retry limit with HTTP 429,
+before patch/reply/tool execution. No model code exists to review and no quality
+pass is claimed. Availability attempt recorded (BLOCKED), exact raw IDs retained
+locally, missing usage/serving settings UNKNOWN. Coordinator rescue and review
+disposition recorded separately; global pilot notes/availability overlay updated.
+No retry loops, credentials changed, release/tag or public push. Temporary
+verification and small review fixes stayed inline; firmware was delegated and
+two independent reviews were used. Reflection: a tiny high-route reply proves
+neither the exact medium route nor sustained tool-agent readiness.
+
+
+## Antigravity live check (2026-11-22)
+
+- [x] Capture the running display and USB/service baseline without restarting it.
+- [x] Compare daily-endpoint quota and CPAMC cooldowns per account; observe at least twelve minutes of refreshes and USB acknowledgements.
+- [x] Capture the final framebuffer and record results and any unresolved limits.
+
+Result: 720 seconds, 25 samples, zero unplanned failures. One expected serial
+pause during the midpoint screenshot made the strict harness exit 1; its only
+failed sample has paused=true. USB ACK age otherwise stayed at or below 4.8s.
+Three per-account quota-probe rounds succeeded; four distinct direct-collector
+check timestamps were observed. Additional daily-only snapshots returned 200
+for both accounts, with no cooldowns. Initial, midpoint and final framebuffers
+were inspected: Neon 5h/7d 100%, shared Claude 5h 100% / 7d 75%, Argon 7d 100%.
+The reported ten-minute outage did not recur during this observation window.
+
+Checks completed while observing: real Neon and Argon requests returned HTTP 200
+and the requested reply. Fresh daily-endpoint readings matched the framebuffer;
+the tiny request usage appeared upstream but rounds to 100% on the display.
+The monitor's local API key returned 401; the existing Codex proxy key succeeded.
+Quota collection uses the separate working management key. No credentials changed.
+
+Reliability finding: an offline reproduction of a failed live quota probe with
+two-hour-old cached 100% quota still produces proxy up=1, age=0, attn=0 after
+successful account-list polling. Health/ACK success alone cannot prove fresh
+Proxy quota. Independent read-only review confirmed this and the possibility
+of falling back from daily to a primary endpoint with different quota.
+This is a demonstrated diagnostic gap, not a reproduced live ten-minute outage.
+Production code and firmware remain unchanged for this requested live check.
+Evidence scripts and redacted results are local under build/antigravity-* and
+build/check_*; no full suite, build or flash was needed. Temporary check scripts
+were kept inline because they only collect bounded diagnostic evidence; the
+quota reliability review was delegated independently.
+
+
 ## Contributor attribution cleanup (2026-11-21)
 
 - [x] Inspect live GitHub contributors and historical attribution: API lists only

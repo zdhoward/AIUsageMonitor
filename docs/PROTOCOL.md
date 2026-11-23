@@ -144,8 +144,51 @@ A separate `{"t":"proxy",...}` line about every 3 s (account data re-polled ever
 
 `up` proxy reachable, `age` seconds since the last good poll, `attn` global danger flag; per group `n` name, `c` active accounts, `a` danger flag, `ly` `r` (normal tile) or `m` (double-wide, one mini ring pair per pool), `p` pools (max 3) each with `w` windows (max 2; the first is the shorter and draws the outer ring). `r` is percent **remaining** 0-100 (-1 unknown), `z` the next reset epoch (0 none). At most 6 groups.
 
+Quota freshness is separate from account-list/link freshness: `qa` is the oldest
+successful quota observation age in seconds (`-1` unknown), and `qs` is 1 if any
+visible group's quota is stale or the proxy is unreachable. Each group adds
+`age` and `st` with the same quota-age and stale meanings. A failed probe marks
+quota stale immediately and retains both the last good values and their original
+observation time, including on authentication failure. Successful account-list
+polls cannot clear it. Readings also become stale after 360 seconds without a
+successful quota observation. Disabled accounts do not contribute. Only a
+successful quota probe clears a failed-probe warning. Missing required buckets
+are failed probes; explicitly disabled optional buckets may be skipped.
+Profiles may mark a window `optional: true` when it is absent on supported plans
+(for example a single-window Codex plan). Such windows are omitted rather than
+turning an otherwise successful response stale; missing required windows still
+fail the probe. Unknown/header-only groups remain explicitly unverified.
+
+New firmware shows an amber `STALE` badge on affected groups and a `STALE quota`
+footer with the oldest observation age. Fresh footers read `Quota <age>`. Ages
+advance on-device even if serial stops, and loss of the proxy stream still gets
+the existing red link warning. Legacy payloads without freshness fields retain
+the prior footer. `/healthz` and `/v1/status` expose the safe proxy payload under
+`proxy`; health `source_errors.cpamc` reports stale/unavailable quota independently
+of USB acknowledgements. `ok` remains service liveness.
+
 `ts` is an optional addition to the contract: the sender's current epoch. The ESP32 has no clock, so reset countdowns (`z - now`) show `--` unless `ts` is present. `tz` (optional, seconds) is the sender's local UTC offset including daylight saving; with `ts` it drives the header date and time (`Fri, Nov 6, 2026 9:27 AM`). Without `ts` the header clock is hidden; without `tz` it shows UTC.
 
 Each window may include `q`, an array of `[remaining, reset_epoch]` pairs in the same anonymous account order across all windows and pools in a group. The first element corresponds to account 1, clockwise from the top; `-1` is unknown and reset `0` is unknown. Order follows CPAMC's opaque auth index and can change if accounts are added, removed, or reidentified. No identifiers are sent. `r` averages known values and `z` is the earliest future reset; neither implies a refill after a deadline. At most eight accounts have sector detail. To stay within the 4095-byte line limit the service may omit `q` for whole groups, starting at the end; firmware then renders the aggregate. Old payloads without `q` remain valid and older firmware ignores it.
 
 A group may include `rc`, an array of banked manual limit resets per account in the same order as `q` (`-1` unknown, at most eight). The service fills it from a profile's `reset_credits` path (Codex: `rate_limit_reset_credits.available_count`). `wham/usage` reports counts only. On the `proxy` line (`g[].rx`), the service adds the soonest expiry per account as epoch seconds (`0` unknown), read from Codex `wham/rate-limit-reset-credits`. Older firmware ignores it.
+
+Claude uses the same `rc`/`rx` fields. Its read-only usage request adds
+`cedar_ember=1`, then parses the `cedar_ember` inventory: sum positive
+`resets_left` for usable, unpaused, unexpired grants and report the earliest known
+`ends_at`. Missing/unreadable inventory is `rc=-1`, never zero. An explicit
+ineligible response with an empty grants list is known zero. Grant identifiers,
+redemption handles and `next_grant_id` are never forwarded or stored. No reset
+is consumed. Reference: [T3's read-only parser](https://github.com/pingdotgg/t3code/blob/main/apps/server/src/provider/claudeResetCredits.ts).
+
+The Messages card puts nearest known reset-credit expiry first; within 24 hours
+it shows a white `expires <duration>`. If rows overflow, `RESETS +N` preserves
+the first real account/expiry row. An expired cached credit prompts `check` /
+`expiry passed` until a refreshed inventory arrives. Unknown inventory shows
+`Unavailable` instead of claiming no credits. A known expiry remains visible even
+if another grant for that account lacks an expiry.
+
+In grid quota rows, known non-expired 5h reset ETAs become white at 30 minutes or
+less (including the exact 1800-second boundary). Percentages and rings keep
+their existing colors; unknown and past deadlines stay muted. Weekly highlighting
+is unchanged. CPAMC setup and callback behavior: [login notes](CPAMC_LOGIN.md).

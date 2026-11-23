@@ -1,5 +1,8 @@
 # CPAMC Home view — idea (2026-10-30)
 
+Current callback/Neon findings: [CPAMC login notes](CPAMC_LOGIN.md). Claude reset
+credits and short 5h ETA highlighting are documented in [protocol](PROTOCOL.md).
+
 Status: implemented and installed; published as part of v1.15.0. Historical research and decisions follow. Current behavior is described in [UI](UI.md), [protocol](PROTOCOL.md) and [release evidence](RELEASE_1.15.0.md).
 
 ## Goal

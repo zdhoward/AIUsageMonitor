@@ -1,5 +1,59 @@
 # Project log
 
+## 2026-11-22: Session wrapup
+
+- Reconciled completed display/collector, callback and Neon setup work. No open
+  PRs; shared instances In sync; installed service, serial and callback bridge
+  healthy. Reused unchanged build/frame/test evidence rather than rerunning suites.
+- Owner preference now drives eligible implementation/mechanical Neon routing,
+  retaining trust and exhaustion gates;49 targeted router checks passed.
+- Retrospective: documented setup before broad probe sweeps; refresh cached
+  provider processes after config changes; verify real work before clearing
+  availability, then remove stale blocking prose. No measured cost/savings claim.
+- Real OAuth login and longer-term Neon reliability remain unverified; the next
+  model-quality checkpoint is after five reviewed organic outputs. Prior backlog
+  remains unscheduled. No new tag/release or direct main-branch modification.
+- Publication complete: my-setup pushed after privacy and attribution guards;
+  private routing, availability, outcome and retrospective commits pushed too.
+  Unrelated uncommitted shared-root work was preserved.
+
+## 2026-11-22: Supported Neon client setup verified
+
+- Followed owner's correction toward official Codex custom-provider configuration.
+  Isolated P-Gemini, set Gemini default and documented instruction-file override,
+  preserved other provider config, endpoint/auth and remaining operating rules.
+- Restarted cached P-Gemini client; Neon completed real file/tool work and ran
+  its read-only setup checker successfully. Parent independently reviewed artifact
+  and activity, positive/negative checks and clarified one output label.
+- First organic output accepted; prior failures retained, availability marker
+  cleared, no broad promotion or cost claims. Current details: docs/CPAMC_LOGIN.md.
+
+## 2026-11-22: Claude reset inventory, ETA and callbacks
+
+- Added opt-in read-only Claude reset grants to rc/rx; known no grants on four
+  accounts, unknown distinct from zero. Prioritized nearest expiry and preserved
+  the first reminder under overflow. Grid5h ETA is white within30m inclusive.
+- Eleven parser,18 integration/freshness,2 prior credit checks passed; built and
+  flashed with boundary/unknown/expired and multi-credit framebuffer evidence.
+- Updated official CPAMC8.1.1 with verified updater/health. Tiny Neon medium chat
+  works, full tool-agent still429 before patches; two attempts recorded blocked,
+  no code-quality claim. Established Sonnet parser and parent integration reviewed.
+- Confirmed hardcoded loopback final callback versus Tailscale listener. Installed
+  narrow loopback-only Claude/Codex callback bridge, no provider redirect changes;
+  eleven fake-upstream checks and real local health/listener checks passed.
+  Real account login remains an owner action, not part of the validation.
+
+## 2026-11-22: Truthful quota freshness
+
+- Separated quota observation age from account polling; failed/overdue probes
+  retain readings with STALE badges, quota-age footer and health/status warning.
+- Independent reviews caught optional-plan and parser-isolation defects, fixed
+  before deployment. Sixteen focused freshness and thirteen existing Proxy tests
+  passed. Built/flashed and inspected landscape, portrait, failure and recovery.
+- Requested Neon medium pilot failed HTTP 429 before a patch. Recorded blocked
+  availability, no quality pass; coordinator completed collector, native worker
+  firmware, with independent reviews. No release or public publication.
+
 ## 2026-11-21: Contributor attribution cleanup
 
 - Removed 124 AI co-author trailers from published main after owner approval,

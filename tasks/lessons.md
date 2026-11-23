@@ -1,5 +1,24 @@
 # Lessons
 
+- 2026-11-22: **Start integration repairs from the supported setup.** When an
+  owner asks to make a standard proxy integration work, consult official client
+  setup guidance and apply its normal configuration before spending many calls
+  bisecting backend behavior. Keep diagnostics bounded and switch promptly when
+  the owner asks for a simpler documented route.
+
+- 2026-11-22: **Test the workload, not just the quota or tiny reply.** Neon can
+  return200 for a tiny exact-model chat while the tool-agent route receives
+  Google RESOURCE_EXHAUSTED. Keep availability failures separate from code quality,
+  perform bounded recovery checks after an update, then stop retrying.
+- 2026-11-22: **API host and OAuth callback target are separate.** CPAMC can listen
+  on Tailscale while its final browser hop remains hardcoded to loopback. Verify
+  both listeners before blaming the saved address or replacing provider redirects.
+
+- 2026-11-22: **A successful connection is not a successful quota refresh.**
+  Preserve each last-good quota timestamp across failures, expose failed/overdue
+  readings on the physical display and in health, and test failure plus recovery.
+  Fresh account-list polls and USB ACKs must never make retained numbers look new.
+
 - 2026-11-21: **AI credit returns unless enforced.** Do not add AI author or
   co-author identities. Install the repository attribution hooks, preserve the
   public push guard, and audit incoming history in CI. Check commit messages as
@@ -30,3 +49,4 @@
 - Rule: in tracked files, refer to accounts by position or role ("third Claude account on the display"), never by name. Scan the outgoing diff for the bare names too, not just email domains.
 
 - 2026-11-21: **Read quota from the endpoint the proxy spends against.** Google's primary and daily Antigravity endpoints report different quotas (49% vs 64% on one account); CPAMC routes through daily. Check the CPAMC log for the upstream host before trusting a quota endpoint.
+- 2026-11-22: **A silent stop with no error in `aimon.log` means an outside kill.** Another project's subagent ran `Get-Process python* | Stop-Process -Force`, which matched `pythonw -m aimon`; the task's RestartCount does not cover outside kills. Find the culprit by searching agent transcripts for `Stop-Process|taskkill|pkill` at the last log timestamp (transcripts use UTC). `service.ps1 install` now adds a 5-minute watchdog trigger; the global rule (stop only your own PIDs) lives in `~/.agents/rules/testing-git-security.md`.
