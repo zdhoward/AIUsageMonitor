@@ -60,3 +60,4 @@
 | docs/PROJECT_LOG.md | Record wrapup and evidence-based retrospective. | 2026-11-22 |
 | scripts/service.ps1 | Add a 5-minute watchdog trigger (IgnoreNew) so the service returns after an outside kill. | 2026-11-22 |
 | tasks/lessons.md | Record how the service was killed by another session and how to trace it. | 2026-11-22 |
+| HANDOFF.md, docs/PROJECT_LOG.md, tasks/todo.md | Record the service-kill cause, watchdog, magi sync and branch merge. | 2026-11-23 |

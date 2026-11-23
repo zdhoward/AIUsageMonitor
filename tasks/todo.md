@@ -1,5 +1,11 @@
 # Catchup ledger (2026-11-13)
 
+## Service kill and watchdog (2026-11-23)
+- [x] Find why the service stopped (wildcard python kill by another session's subagent)
+- [x] Watchdog trigger in `service.ps1 install`, re-registered, forced-kill test passed (298 s)
+- [x] Shared PID-only kill rule, synced and verified on magi
+- [x] Merge my-setup into main, delete it locally and on origin
+
 ## Session wrapup (2026-11-22)
 
 - [x] Reconcile installed display freshness, Claude resets/ETA, callback bridge

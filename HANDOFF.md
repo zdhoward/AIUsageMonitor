@@ -1,9 +1,25 @@
-# Supported Neon proxy setup (2026-11-22) - CURRENT
+# Service watchdog and branch consolidation (2026-11-23) - CURRENT
+
+- Objective: find why the monitor stopped updating, fix it, prevent a repeat.
+- Cause: on 2026-11-22 at 18:58 an UnderAssault subagent ran
+  `Get-Process python* | Stop-Process -Force`, which also killed `pythonw -m aimon`.
+  The logon task's RestartCount does not cover outside kills, so it stayed down.
+- Fixes: `scripts/service.ps1 install` adds a 5-minute repeating trigger with
+  IgnoreNew (re-registered on this PC). Shared rule "stop only processes you
+  started, by PID" in `~/.agents/rules/testing-git-security.md` (5737f04), synced
+  to magi and verified in a fresh magi session (FLEET.md 5f162f2).
+- Validation: a forced kill by PID recovered after 298 s with serial reconnected;
+  the service has run since; screenshot shows live data. No suites run.
+- Branch: my-setup merged into main (3ebf240) and deleted locally and on origin.
+  No open PRs. No release or tag (service-script patch, per O8 policy).
+- Remaining: nothing new. Older open items (O4, O9, B1, B2, B6) stay in tasks/todo.md.
+
+# Supported Neon proxy setup (2026-11-22)
 
 - Wrapup: installed service/USB/callback bridge health verified; shared-instance
   sync reports In sync. No open PRs to merge. Completed my-setup branch published
-  with public privacy and attribution guards passing; main remains an upstream
-  mirror, with no release tag or version decision. Private router and shared-policy
+  with public privacy and attribution guards passing. (Superseded 2026-11-23:
+  my-setup merged into main and deleted; only main remains.) Private router and shared-policy
   commits also pushed. Existing validation is reused for unchanged code.
 - Standing use policy is now enforced in model-router commit532c6c3: both eligible
   implementation and mechanical lanes choose Neon medium with pilot/scope flags,

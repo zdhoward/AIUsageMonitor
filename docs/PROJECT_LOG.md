@@ -1,5 +1,13 @@
 # Project log
 
+## 2026-11-23: Service kill traced, watchdog added
+
+- The service stopped at 18:58 on 11-22 with no error: another project's subagent
+  killed every `python*` process. Traced through agent transcripts (UTC stamps).
+- `service.ps1 install` now adds a 5-minute watchdog trigger; a forced-kill test
+  recovered in 298 s. Shared PID-only kill rule added and synced to magi.
+- my-setup merged into main and deleted; the owner wants completed work on main.
+
 ## 2026-11-22: Session wrapup
 
 - Reconciled completed display/collector, callback and Neon setup work. No open
