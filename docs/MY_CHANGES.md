@@ -58,3 +58,5 @@
 | HANDOFF.md | Reconcile routing policy, live health, sync, publication and remaining validation limits at wrapup. | 2026-11-22 |
 | tasks/todo.md | Record wrapup checks and branch publication tracking. | 2026-11-22 |
 | docs/PROJECT_LOG.md | Record wrapup and evidence-based retrospective. | 2026-11-22 |
+| scripts/service.ps1 | Add a 5-minute watchdog trigger (IgnoreNew) so the service returns after an outside kill. | 2026-11-22 |
+| tasks/lessons.md | Record how the service was killed by another session and how to trace it. | 2026-11-22 |

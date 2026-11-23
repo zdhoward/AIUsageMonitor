@@ -48,10 +48,15 @@ switch ($Action) {
   }
   'install' {
     $taskAction = New-ScheduledTaskAction -Execute (Find-Pythonw) -Argument '-m aimon' -WorkingDirectory $serviceDir
-    $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+    $logon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+    # Watchdog: RestartCount only covers launch failures, so a process killed from outside stays down.
+    # This trigger re-runs the task every 5 minutes; IgnoreNew skips it while the service is running.
+    # A copy started outside the task (service.ps1 start) makes a watchdog copy fail to bind 8797 and exit.
+    $watchdog = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-      -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-    Register-ScheduledTask -TaskName $taskName -Action $taskAction -Trigger $trigger -Settings $settings `
+      -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
+      -MultipleInstances IgnoreNew -StartWhenAvailable
+    Register-ScheduledTask -TaskName $taskName -Action $taskAction -Trigger @($logon, $watchdog) -Settings $settings `
       -Description 'Local AI usage monitor feeding the ESP32 display (<local-path>)' -Force | Out-Null
     Write-Host "registered logon task '$taskName'"
   }
