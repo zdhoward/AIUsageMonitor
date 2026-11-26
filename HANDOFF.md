@@ -1,4 +1,19 @@
-# Service watchdog and branch consolidation (2026-11-23) - CURRENT
+# Retire Argon across AIUsageMonitor and model-router (2026-11-26) - CURRENT
+
+- Objective: Antigravity no longer has dedicated Argon quota; retire Argon across `AIUsageMonitor`, `model-router`, shared hooks, and `models.md` in favor of Neon and the orchestrator.
+- Plan & review: drafted plan and had Sol 6.2 (`gpt-6.2-sol`, low) review it (4 Important, 1 Nit ? all incorporated before implementation).
+- Done (`AIUsageMonitor` `main` `06354ad`, pushed; service-only, no firmware flash):
+  - Removed the `argon` window, tile pool, and cooldown mapping from `service/aimon/profiles/antigravity.json` (Antigrav tile now shows `Neon` and `Claude`; `drawProxyMulti` sizes 2 pools dynamically; `cpa_reset_priority.py` ranks by `3p`).
+  - Stopped emitting `antigravity_argon` in `service/aimon/sources/antigravity.py` and `service/aimon/snapshot.py` while keeping the `ARGON_MODEL` filter inside `_gemini_windows` so legacy responses cannot skew Gemini quota.
+  - Updated `service/tests/test_service.py` and `docs/DATA_SOURCES.md`.
+- Done outside this repo (all committed and pushed):
+  - `model-router` (`7551d8e`): removed Argon from `scout`/`tiny` (`Haiku 5.5 -> Terra 6.1 -> Sonnet 5.5`), held Argon across all tasks in `task-trust.json`, removed `agy-argon` from `pool-status.json`, added `scout`/`tiny` rejection tests, updated `SKILL.md`, `probation.md`, `TRUST-ROUTING.md`.
+  - `~/.agents` (`296a79e`): `pool-status-update.py` returns `None` for retired `gemini-4-argon*` before provider fallback; `delegate-nudge.py` replaced `"argon"` with `"neon"` in `ORCH_KEYS`; updated `test_pool_status_update.py`.
+  - `Global-Project-Management` (`0ccd411`): removed Argon from `system/instructions-v2/shared/models.md` and logged the 2026-11-26 retirement.
+- Validation: `AIUsageMonitor` service restarted and both live display pages verified (`build/check-proxy.png` shows 2-ring Antigrav tile `Neon`/`Claude`; `build/check-console.png` shows `Antigrav` present and `Argon` absent). `model-router` 90/90 tests OK, `~/.agents/tools/tests` 57/57 OK, `doctor.py` 16/17 OK (1 pre-existing stale passed-reset check in `pool-status.json`). No open PRs; no release/tag (service-only change).
+- Remaining: none from this session. Older open items (O4, O9, B1, B2, B6) stay in `tasks/todo.md`.
+
+# Service watchdog and branch consolidation (2026-11-23)
 
 - Objective: find why the monitor stopped updating, fix it, prevent a repeat.
 - Cause: on 2026-11-22 at 18:58 an UnderAssault subagent ran

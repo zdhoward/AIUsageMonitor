@@ -478,3 +478,8 @@
 - CPAMC (CLIProxyAPI) now binds to the owner's Tailscale address instead of loopback. The proxy source takes its base URL from `CPAMC_URL` (environment or the gitignored `service/.cpamc.env`), defaulting to `http://127.0.0.1:8317`, so no private address is tracked.
 - The management key had been rotated that day; the stored key returned 401 until replaced. Traffic is plain HTTP inside the WireGuard tunnel; the proxy must stay bound to the Tailscale interface, not a public one.
 - Verified by a live management call (12 accounts) and 5 s polling in `logs/aimon.log` after a service restart. Tests deferred; firmware untouched.
+
+## 2026-11-26 ? Retire Argon pool and card
+- Antigravity no longer provides dedicated Argon quota; retired Argon across `AIUsageMonitor` (`06354ad`, service-only, no firmware flash), `model-router` (`7551d8e`), `~/.agents` hooks (`296a79e`), and `models.md` (`0ccd411`).
+- Proxy Antigrav tile now renders two pools (`Neon` and `Claude`); direct Antigravity source emits only `Antigrav` while still excluding legacy `gemini-4-argon` entries from `_gemini_windows`.
+- Verified live on device via `build/check-proxy.png` and `build/check-console.png` after restarting `aimon`; `model-router` (90/90) and `~/.agents/tools` (57/57) test suites pass.
