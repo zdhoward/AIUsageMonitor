@@ -83,7 +83,7 @@ def select_accounts(accounts: list[Account]) -> list[Account]:
 
     Order is otherwise untouched, so generic grids still show service order.
     Only when the model cap is exceeded are the requested providers (two
-    Claude accounts, Codex, then Antigrav/Argon) ranked ahead of extras.
+    Claude accounts, Codex, then Antigrav) ranked ahead of extras.
     """
     seen: dict[str, int] = {}
     unique: list[Account] = []
@@ -99,7 +99,7 @@ def select_accounts(accounts: list[Account]) -> list[Account]:
 
     # Only the first two Claude instances and the first Codex instance keep a
     # privileged rank. Duplicate Codex caches (or extra Claude logins) cannot
-    # jump ahead of Antigrav/Argon and displace a requested provider.
+    # jump ahead of Antigrav and displace a requested provider.
     def priority(a: Account) -> int:
         if a.driver == "claudeAgent":
             return 0 if claude_seen[0] < 2 else 5
@@ -107,8 +107,6 @@ def select_accounts(accounts: list[Account]) -> list[Account]:
             return 1 if codex_seen[0] < 1 else 5
         if a.name == antigravity.ANTIGRAV_NAME:
             return 2
-        if a.name == antigravity.ARGON_NAME:
-            return 3
         return 5
 
     claude_seen, codex_seen = [0], [0]

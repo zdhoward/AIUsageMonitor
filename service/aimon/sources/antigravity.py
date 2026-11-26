@@ -34,12 +34,9 @@ USER_AGENT = "antigravity/hub/1.0.0 (aidev_client; os_type=windows; arch=amd64; 
 MAX_BODY = 512 * 1024
 
 ANTIGRAV_NAME = "Antigrav"
-ARGON_NAME = "Argon"
 ARGON_MODEL = "gemini-4-argon"
 ANTIGRAV_COLOR = "4285f4"
-ARGON_COLOR = "9b72cb"
 ANTIGRAV_UNAVAILABLE = "quota unavailable"
-ARGON_UNAVAILABLE = "no independent quota"  # 20 chars: fits the device field
 
 
 class QuotaError(Exception):
@@ -285,8 +282,10 @@ def _bucket_window(buckets: list[dict], bucket_id: str, window_id: str, kind: st
 
 
 def apply_summary(accounts: list[Account], buckets: list[dict], now: float) -> list[Account]:
-    """Overlay summary buckets (Gemini 5h/7d, Argon 7d) on the model-derived accounts."""
-    antigrav, argon = accounts
+    """Overlay summary buckets (Gemini 5h/7d) on the model-derived Antigrav account."""
+    if not accounts:
+        return accounts
+    antigrav = accounts[0]
     five = _bucket_window(buckets, "gemini-5h", "antigravity-5h", "session", "5h", 300)
     week = _bucket_window(buckets, "gemini-weekly", "antigravity-7d", "weekly", "7d", 10080)
     keep = [w for w in antigrav.windows if not (
@@ -294,10 +293,6 @@ def apply_summary(accounts: list[Account], buckets: list[dict], now: float) -> l
     antigrav.windows = sorted(keep + [w for w in (five, week) if w], key=lambda w: w.kind != "session")
     if antigrav.windows:
         antigrav.checked_at, antigrav.unavailable = now, None
-    wk = _bucket_window(buckets, "gemini-argon-wtu-weekly", f"{ARGON_MODEL}-weekly", "weekly", "7d", 10080)
-    if wk:
-        argon.windows = [w for w in argon.windows if w.kind != "weekly"] + [wk]
-        argon.checked_at, argon.unavailable = now, None
     return accounts
 
 
@@ -368,23 +363,8 @@ def _gemini_windows(models: dict) -> list[Window]:
     return windows
 
 
-def _argon_windows(models: dict) -> list[Window]:
-    """Only the distinct gemini-4-argon model; family or 3p numbers never stand in."""
-    model = models.get(ARGON_MODEL)
-    if not isinstance(model, dict):
-        return []
-    windows: list[Window] = []
-    primary = _quota_window(f"{ARGON_MODEL}-quota", "session", "5h", model.get("quotaInfo"), 300)
-    if primary:
-        windows.append(primary)
-    weekly = _quota_window(f"{ARGON_MODEL}-weekly", "weekly", "7d", model.get("weeklyQuotaInfo"), 10080)
-    if weekly:
-        windows.append(weekly)
-    return windows
-
-
 def accounts_from_models(models, now: float) -> list[Account]:
-    """Build the stable Antigrav and Argon accounts from one model map."""
+    """Build the stable Antigrav account from one model map."""
     clean = _clean_models(models)
     antigrav = Account(
         instance_id="antigravity_direct",
@@ -394,34 +374,19 @@ def accounts_from_models(models, now: float) -> list[Account]:
         color=ANTIGRAV_COLOR,
         source="antigravity_direct",
     )
-    argon = Account(
-        instance_id="antigravity_argon",
-        name=ARGON_NAME,
-        driver="antigravity",
-        plan=None,
-        color=ARGON_COLOR,
-        source="antigravity_direct",
-    )
     antigrav.windows = _gemini_windows(clean)
     if antigrav.windows:
         antigrav.checked_at = now
     else:
         antigrav.unavailable = "no Gemini quota"
-    argon.windows = _argon_windows(clean)
-    if argon.windows:
-        argon.checked_at = now
-    else:
-        argon.unavailable = ARGON_UNAVAILABLE
-    return [antigrav, argon]
+    return [antigrav]
 
 
 def placeholder_accounts(reason: str) -> list[Account]:
-    """Stable cells even before the first successful probe."""
+    """Stable cell even before the first successful probe."""
     return [
         Account("antigravity_direct", ANTIGRAV_NAME, "antigravity", None, ANTIGRAV_COLOR,
                 unavailable=reason, source="antigravity_direct"),
-        Account("antigravity_argon", ARGON_NAME, "antigravity", None, ARGON_COLOR,
-                unavailable=ARGON_UNAVAILABLE, source="antigravity_direct"),
     ]
 
 

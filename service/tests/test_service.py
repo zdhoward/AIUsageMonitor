@@ -122,7 +122,9 @@ class AntigravityTests(unittest.TestCase):
         for bad in (None, True, "0.5", float("nan")):
             self.assertIsNone(antigravity.fraction_to_used(bad))
 
-        antigrav, argon = antigravity.accounts_from_models(self.models(), NOW)
+        accounts = antigravity.accounts_from_models(self.models(), NOW)
+        self.assertEqual(len(accounts), 1)
+        antigrav = accounts[0]
         self.assertEqual(antigrav.name, "Antigrav")
         self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
                          [("5h", 25.0), ("7d", 50.0)])
@@ -136,33 +138,24 @@ class AntigravityTests(unittest.TestCase):
             "modelProvider": "MODEL_PROVIDER_GOOGLE",
             "quotaInfo": {"remainingFraction": 0.0, "resetTime": iso(NOW + 3600)},
         }
-        antigrav, argon = antigravity.accounts_from_models(models, NOW)
-        self.assertEqual(antigrav.windows[0].used_percent, 25.0)
-        self.assertEqual(argon.windows[0].used_percent, 100.0)
-
-    def test_missing_argon_is_distinct_and_unknown(self):
-        antigrav, argon = antigravity.accounts_from_models(self.models(), NOW)
-        self.assertEqual(argon.name, "Argon")
-        self.assertEqual(argon.windows, [])
-        self.assertIsNone(argon.checked_at)
-        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
-        self.assertGreaterEqual(len(antigrav.windows), 1)
+        accounts = antigravity.accounts_from_models(models, NOW)
+        self.assertEqual([a.name for a in accounts], ["Antigrav"])
+        self.assertEqual(accounts[0].windows[0].used_percent, 25.0)
 
     def test_optional_weekly_is_never_invented(self):
         doc = {"gemini-3-flash": self.models()["gemini-3-flash"]}
-        antigrav, _argon = antigravity.accounts_from_models(doc, NOW)
+        (antigrav,) = antigravity.accounts_from_models(doc, NOW)
         self.assertEqual([w.label for w in antigrav.windows], ["5h"])
         self.assertIsNotNone(antigrav.windows[0].resets_at)
 
     def test_malformed_data_is_bounded_and_unavailable(self):
         with self.assertRaises(antigravity.QuotaError):
             antigravity.accounts_from_models(["not", "a", "map"], NOW)
-        antigrav, argon = antigravity.accounts_from_models(
+        (antigrav,) = antigravity.accounts_from_models(
             {"gemini-3-flash": "junk", "gemini-2.5-pro": {"quotaInfo": {"remainingFraction": "x"}}}, NOW
         )
         self.assertEqual(antigrav.windows, [])
         self.assertEqual(antigrav.unavailable, "no Gemini quota")
-        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
 
     def buckets(self):
         return [
@@ -173,23 +166,22 @@ class AntigravityTests(unittest.TestCase):
             {"bucketId": "gemini-argon-wtu-weekly", "remainingFraction": 0.5, "resetTime": iso(NOW + 94 * 3600)},
         ]
 
-    def test_summary_supplies_gemini_weekly_and_argon(self):
+    def test_summary_supplies_gemini_weekly_and_ignores_argon(self):
         accounts = antigravity.accounts_from_models(self.models(), NOW)
-        antigrav, argon = antigravity.apply_summary(accounts, self.buckets(), NOW)
+        updated = antigravity.apply_summary(accounts, self.buckets(), NOW)
+        self.assertEqual([a.name for a in updated], ["Antigrav"])
+        antigrav = updated[0]
         self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
                          [("5h", 100.0), ("7d", 82.2)])
         self.assertAlmostEqual(antigrav.windows[1].resets_at - NOW, 97 * 3600, delta=1)
-        self.assertEqual([(w.label, w.used_percent) for w in argon.windows], [("7d", 50.0)])
-        self.assertIsNone(argon.unavailable)
-        # The Claude/GPT 3p buckets never leak into Gemini or Argon.
+        # The Claude/GPT 3p and legacy Argon buckets never leak into Gemini.
         self.assertEqual(len(antigrav.windows), 2)
 
     def test_summary_without_matching_buckets_keeps_model_data(self):
         accounts = antigravity.accounts_from_models(self.models(), NOW)
-        antigrav, argon = antigravity.apply_summary(accounts, [{"bucketId": "3p-weekly", "remainingFraction": 0}], NOW)
+        (antigrav,) = antigravity.apply_summary(accounts, [{"bucketId": "3p-weekly", "remainingFraction": 0}], NOW)
         self.assertEqual([(w.label, round(w.used_percent, 1)) for w in antigrav.windows],
                          [("5h", 25.0), ("7d", 50.0)])
-        self.assertEqual(argon.unavailable, antigravity.ARGON_UNAVAILABLE)
 
     def test_summary_failure_falls_back_to_models(self):
         with tempfile.TemporaryDirectory() as d:
@@ -237,12 +229,12 @@ class AccountSelectionTests(unittest.TestCase):
             acct("codex", "Codex", "codex"),
             acct("codex_dup", "Codex 2", "codex"),
             acct("antigravity_direct", "Antigrav", "antigravity"),
-            acct("antigravity_argon", "Argon", "antigravity"),
+            acct("openrouter", "OpenRouter", "openrouter"),
             acct("cursor", "Cursor", "cursor"),
         ]
         kept = [a.name for a in select_accounts(accounts)]
         self.assertLessEqual(len(kept), 6)
-        self.assertEqual(set(kept), {"A", "B", "Codex", "Codex 2", "Antigrav", "Argon"})
+        self.assertEqual(set(kept), {"A", "B", "Codex", "Codex 2", "Antigrav", "OpenRouter"})
 
 
 class TranscriptTests(unittest.TestCase):
@@ -664,19 +656,26 @@ class ProxyExhaustionTests(unittest.TestCase):
 
 class ProxyCooldownTests(unittest.TestCase):
     def test_quota_cooldown_zeroes_mapped_pool_despite_full_quota(self):
-        wins = [{"pool": "argon", "label": "7d", "rem": 100.0, "reset": NOW + 9, "len": 604800},
-                {"pool": "flash", "label": "5h", "rem": 100.0, "reset": NOW + 9, "len": 18000}]
-        cd = [{"reason": "quota", "model_key": "gemini-4-argon-high",
+        wins = [{"pool": "flash", "label": "7d", "rem": 100.0, "reset": NOW + 9, "len": 604800},
+                {"pool": "3p", "label": "7d", "rem": 100.0, "reset": NOW + 9, "len": 604800}]
+        cd = [{"reason": "quota", "model_key": "gemini-4-neon-xhigh",
                "retry_at": "2099-01-01T00:00:00.123456789Z"}]
-        out = cpamc.apply_cooldowns(wins, cd, {"argon": "argon"}, NOW)
+        out = cpamc.apply_cooldowns(wins, cd, {"gemini-4-neon": "flash"}, NOW)
         self.assertEqual([w["rem"] for w in out], [0.0, 100.0])
         self.assertGreater(out[0]["reset"], NOW)
 
+    def test_unmapped_argon_cooldown_does_not_zero_neon_pool(self):
+        wins = [{"pool": "flash", "label": "7d", "rem": 100.0, "reset": NOW + 9, "len": 604800}]
+        cd = [{"reason": "quota", "model_key": "gemini-4-argon-high",
+               "retry_at": "2099-01-01T00:00:00.123456789Z"}]
+        out = cpamc.apply_cooldowns(wins, cd, {"gemini-4-neon": "flash"}, NOW)
+        self.assertEqual(out[0]["rem"], 100.0)
+
     def test_expired_or_non_quota_cooldown_ignored(self):
-        wins = [{"pool": "argon", "label": "7d", "rem": 100.0, "reset": 0, "len": 604800}]
-        cd = [{"reason": "quota", "model_key": "gemini-4-argon-high", "retry_at": "2000-01-01T00:00:00Z"},
-              {"reason": "other", "model_key": "gemini-4-argon-high", "retry_at": "2099-01-01T00:00:00Z"}]
-        self.assertEqual(cpamc.apply_cooldowns(wins, cd, {"argon": "argon"}, NOW)[0]["rem"], 100.0)
+        wins = [{"pool": "flash", "label": "7d", "rem": 100.0, "reset": 0, "len": 604800}]
+        cd = [{"reason": "quota", "model_key": "gemini-4-neon-xhigh", "retry_at": "2000-01-01T00:00:00Z"},
+              {"reason": "other", "model_key": "gemini-4-neon-xhigh", "retry_at": "2099-01-01T00:00:00Z"}]
+        self.assertEqual(cpamc.apply_cooldowns(wins, cd, {"gemini-4-neon": "flash"}, NOW)[0]["rem"], 100.0)
 
 
 class ProxyResetCreditTests(unittest.TestCase):
