@@ -31,8 +31,10 @@ The target follows the existing private service setting. A browser on another
 device must still use callback-URL submission or that device's own tunnel.
 
 Install/start with `scripts/cpamc-callback-bridge.ps1 -Install`; remove with
-`-Remove`. The limited-user task runs headlessly at logon and restarts up to
-three times after a failure. It will not take over an occupied port. Its safe
+`-Remove`. The limited-user task runs headlessly at logon with a 5-minute watchdog trigger
+(`IgnoreNew`), restarts up to three times after a failure, and binds exclusively
+on Windows (`allow_reuse_address = False`) so it will not take over an occupied
+port. Its safe
 diagnostic path is `http://127.0.0.1:8317/_bridge/health`. No broader network
 binding was installed. Deployment health checks do not exercise a real Google,
 Claude or Codex sign-in; the owner still completes any account login.

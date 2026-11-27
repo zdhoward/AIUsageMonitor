@@ -66,3 +66,4 @@
 | service/aimon/server.py, scripts/cpamc_callback_bridge.py | Disable allow_reuse_address on Windows so duplicate instances cannot bind ports 8797/8317 alongside the running one. | 2026-11-27 |
 | tasks/todo.md, HANDOFF.md | Update catchup ledger (A5 done, O9 wording updated for Argon retirement) and session handoff. | 2026-11-27 |
 | tasks/todo.md, GOALS.md, HANDOFF.md | Close O4 and O9 (keep Console Antigrav card as is) per owner decision. | 2026-11-27 |
+| docs/PROJECT_LOG.md, docs/CPAMC_LOGIN.md | Record 2026-11-27 wrapup, watchdog trigger, and Windows exclusive bind behavior. | 2026-11-27 |

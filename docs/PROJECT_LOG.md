@@ -1,5 +1,12 @@
 # Project log
 
+## 2026-11-27: Callback bridge watchdog, Windows single-instance bind, and O4/O9 closure
+
+- Diagnosed Antigravity `x1` drop (CPAMC auto-disabled the second account after upstream `403` during failover) and local Claude OAuth `127.0.0.1:8317` callback failure (the **CPAMC Callback Bridge** task had stayed down since the 2026-11-22 outside kill).
+- Added a 5-minute repeating watchdog trigger (`IgnoreNew`) to `scripts/cpamc-callback-bridge.ps1` and disabled `allow_reuse_address` on Windows in `service/aimon/server.py` and `scripts/cpamc_callback_bridge.py` (`18fbf3c`) so neither service can bind duplicate listeners on ports `8797`/`8317`.
+- Re-installed the callback bridge, restarted `AI Usage Monitor (aimon)` cleanly (removing a duplicate `pythonw -m aimon` process), and verified port exclusivity (`WSAEADDRINUSE 10048`) and live health (`Claude c=4`, `Codex c=2`, `Antigrav c=2`, `COM6` connected).
+- Closed owner items `O4` and `O9` (keep Console Antigrav card as is) in `tasks/todo.md`, `GOALS.md`, and `HANDOFF.md` (`934943d`).
+
 ## 2026-11-26: Filter T3 proxies off Console and restore Antigrav x2
 
 - Re-enabled the second `antigravity` auth file in CPAMC (`Antigrav x2`, `PROXY (8)`).
