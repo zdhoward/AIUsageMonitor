@@ -222,7 +222,9 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 - O6 P-Gemini default model: the 2026-11-10 handoff verified P-Gemini working on `gemini-3.8-flash-high`; that config lives outside this repo.
 
 ## owner
-None.
+| # | Item | Source |
+|---|---|---|
+| O13 | Antigravity account plan after the 2026-11-27 suspension: stay on one signed-in personal account in T3 (currently the second account, quota back ~12-03), or switch T3's Antigravity sign-in to a Gemini API key for overflow. Until decided: no second T3 Antigravity instance, no switching accounts when quota runs out, sign out everywhere before any switch. Also confirm whether the suspended account's appeal succeeded. | Owner-supplied risk notes at wrap-up 2026-11-27 (automated false-positive bans for account switching; T3 not named as an approved client) |
 
 ## Answered 2026-11-27 (see GOALS.md "Owner answers")
 - O4 closed: all four Claude accounts probe cleanly; no parser investigation needed.
