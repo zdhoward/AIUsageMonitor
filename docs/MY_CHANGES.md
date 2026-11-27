@@ -62,3 +62,6 @@
 | tasks/lessons.md | Record how the service was killed by another session and how to trace it. | 2026-11-22 |
 | HANDOFF.md, docs/PROJECT_LOG.md, tasks/todo.md | Record the service-kill cause, watchdog, magi sync and branch merge. | 2026-11-23 |
 | service/aimon/sources/t3_limits.py | Filter T3 proxy (*_BASE_URL) and orphaned/disabled caches off the Console page. | 2026-11-26 |
+| scripts/cpamc-callback-bridge.ps1 | Add 5-minute watchdog trigger (IgnoreNew) so the callback bridge recovers after an outside kill. | 2026-11-27 |
+| service/aimon/server.py, scripts/cpamc_callback_bridge.py | Disable allow_reuse_address on Windows so duplicate instances cannot bind ports 8797/8317 alongside the running one. | 2026-11-27 |
+| tasks/todo.md, HANDOFF.md | Update catchup ledger (A5 done, O9 wording updated for Argon retirement) and session handoff. | 2026-11-27 |

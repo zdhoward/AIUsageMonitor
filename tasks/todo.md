@@ -215,6 +215,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 | A2 | Confirm GPM's CPAMC priority changes | HANDOFF 2026-11-10/11-12 | Done (read-only). Every active account has a priority: Antigravity 20/10, Claude 40/30/20/10, Codex 20/10, xAI 10. |
 | A3 | Unit test for `cpamc.load_base` (env > `.cpamc.env` > default) | HANDOFF 2026-11-12 | Done: `ProxyAddressTests` in `service/tests/test_service.py`. Compiles; not run (deferred). |
 | A4 | `add-card.md` small-model gap test (was B5) | HANDOFF 2026-11-06 | Done. Haiku followed steps 1-4 in an isolated worktree; build ok (34% flash), not flashed. Gaps fixed in `add-card.md` (prerequisites line, ~20-line model card, full two-row sample, `build ok` is not the last line, missing-profile hint) and `customise-safely.md` step 3 (exit 0 check, art warnings expected, unchanged copy valid). Test worktree removed. |
+| A5 | Add 5-minute watchdog trigger to `scripts/cpamc-callback-bridge.ps1` and disable `allow_reuse_address` on Windows in `service/aimon/server.py` and `scripts/cpamc_callback_bridge.py` | Catchup 2026-11-27 (live duplicate `aimon` + dead bridge) | Done. Re-installed callback bridge with 2 triggers (`AtLogOn` + 5m watchdog); restarted `aimon` via scheduled task; verified both ports (`8797`, `8317`) reject duplicate binds (`WSAEADDRINUSE 10048`) and report live health (`Claude c=4`, `Codex c=2`, `Antigrav c=2`, `COM6` connected). |
 
 ## Dropped (stale notes, checked)
 - HEALTH hook still probing `127.0.0.1:8317`: already fixed. `~/.agents/model-router/scripts/doctor.py` probes the Tailscale address (Home Repo catchup 2026-11-12).
@@ -224,7 +225,7 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 | # | Item | Needed |
 |---|---|---|
 | O4 | One Claude account (the third in display order) reads 7d 0% and 5h 0% from Anthropic's headers; the owner says all accounts look fine but can't tell which is which | owner: check that account in `/usage`; if it has quota left, report it and the parser gets investigated |
-| O9 | Console Antigrav/Argon cards read T3's stored Google login (a different account), so they stay 5h-only; the Proxy home page already shows the right numbers from CPAMC | owner: keep Console as is (default), or ask to switch its source to CPAMC |
+| O9 | Console Antigrav card reads T3's stored Google login (a different account), so it stays 5h-only; the Proxy home page already shows the right numbers from CPAMC (Argon retired 2026-11-26) | owner: keep Console as is (default), or ask to switch its source to CPAMC |
 
 ## Answered 2026-11-13 (see GOALS.md "Owner answers")
 - O1 keep the account count; O2 no next provider (T-033 closed).

@@ -1,4 +1,14 @@
-# Filter T3 proxies off Console & restore Antigrav x2 (2026-11-26) - CURRENT
+# Catchup: callback bridge watchdog & Windows single-instance bind (2026-11-27) - CURRENT
+
+- Objective: complete `/catchup` inventory and resolve automatable gaps without touching owner-only or blocked items.
+- Done (service/script-only, no firmware flash):
+  - Added a 5-minute repeating watchdog trigger (`IgnoreNew`, matching `scripts/service.ps1`) to `scripts/cpamc-callback-bridge.ps1` and re-installed the **CPAMC Callback Bridge** scheduled task (which had stayed down since the 2026-11-22 outside kill, breaking local `127.0.0.1:8317` Claude OAuth callbacks).
+  - Disabled `allow_reuse_address` on Windows (`sys.platform != "win32"`, matching `studio/server.py`) in `service/aimon/server.py` (`_AimonHTTPServer`) and `scripts/cpamc_callback_bridge.py` (`_BridgeHTTPServer`) so watchdog/manual launches cannot bind duplicate listeners on ports `8797` or `8317`.
+  - Restarted `AI Usage Monitor (aimon)` cleanly via its scheduled task (clearing the duplicate `pythonw -m aimon` process) and cleaned up stale `Argon` wording in `O9` in `tasks/todo.md`; logged changes in `docs/MY_CHANGES.md`.
+- Validation: verified both `127.0.0.1:8797` and `127.0.0.1:8317` reject duplicate binds (`WSAEADDRINUSE 10048`), single listener per port, `/_bridge/health` OK, `/healthz` OK with `COM6` connected and `Claude c=4`, `Codex c=2`, `Antigrav c=2`, `attn=0`. Test suites deferred per repo/testing rules (`ProxyAddressTests`, `ProxyCooldownTests`, `ProxyResetCreditTests` remain unrun).
+- Remaining: owner-only items (`O4`, `O9`) and blocked items (`B1`, `B2`, `B6`) in `tasks/todo.md`. No open auto items, no open GitHub issues, no extra worktrees/branches.
+
+# Filter T3 proxies off Console & restore Antigrav x2 (2026-11-26)
 
 - Objective: restore the second Antigravity account on the Proxy page and stop T3 proxy/orphaned caches (`P-Claude`, `P-Codex`, `P-Gemini`, `ChatGPT - Cx A`) from appearing as dashed `--` tiles on the Console page.
 - Done (`main` `f16e5bb`, pushed; service-only, no firmware flash):
