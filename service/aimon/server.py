@@ -57,7 +57,7 @@ class App:
         self._stop = threading.Event()
         self.serial: SerialLink | None = None
         self.brightness = BrightnessController(settings)
-        self.cpamc = CpamcSource()
+        self.cpamc = CpamcSource(t3_home=settings.t3_home)
         threading.Thread(target=self.cpamc.run, name="cpamc", daemon=True).start()
         if settings.serial_enabled:
             self.serial = SerialLink(settings.serial_port, settings.serial_baud, settings.push_interval_s,

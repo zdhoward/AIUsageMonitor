@@ -67,3 +67,4 @@
 | tasks/todo.md, HANDOFF.md | Update catchup ledger (A5 done, O9 wording updated for Argon retirement) and session handoff. | 2026-11-27 |
 | tasks/todo.md, GOALS.md, HANDOFF.md | Close O4 and O9 (keep Console Antigrav card as is) per owner decision. | 2026-11-27 |
 | docs/PROJECT_LOG.md, docs/CPAMC_LOGIN.md | Record 2026-11-27 wrapup, watchdog trigger, and Windows exclusive bind behavior. | 2026-11-27 |
+| service/aimon/sources/cpamc.py, service/aimon/server.py, service/aimon/profiles/antigravity.json, service/aimon/profiles/README.md, docs/DATA_SOURCES.md | Read the Antigrav Proxy group directly with T3's Antigravity login (`"direct": "t3"`) instead of CPAMC api-call; CPAMC Antigravity auth files ignored and disabled after Google suspended a proxied account. | 2026-11-27 |

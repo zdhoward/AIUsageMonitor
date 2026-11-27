@@ -2,7 +2,9 @@
 
 - Finding: the second CPAMC `antigravity` auth file gets `403 PERMISSION_DENIED` / `TOS_VIOLATION` from Google on every request (first logged 2026-11-26 11:52). Its quota endpoint still reads 100%, so the display looked healthy. The 2026-11-26 re-enable below only masked this.
 - Done: disabled that auth file in CPAMC (`PATCH /v0/management/auth-files/status`, `disabled: true`). `cpa_reset_priority.py` skips disabled files, so it stays off. Display now shows Antigrav x1.
-- Do not re-enable it unless the owner says Google's appeal succeeded. The appeal is the owner's account action.
+- Do not re-enable it unless the owner says Google's appeal succeeded. The appeal is the owner's account action (submitted 2026-11-27).
+- Then (owner): Antigravity never goes through CPAMC. Disabled the first Antigravity auth file in CPAMC too. The Antigrav Proxy group now reads T3's stored Antigravity login directly (`"direct": "t3"` in `profiles/antigravity.json`, `CpamcSource._direct_accounts`/`_api_call`). Service restarted; capture `build/check-antigrav-direct.png` shows `Antigrav x1` (Neon 7d 0%, resets ~12-03; Claude pool 7d 50%). Tests not run (repo rule).
+- Outside this repo: T3 P-Gemini (`codex_proxy_gemini`) disabled on this PC and magi; Neon lanes route to `antigravity/gemini-4-neon` (model-router `0c6888e`, rules `ae0080a`, fleet `51e30cf`). T3 direct Antigravity still reports "not authenticated" for tasks: the owner must run `agy acp --login` with `GEMINI_HOME` set to T3's provider folder and `AGY_ACP_FORCE_FILE_STORAGE=1` (a plain `agy acp --login` writes to `~/.gemini/antigravity-cli` instead; the standalone agy is now signed in as the suspended account). Each Antigravity account needs its own T3 provider instance and home; add a second only if the appeal succeeds.
 
 # Catchup: callback bridge watchdog & Windows single-instance bind (2026-11-27)
 

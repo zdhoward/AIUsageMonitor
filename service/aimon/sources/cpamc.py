@@ -17,11 +17,13 @@ import json
 import os
 import threading
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 
 from .. import log
+from . import antigravity
 from .claude_resets import parse_inventory
 
 BASE = "http://127.0.0.1:8317"
@@ -305,10 +307,13 @@ def pool_groups(accounts: list[dict], live: dict, profiles: dict, now: float) ->
 class CpamcSource:
     """Background poller. `line()` returns the latest `proxy` serial message."""
 
-    def __init__(self, base: str | None = None):
+    def __init__(self, base: str | None = None, t3_home: Path | None = None):
         self.base = base or load_base()
         self.key = load_key()
         self.profiles = load_profiles()
+        self.t3_home = t3_home or Path.home() / ".t3"
+        self._direct_tokens: dict = {}  # synthetic auth_index -> T3 Token (or None when signed out)
+        self._direct_access: dict = {}  # synthetic auth_index -> (access token, expiry epoch s)
         self._accounts: list[dict] = []
         self._live: dict = {}
         self._live_at: dict = {}
@@ -324,6 +329,46 @@ class CpamcSource:
                                      headers={"Authorization": "Bearer " + self.key, "Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.load(r)
+
+    def _direct_accounts(self) -> list[dict]:
+        """One account per profile marked `"direct": "t3"`, read with T3's own login.
+
+        These providers never go through CPAMC (owner 2026-11-27: Google suspended
+        a proxied Antigravity account). Their CPAMC auth files are ignored."""
+        out = []
+        for prov, prof in self.profiles.items():
+            if prof.get("direct") != "t3":
+                continue
+            choice = antigravity.discover_token(self.t3_home)
+            idx = "t3:" + (choice.profile or "signed-out")
+            if choice.token is None:
+                log.warn("cpamc.direct_no_login", provider=prov, reason=choice.reason)
+            self._direct_tokens[idx] = choice.token
+            out.append({"provider": prov, "auth_index": idx, "status": "active", "cooldowns": [],
+                        "project_id": choice.token.project_id if choice.token else None})
+        return out
+
+    def _api_call(self, acc: dict, payload: dict) -> dict:
+        """CPAMC `api-call` for proxied accounts; a direct HTTPS call for T3-login accounts."""
+        idx = str(acc.get("auth_index") or "")
+        if not idx.startswith("t3:"):
+            return self._call("POST", "/v0/management/api-call", payload)
+        token = self._direct_tokens.get(idx)
+        if token is None:
+            return {"status_code": 401}  # signed out: the owner must sign in to T3's Antigravity
+        access, expires = self._direct_access.get(idx, (None, 0.0))
+        if not access or time.time() > expires - 60:
+            access, expires = antigravity.refresh_access_token(token, 10)
+            self._direct_access[idx] = (access, expires)
+        headers = {k: str(v).replace("$TOKEN$", access) for k, v in payload["header"].items()}
+        data = payload.get("data")
+        req = urllib.request.Request(payload["url"], data=data.encode() if data else None,
+                                     method=payload["method"], headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return {"status_code": r.status, "body": r.read(1_000_000).decode("utf-8", "replace")}
+        except urllib.error.HTTPError as e:
+            return {"status_code": e.code}
 
     def _credit_expiry(self, acc: dict, req: dict, url: str) -> int | None:
         """Soonest expiry (epoch s) of this account's available banked resets; None on failure.
@@ -354,7 +399,7 @@ class CpamcSource:
             if data:
                 payload["data"] = data
             try:
-                out = self._call("POST", "/v0/management/api-call", payload)
+                out = self._api_call(acc, payload)
             except Exception as e:
                 log.warn("cpamc.live_error", provider=acc.get("provider"), err=type(e).__name__)
                 continue
@@ -398,6 +443,13 @@ class CpamcSource:
             with self._lock:
                 self._up = False
             return
+        direct = {p for p, prof in self.profiles.items() if prof.get("direct") == "t3"}
+        if direct:
+            accounts = [a for a in accounts if a.get("provider") not in direct]
+            try:
+                accounts += self._direct_accounts()
+            except Exception as e:  # a broken T3 login read must not blank the other groups
+                log.warn("cpamc.direct_error", err=type(e).__name__)
         indices = {a.get("auth_index") for a in accounts if a.get("auth_index") and not a.get("disabled")}
         live = {idx: value for idx, value in self._live.items() if idx in indices}
         self._live_at = {idx: value for idx, value in self._live_at.items() if idx in indices}

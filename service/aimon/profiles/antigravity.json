@@ -1,5 +1,6 @@
 {
   "provider": "antigravity",
+  "direct": "t3",
   "request": {"method": "POST", "url": "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary",
               "header": {"Authorization": "Bearer $TOKEN$", "Content-Type": "application/json", "User-Agent": "antigravity/hub/2.34.0 windows/amd64"},
               "data": "{\"project\": \"{project_id}\"}"},
