@@ -222,10 +222,11 @@ Sources: HANDOFF.md, tasks/lessons.md, .tickets/*, `gh issue list` (none open), 
 - O6 P-Gemini default model: the 2026-11-10 handoff verified P-Gemini working on `gemini-3.8-flash-high`; that config lives outside this repo.
 
 ## owner
-| # | Item | Needed |
-|---|---|---|
-| O4 | One Claude account (the third in display order) reads 7d 0% and 5h 0% from Anthropic's headers; the owner says all accounts look fine but can't tell which is which | owner: check that account in `/usage`; if it has quota left, report it and the parser gets investigated |
-| O9 | Console Antigrav card reads T3's stored Google login (a different account), so it stays 5h-only; the Proxy home page already shows the right numbers from CPAMC (Argon retired 2026-11-26) | owner: keep Console as is (default), or ask to switch its source to CPAMC |
+None.
+
+## Answered 2026-11-27 (see GOALS.md "Owner answers")
+- O4 closed: all four Claude accounts probe cleanly; no parser investigation needed.
+- O9 closed: keep Console Antigrav card as is (T3's stored Google login, 5h-only); Proxy home page already shows CPAMC numbers.
 
 ## Answered 2026-11-13 (see GOALS.md "Owner answers")
 - O1 keep the account count; O2 no next provider (T-033 closed).

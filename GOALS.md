@@ -1,5 +1,10 @@
 # Accepted display decisions
 
+## Owner answers (2026-11-27)
+
+- Console Antigrav card stays as is (T3's stored Google login, 5h-only); Proxy home page remains the CPAMC source (O9 closed).
+- O4 closed (all four Claude accounts probe cleanly).
+
 ## Owner answers (2026-11-13)
 
 - Versioning: patch fixes are pushed to `main` whenever they are ready, with no tag or GitHub release. Minor versions get a tag and a release.

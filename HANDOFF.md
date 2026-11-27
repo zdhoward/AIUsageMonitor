@@ -6,7 +6,7 @@
   - Disabled `allow_reuse_address` on Windows (`sys.platform != "win32"`, matching `studio/server.py`) in `service/aimon/server.py` (`_AimonHTTPServer`) and `scripts/cpamc_callback_bridge.py` (`_BridgeHTTPServer`) so watchdog/manual launches cannot bind duplicate listeners on ports `8797` or `8317`.
   - Restarted `AI Usage Monitor (aimon)` cleanly via its scheduled task (clearing the duplicate `pythonw -m aimon` process) and cleaned up stale `Argon` wording in `O9` in `tasks/todo.md`; logged changes in `docs/MY_CHANGES.md`.
 - Validation: verified both `127.0.0.1:8797` and `127.0.0.1:8317` reject duplicate binds (`WSAEADDRINUSE 10048`), single listener per port, `/_bridge/health` OK, `/healthz` OK with `COM6` connected and `Claude c=4`, `Codex c=2`, `Antigrav c=2`, `attn=0`. Test suites deferred per repo/testing rules (`ProxyAddressTests`, `ProxyCooldownTests`, `ProxyResetCreditTests` remain unrun).
-- Remaining: owner-only items (`O4`, `O9`) and blocked items (`B1`, `B2`, `B6`) in `tasks/todo.md`. No open auto items, no open GitHub issues, no extra worktrees/branches.
+- Remaining: no open auto or owner items (`O4` and `O9` closed 2026-11-27; Console Antigrav stays as is). Only blocked items (`B1`, `B2`, `B6`) remain in `tasks/todo.md`. No open GitHub issues, no extra worktrees/branches.
 
 # Filter T3 proxies off Console & restore Antigrav x2 (2026-11-26)
 
