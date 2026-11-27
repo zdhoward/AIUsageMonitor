@@ -1,4 +1,15 @@
-# Retire Argon across AIUsageMonitor and model-router (2026-11-26) - CURRENT
+# Filter T3 proxies off Console & restore Antigrav x2 (2026-11-26) - CURRENT
+
+- Objective: restore the second Antigravity account on the Proxy page and stop T3 proxy/orphaned caches (`P-Claude`, `P-Codex`, `P-Gemini`, `ChatGPT - Cx A`) from appearing as dashed `--` tiles on the Console page.
+- Done (`main` `f16e5bb`, pushed; service-only, no firmware flash):
+  - Re-enabled the disabled second `antigravity` auth file in CPAMC (`PATCH /v0/management/auth-files/status`), restoring `Antigrav x2` (`PROXY (8)`).
+  - Updated `service/aimon/sources/t3_limits.py` to read `providerInstances` from `~/.t3/userdata/settings.json` and skip proxy instances (`*_BASE_URL` env overrides), disabled instances, and orphaned cache files not present in `settings.json`; logged in `docs/MY_CHANGES.md`.
+  - Restarted `aimon` (clearing a duplicate `pythonw -m aimon` process) and rebooted the ESP32 over serial to clear cached stale proxy tiles from RAM.
+  - Diagnosed `Claude STALE` / warning triangle to the owner's cancelled 4th Claude account (`unauthorized (refresh token invalid)` + `429` on `/api/oauth/usage`); confirmed `cpamc.py` hides disabled accounts automatically within ~5 s.
+- Validation: live `/v1/device` and `/v1/status` plus captured display frames (`build/verify-proxy.png` shows `PROXY (8)` / `Antigrav x2`; `build/verify-console.png` shows `AI USAGE (2)` with only `Claude` and `Antigrav`). No open PRs; no release/tag (service-only fix).
+- Remaining: none from this session. Older open items (O4, O9, B1, B2, B6) stay in `tasks/todo.md`.
+
+# Retire Argon across AIUsageMonitor and model-router (2026-11-26)
 
 - Objective: Antigravity no longer has dedicated Argon quota; retire Argon across `AIUsageMonitor`, `model-router`, shared hooks, and `models.md` in favor of Neon and the orchestrator.
 - Plan & review: drafted plan and had Sol 6.2 (`gpt-6.2-sol`, low) review it (4 Important, 1 Nit ? all incorporated before implementation).

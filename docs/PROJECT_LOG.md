@@ -1,5 +1,11 @@
 # Project log
 
+## 2026-11-26: Filter T3 proxies off Console and restore Antigrav x2
+
+- Re-enabled the second `antigravity` auth file in CPAMC (`Antigrav x2`, `PROXY (8)`).
+- Filtered T3 proxy instances (`*_BASE_URL` env overrides) and orphaned/disabled cache files out of `service/aimon/sources/t3_limits.py` (`f16e5bb`) so Console shows only direct accounts (`Claude`, `Antigrav`).
+- Restarted `aimon` (also removing a duplicate background instance), rebooted the ESP32 to clear RAM-retained stale tiles, and verified both live pages via screenshots.
+
 ## 2026-11-23: Service kill traced, watchdog added
 
 - The service stopped at 18:58 on 11-22 with no error: another project's subagent
