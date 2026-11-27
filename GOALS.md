@@ -3,6 +3,7 @@
 ## Owner answers (2026-11-27)
 
 - Console Antigrav card stays as is (T3's stored Google login, 5h-only); Proxy home page remains the CPAMC source (O9 closed).
+- Antigravity: one personal account in T3 only, read directly (not through CPAMC); no API key for now; the suspended account's appeal is pending (O13 closed).
 - O4 closed (all four Claude accounts probe cleanly).
 
 ## Owner answers (2026-11-13)
