@@ -1,4 +1,10 @@
-# Catchup: callback bridge watchdog & Windows single-instance bind (2026-11-27) - CURRENT
+# Second Antigravity account suspended by Google (2026-11-27) - CURRENT
+
+- Finding: the second CPAMC `antigravity` auth file gets `403 PERMISSION_DENIED` / `TOS_VIOLATION` from Google on every request (first logged 2026-11-26 11:52). Its quota endpoint still reads 100%, so the display looked healthy. The 2026-11-26 re-enable below only masked this.
+- Done: disabled that auth file in CPAMC (`PATCH /v0/management/auth-files/status`, `disabled: true`). `cpa_reset_priority.py` skips disabled files, so it stays off. Display now shows Antigrav x1.
+- Do not re-enable it unless the owner says Google's appeal succeeded. The appeal is the owner's account action.
+
+# Catchup: callback bridge watchdog & Windows single-instance bind (2026-11-27)
 
 - Objective: complete `/catchup` inventory and resolve automatable gaps without touching owner-only or blocked items.
 - Done (service/script-only, no firmware flash):
