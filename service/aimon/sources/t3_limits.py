@@ -88,20 +88,42 @@ def parse_cache(doc: dict, instance_id: str, display_names: dict[str, str]) -> A
     return acct
 
 
-def read_display_names(t3_home: Path) -> dict[str, str]:
+def _read_instances(t3_home: Path) -> dict[str, dict]:
     try:
         settings = json.loads((t3_home / "userdata" / "settings.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-    out = {}
-    for iid, inst in (settings.get("providerInstances") or {}).items():
-        if isinstance(inst, dict) and inst.get("displayName"):
-            out[iid] = inst["displayName"]
-    return out
+    raw = settings.get("providerInstances")
+    if not isinstance(raw, dict):
+        return {}
+    return {iid: inst for iid, inst in raw.items() if isinstance(inst, dict)}
+
+
+def _is_proxy_instance(inst: dict) -> bool:
+    env = inst.get("environment")
+    if isinstance(env, dict):
+        return any(str(k).endswith("_BASE_URL") and bool(v) for k, v in env.items())
+    if isinstance(env, list):
+        for item in env:
+            if not isinstance(item, dict):
+                continue
+            key = item.get("name") or item.get("key") or ""
+            if str(key).endswith("_BASE_URL") and item.get("value"):
+                return True
+    return False
+
+
+def read_display_names(t3_home: Path) -> dict[str, str]:
+    return {
+        iid: inst["displayName"]
+        for iid, inst in _read_instances(t3_home).items()
+        if inst.get("displayName")
+    }
 
 
 def read_accounts(t3_home: Path) -> list[Account]:
-    names = read_display_names(t3_home)
+    instances = _read_instances(t3_home)
+    names = {iid: inst["displayName"] for iid, inst in instances.items() if inst.get("displayName")}
     accounts = []
     for path in sorted((t3_home / "caches").glob("*.json")):
         try:
@@ -111,7 +133,12 @@ def read_accounts(t3_home: Path) -> list[Account]:
             continue
         if not isinstance(doc, dict):
             continue
-        acct = parse_cache(doc, doc.get("instanceId") or path.stem, names)
+        iid = doc.get("instanceId") or path.stem
+        if instances:
+            inst = instances.get(iid)
+            if inst is None or not inst.get("enabled", True) or _is_proxy_instance(inst):
+                continue
+        acct = parse_cache(doc, iid, names)
         if acct:
             accounts.append(acct)
     return accounts
