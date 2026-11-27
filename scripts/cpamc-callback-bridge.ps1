@@ -22,7 +22,8 @@ if (-not $Install) {
 }
 $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" -Argument $arguments -WorkingDirectory $PSScriptRoot
-$trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId
+$logon = New-ScheduledTaskTrigger -AtLogOn -User $userId
+$watchdog = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
 $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet -Hidden -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
@@ -33,6 +34,6 @@ if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
     Start-Sleep -Milliseconds 200
   }
 }
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description 'Loopback-only Claude/Codex callback bridge to configured CPAMC; no management/API forwarding or credential storage.' -Force | Out-Null
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger @($logon, $watchdog) -Principal $principal -Settings $settings -Description 'Loopback-only Claude/Codex callback bridge to configured CPAMC; no management/API forwarding or credential storage.' -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
 Write-Output 'Installed and started CPAMC Callback Bridge.'

@@ -12,10 +12,15 @@ from __future__ import annotations
 import json
 import math
 import ipaddress
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
+
+
+class _AimonHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = sys.platform != "win32"
 
 from . import log
 from .brightness import BrightnessController, build_brightness_payload, build_brightness_status
@@ -226,7 +231,7 @@ class App:
             def log_message(self, fmt, *args):
                 log.debug("http.request", line=fmt % args)
 
-        httpd = ThreadingHTTPServer((self.s.bind_host, self.s.bind_port), Handler)
+        httpd = _AimonHTTPServer((self.s.bind_host, self.s.bind_port), Handler)
         self.httpd = httpd
         try:
             self.collector.refresh()

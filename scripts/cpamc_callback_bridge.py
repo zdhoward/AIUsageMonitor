@@ -148,8 +148,12 @@ class Handler(BaseHTTPRequestHandler):
     do_POST = do_PUT = do_DELETE = do_PATCH = do_OPTIONS = do_HEAD = _reject
 
 
+class _BridgeHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = sys.platform != "win32"
+
+
 def make_server(port: int = DEFAULT_PORT) -> ThreadingHTTPServer:
-    srv = ThreadingHTTPServer((BIND_HOST, port), Handler)
+    srv = _BridgeHTTPServer((BIND_HOST, port), Handler)
     srv.daemon_threads = True
     srv.bridge_port = srv.server_address[1]
     return srv
