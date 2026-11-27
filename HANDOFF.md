@@ -208,7 +208,7 @@
 - Open: confirm what GPM changed (re-read live priorities, all active accounts should have one). Next scheduled apply was 06:00 on 2026-11-11.
 - No open PRs; no firmware or service changes.
 
-# Wrap-up (2026-11-10) â€” CURRENT
+# Wrap-up (2026-11-10) — CURRENT
 - Done: P-Gemini verified working (CPAMC log shows `gemini-3.8-flash-high` on the first Antigravity account). Display Flash 100% is faithful: Google's quota endpoints report Flash 100% on both accounts despite use. Argon read 100% while both accounts hold 429 quota cooldowns (really 0%): fixed with `cpamc.apply_cooldowns` + `cooldown_pools` in `service/aimon/profiles/antigravity.json`. Service restarted, capture `build/argon-cooldown.png` shows Argon 7d 0%. Commit `87825da` on main (pushed). Firmware untouched (1.16.0).
 - Tests: `ProxyCooldownTests` and `ProxyResetCreditTests` written, not run (deferred to testing phase).
 - Open: Flash/Google quota may be unreliable for newer models; optional: add Flash models to `cooldown_pools`, or show per-account request counts. Owner list unchanged (10 items in `tasks/todo.md`, incl. stale `t3/*` worktrees).
@@ -218,7 +218,7 @@
 - Done: T-033.1 (Antigrav `7d` line no longer clipped) and T-033.3 (weekly-only pool draws only the inner ring) in `ui.cpp`; built, flashed to COM6, capture `build/t033-fix.png` inspected. Added `ProxyResetCreditTests` (`rc`); the `tz` test already existed. Tests not run (deferred). Firmware version not bumped.
 - Done: T-033.1 and T-033.3 in `ui.cpp` (flashed, capture `build/t033-fix.png`); `rc` tests added. Re-swept 2026-11-10: nothing new to automate. Ledger in `tasks/todo.md`: 0 auto, 10 owner (adds O10: stale `t3/*` worktrees), 6 blocked.
 
-# Handoff â€” safe-update flow, agent guide, Studio Updates tab (2026-11-06) â€” CURRENT
+# Handoff — safe-update flow, agent guide, Studio Updates tab (2026-11-06) — CURRENT
 - Done: `AGENTS.md` + `docs/recipes/*` + `scripts/doctor.ps1` for agent-guided customising and updates; users work on a `my-setup` branch with `profiles/my.json`, `main` mirrors upstream. Studio **Updates** tab backed by `studio/updater.py` (check, trial-merge preview, backup tag, abort on conflict with an agent prompt, flash/restart, undo). Fixed a stale-backup-tag bug and added the missing `tz` test. Docs updated (README, SETUP, STUDIO, CONTRIBUTING, TEST_REPORT, PROJECT_LOG). Released as **v1.17.0** (tag + GitHub release, notes in docs/RELEASE_1.17.0.md). Firmware is unchanged and still reports 1.16.0 (`FW_VERSION` deliberately not bumped, nothing was reflashed).
 - Validation: service 56 OK, Studio 29 OK, third-party check PASS (run this session). UI checked visually for the Updates tab only in its idle state.
 - Open: (1) update-available and conflict panels untested through the UI against a real newer upstream. (2) Run the README setup prompt once on a clean checkout (reflashes). (3) Resize recipe unverified on any non-320x240 board. (4) Have a small model follow `add-card.md` to find gaps. (5) Studio must be restarted to load new code after an update. (6) Once a v1.17.1+ exists, use it to exercise the update-available panel for real.
@@ -229,33 +229,33 @@
 - Validation: firmware build 45% flash, hash-verified flash, framebuffer inspected (`build/messages-ui4.png`). No tests run (owner declared none needed); nothing covers `tz`.
 - Open: (1) run the README's AI setup prompt once on a clean checkout (never executed end to end; it would reflash). (2) Owner review of README tone/claims. (3) Add a unit test for `tz`. (4) Earlier items below (console Antigrav source, Claude pool 7d check, Flash 0.41% rounding) still stand.
 
-# Handoff addendum â€” Antigrav cooldown label and weekly source (2026-11-05)
+# Handoff addendum — Antigrav cooldown label and weekly source (2026-11-05)
 - Finding: the Antigrav tile's amber "COOLDOWN" was the soonest 0% window across all pools and both accounts' average, here the Claude pool's `3p-weekly`, not the Gemini weekly (97.7 h, correctly outside the 24 h burn pile). Verified against live CPAMC buckets and the owner's agy `/usage` (Gemini weekly 97h, Argon 93h, 5h 44m all match).
 - Done (firmware, flashed to COM6, pushed; commits `c87ed01`..`b5703b7`, last capture `build/cd-plain.png`): the multi tile's top-right is now **only Flash's soonest 7d cooldown, as a bare countdown** (judged per account via `q[]`/`qz[]`, 5h ignored, `proxyCooldown(..., onlyPool=0)`). The Gemini-side "Cl/GPT" pool is labelled **Claude** (no GPT models; profile `antigravity.json`). A weekly-only pool (Argon) shows its next reset in the empty 5h line under the ring. Single-account tiles (Claude/Codex) use the same per-account weekly rule; Claude's title turned amber because one of its four accounts reads 7d 0%, unconfirmed by the owner.
 - Done (service): the direct Antigrav probe also calls `retrieveUserQuotaSummary` (agy `/usage` source) for `gemini-5h`, `gemini-weekly` and Argon's weekly, falling back to models-only. 54 service tests pass (3 new, run after that change; the later firmware-only commits ran no tests). Docs: `DATA_SOURCES.md`, `UI.md`.
 - Open: (1) T3's stored Antigravity login is a different Google account from the two CPAMC ones and returns only `3p-*` buckets, so the **console** Antigrav/Argon cards stay 5h-only/unknown; option: source them from CPAMC. (2) Claude pool 7d reads 50% (average of two accounts); owner should check account 2 in `/usage` to confirm it is really 0%. (3) A Flash 7d at 0.41% rounds to 0% and counts as a cooldown; tighten to true 0.00% if the owner prefers. (4) Firmware version not bumped.
 
-# Handoff addendum â€” Console Codex "unsupported" fix (2026-11-05)
+# Handoff addendum — Console Codex "unsupported" fix (2026-11-05)
 - Done: console Codex tile showed "unsupported". Cause: T3 names the ChatGPT account by UUID (stale cache, "unsupported"), while `snapshot._merge_codex_log_limits` only matched an account with id `codex`. Now falls back to the ChatGPT-plan Codex account with no windows when no exact id exists. Commit `7fc7c6a`; service restarted; device payload shows 5h 12% / 7d 79% (source `codex_log`).
 - Expected, not a bug: API-key proxy accounts (P-Codex, P-Gemini, P-Grok, P-Claude) stay "unsupported" on the console. The Proxy view reads CPAMC and was always correct.
 - Limit: log-based reading is only as fresh as the last Codex use.
 - Deferred: tests (owner testing phase); no test yet for the fallback match. Optional: friendlier label or hide for API-key accounts.
 
-# Handoff addendum â€” Proxy Messages card (2026-11-03)
+# Handoff addendum — Proxy Messages card (2026-11-03)
 - Done: last Proxy grid cell (under System) is a MESSAGES card. **24HR BURN PILE** lists accounts with quota left in their full-reset window (pool's longest, 7d/30d) resetting within 24 h, soonest first. **MANUAL RESETS** lists accounts with banked resets (`Codex1 x2`). Commits `aa527cf`, `0ee0c16`, `0711c64`; flashed to COM6, service restarted, framebuffer `build/messages-card.png` inspected.
 - Data: service reads `rate_limit_reset_credits.available_count` from Codex `wham/usage` (profile key `reset_credits`) and sends per-group `rc` array (sector order, -1 unknown) on the proxy line. Counts available, not `applicable_available_count` (owner OK).
 - Update 2026-11-11: banked-reset expiry now shown. `wham/usage` has counts only, but Codex `wham/rate-limit-reset-credits` (read-only GET via CPAMC `api-call`; never call `/consume`) lists each credit with `expires_at`. The service sends the soonest per account as `g[].rx` and the Messages card shows `expires M/D`. Proxy account poll is now 5 s and the proxy line is sent every 3 s. Firmware flashed to COM6, service restarted, capture `build/manual-reset-expiry.png`. Tests not run. Claude reports no manual resets.
 - Deferred: automated tests (owner testing phase); no test yet for `rc` in `pool_groups`. Firmware version not bumped.
 
-# Handoff addendum â€” commit identity cleanup (2026-11-03)
+# Handoff addendum — commit identity cleanup (2026-11-03)
 - Cause: agent sessions on 2026-10-27/28 committed with invented emails (`zech@users.noreply...`, `197633046+agricidaniel@users.noreply...`), so GitHub credited users `zech` and `kglxeee` (ID 197633046). Only collaborator is zdhoward; no outside contributions.
 - Fixed: `git filter-repo --mailmap` rewrite of remote branches and tags; force-pushed `main` (`ac27eb6`), v1.14.1, v1.15.0, v1.15.1. All main commits now use `3210164+zdhoward@users.noreply.github.com`. Global CLAUDE.md/AGENTS.md/GEMINI.md now forbid overriding commit identity; synced.
 - Caution: local T3 worktree branches still hold pre-rewrite history; rebase onto new `main` before merging or pushing any of them.
 
-# Current handoff â€” v1.16.0 (2026-11-06)
+# Current handoff — v1.16.0 (2026-11-06)
 - v1.16.0 released: Proxy header clock (`ts` + new `tz`), redesigned Messages card. Firmware 1.16.0 flashed to COM6, service restarted. Open: manual-reset expiry dates have no known data source (counts only); no test covers `tz`. Tests deferred.
 
-# Previous handoff â€” v1.15.1 patch (2026-11-03)
+# Previous handoff — v1.15.1 patch (2026-11-03)
 - v1.15.1 released (service-only): 5h forced to 0% left when 7d exhausted (tiles + proxy rings), Antigravity earliest-reset fix. 51 tests pass, service restarted, ESP32 acking. No open PRs. Next: owner visually confirms the Codex ring on the device; firmware still 1.15.0.
 
 - Owner authorized public GitHub release and accepted the installed account-sector spacing. Release target is `v1.15.0` on `main`; release URL: https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.15.0. No open PRs at wrap-up.
@@ -265,18 +265,18 @@
 - Implementation commits: `7a977c9`, `e15856f`, `3cea6ec`; release preparation follows. Main implementation used owner-requested Terra 6.1; coordinator reviewed core diff and made the small warning/gap changes. No independent review claimed for those adjustments.
 - Verification: production builds, hash-verified USB uploads and live two-Codex-account probes passed. Inspected USB framebuffers `build/multi-account-live.png` and `build/sector-gap-live.png`; public evidence is `docs/img/display-proxy.png`. Versioned build/upload logs use `build/v1.15.0-*`. Automated tests remain deferred to owner testing phase; wrap-up does not authorize them.
 - Release is source-only: existing third-party obligations for prebuilt binaries remain unresolved. Optional CC0 scene pack stays on v1.14.1. Do not publish local merged firmware, private settings or art. Public push guard installed; never bypass it.
-- Next: owner testing phase should cover account removal, missing readings, current auth failure/recovery, more than eight accounts and serial fallback, portrait/Rows and retained tests. T-033 items 1â€“4 (clipping/layout/header/provider polish) remain open; version item is completed. T-026 weather and earlier backlog remain unchanged.
+- Next: owner testing phase should cover account removal, missing readings, current auth failure/recovery, more than eight accounts and serial fallback, portrait/Rows and retained tests. T-033 items 1–4 (clipping/layout/header/provider polish) remain open; version item is completed. T-026 weather and earlier backlog remain unchanged.
 - Efficiency: deployment and framebuffer inspection belong in the implementation's done criteria; the first handback left the owner waiting for installation. Reuse existing build/flash/capture scripts and report deferred tests explicitly. Token/cost totals UNKNOWN; no routing promotion justified.
 
 ## Earlier handoff
 
-# Handoff addendum â€” P-Gemini drained Codex (2026-10-30)
+# Handoff addendum — P-Gemini drained Codex (2026-10-30)
 
 - Cause: T3 provider `codex_proxy_gemini` ("P-Gemini") points at CPAMC. Antigravity offers no Sol/Codex models, so a P-Gemini + `gpt-6.1-sol` favorite was served by the Codex Plus account (5h 100%, 7d 90% used; 5h resets 23:38 UTC). The Antigrav "Cl/GPT" tile was correct (pool untouched).
 - Fixed (outside repo, `~/.t3/userdata/settings.json`, backup `.bak-20261030`): removed that favorite; P-Gemini now hides all built-in Codex models and lists only Antigravity models.
 - Open: P-Gemini has no default model in `~/.codex_cpamc`; set `model = "gemini-3.8-flash-high"` at the source and sync. Optional: CPAMC block for Codex model names from P-Gemini. Optional: relabel tile "Cl/GPT" -> "Cl/OSS".
 
-# Handoff â€” CPAMC Proxy home view (2026-10-30)
+# Handoff — CPAMC Proxy home view (2026-10-30)
 
 ## Done
 - The Proxy view is the default home (firmware merged in `2e7fb8c`, service `fdca048`, xAI text and hide `14083cf` and later). Flashed to COM6, service restarted, live data confirmed by framebuffer capture (Claude, Codex, Antigrav multi tile, System card). Console stays selectable.
@@ -293,7 +293,7 @@ Live CPAMC polls and four device captures inspected by the coordinator. Firmware
 - Old Console T3-cache sources are effectively dead under CPAMC; decide whether to retire them.
 - Still open from before: T-026 weather plan and the items listed below.
 
-# Handoff â€” public releases, licensing and weather roadmap (2026-10-28)
+# Handoff — public releases, licensing and weather roadmap (2026-10-28)
 
 ## Session closed
 
@@ -316,13 +316,13 @@ Weather page plus optional local weather/daylight parallax synchronization is re
 ## T-024: v1.14.0 published
 
 - Owner accepts the new wake/reset behavior and display appearance. Argon is exhausted according to owner observation, but the independent collector remains unavailable; unknown is retained. Future screensavers/transitions/audio/ticker remain on the docket.
-- Studio T-020 items 1â€“3 implemented: Settings tab, generator sky suppression and clearer headings. New settings writes preserve unknown/private keys atomically; all POST endpoints enforce JSON and matching loopback origin/port. Corrected minutes vs seconds and brightness limits during review.
+- Studio T-020 items 1–3 implemented: Settings tab, generator sky suppression and clearer headings. New settings writes preserve unknown/private keys atomically; all POST endpoints enforce JSON and matching loopback origin/port. Corrected minutes vs seconds and brightness limits during review.
 - Owner explicitly authorized release tests: 49 service + 20 Studio tests pass. Browser checks save/reload/revert/navigation and sky visibility pass with no JS errors. Main production v1.14.0 Default build and COM6 hash-verified flash pass; firmware greeting/ACKs and installed dashboard inspected. New images reviewed; docs/RELEASE_1.14.0.md records evidence/limits. Gemini Flash implemented/reviewed; Beam unavailable (free quota exhausted); independent litellm/free-review fallback PASS.
 - Published main through `9411540`, tag/release [v1.14.0](https://github.com/zdhoward/AIUsageMonitor/releases/tag/v1.14.0). Public guard initially caught a synthetic test key; replaced it with a short fixture value, amended the unpushed commit, reran 20 Studio tests and guard successfully. No bypass. Remaining: independent Argon telemetry, optional T-020 items and feature backlog, portrait/Rows/logon/brightness/Wi-Fi acceptance.
 
 ## T-023: v1.13.0 installed locally
 
-- Wrap-up: main commit `f067c9f`, local tag `v1.13.0`; no open PRs and no public push. Next: owner testing phase runs retained service tests and times near-reset saver/wake; investigate provider-side early Codex weekly reset only if it recurs using the new history. Existing Argon and T-016â€“T-020 backlog remains open.
+- Wrap-up: main commit `f067c9f`, local tag `v1.13.0`; no open PRs and no public push. Next: owner testing phase runs retained service tests and times near-reset saver/wake; investigate provider-side early Codex weekly reset only if it recurs using the new history. Existing Argon and T-016–T-020 backlog remains open.
 - Efficiency next session: use Gemini Flash first per updated owner preference. Syntax/build checks missed two runtime regressions; keep the production payload check with nonempty cost records before flashing. Capture bounded output to local logs. Retro cost is UNKNOWN; no promotion or savings claim.
 
 - Two-second lightweight local quota/activity reads, ten-second transcript processing, thirty-second directory discovery; aggregate cache avoids recomputation on heartbeats. Changed quotas/deadlines/activity request immediate coalesced serial pushes; network source cadences unchanged.
@@ -367,22 +367,22 @@ Weather page plus optional local weather/daylight parallax synchronization is re
 ## Latest session: due-quota screensaver suppression
 
 - Implemented and flashed **v1.11.1**, Default profile, COM6. Commit `c5d4858` and tag `v1.11.1` are pushed on `main`; no open PRs.
-- `hasDueAvailableUsage` in `firmware/AIUsageMonitor/ui.cpp` checks every reported account/window using the same elapsed reset countdown as the caption. Known usage of 0â€“99% used with a due reset blocks automatic saving and wakes an active saver, including when usage-change waking is disabled. Unknown values and 100%-used windows do not block it.
+- `hasDueAvailableUsage` in `firmware/AIUsageMonitor/ui.cpp` checks every reported account/window using the same elapsed reset countdown as the caption. Known usage of 0–99% used with a due reset blocks automatic saving and wakes an active saver, including when usage-change waking is disabled. Unknown values and 100%-used windows do not block it.
 - Validation: production build passed (583,159 bytes flash / 87,984 bytes static RAM), upload hash verified, and actual framebuffer captures inspected. `build/screensaver-build.log`, `build/screensaver-flash.log`, `build/screensaver-due.png` and `build/screensaver-dashboard.png` are local evidence. The 31-second capture showed the normal saver; live data had no qualifying due window. The final capture restored Console. These captures do **not** verify the new due trigger.
 - Next: at the owner's testing phase, feed a known due window below 100% used and confirm Console/Details remain awake beyond 30 seconds and wake from an active saver. Also check unknown/100%-used exclusions and a deadline crossing. Broader existing acceptance stays open in `docs/SCREENSAVER.md`; automated tests were not run this session.
 - Existing scene/audio/stock backlog is unchanged; see the previous session below and `.tickets/README.md`.
 
-## Latest session (v1.8.0 â€“ v1.11.0)
+## Latest session (v1.8.0 – v1.11.0)
 
 `main` and tags up to `v1.11.0` are **pushed** to the public GitHub repo. The owner wants it public as portfolio work, with code and the system only. Firmware 1.11.0 is flashed on COM6 with the **Default** profile, and the service is running. No open PRs. Details are in [PROJECT_LOG](docs/PROJECT_LOG.md); the owner's decisions are in [GOALS](GOALS.md).
 
-- **Profiles (v1.11.0):** Default (Console â†’ System â†’ Parallax; Console sleeps to the face), Dev (all originals) and Dev (themes) (all theme shifts). Only Console is a required page. Regenerate the scene lists by rerunning the generator logic if the library changes. The Dev profiles list scenes explicitly, so new scenes must be added to them.
+- **Profiles (v1.11.0):** Default (Console → System → Parallax; Console sleeps to the face), Dev (all originals) and Dev (themes) (all theme shifts). Only Console is a required page. Regenerate the scene lists by rerunning the generator logic if the library changes. The Dev profiles list scenes explicitly, so new scenes must be added to them.
 - **Random weather (v1.11.0):** `"weather": "random"` on a playlist (`withWeather` in `ui.cpp`, Studio checkbox in `playlists.js`). Confirmed on the display: Miami Drive got snow.
 - **Long-press home:** holding for 0.7 s jumps to the Console (`uiGoHome` in `ui.cpp`, `pollTouch` in `AIUsageMonitor.ino`, `UI_HOME_PAGE`/`UI_HOLD_MS`). The owner confirmed it on the display.
 - **Footer:** a link dot (green; amber when no payload for 30 s; red on a source error) plus `Updated <newest reading age>`. A stale account is shown only by its card's `STALE` label (60 min, `limits_stale_s` / `CLIENT_STALE_S`). T3 re-polls Claude quota only every few minutes; the serial link is healthy.
 - **Account names:** unmatched names (the owner's T3 `A`/`B`) fill the Claude rows in order (`slotIndex`).
 - **SVG (v1.9.0):** `asset_convert.py` rasterizes SVGs with `resvg-py` (`pip install resvg-py`). The Images page rotates `"image": true` manifest entries every 10 s. The owner's logo is the test case.
-- **Studio UX (v1.10.0):** unsaved chip, â†‘/â†“ reorder, focus outlines, theme badges, library counts, auto-capture. The "display" wording is now consistent.
+- **Studio UX (v1.10.0):** unsaved chip, ↑/↓ reorder, focus outlines, theme badges, library counts, auto-capture. The "display" wording is now consistent.
 - **Validation:** builds at 44% flash, with display screenshots after each flash and Playwright checks of the Studio (the T3 preview snapshot times out, so use Playwright with Edge). No automated tests were run (sprint-end rule).
 - **Public repo hygiene (owner rule):** no art, no personal data.
   - Art is local and git-ignored: the owner's GIF, logo, scene `src/` and previews, `assets/manifest.json`, and the generated `assets_gen.*` / `scenes_gen.*`. A clean clone builds at 33% flash: missing art is skipped, and the Images and City pages show hints.
